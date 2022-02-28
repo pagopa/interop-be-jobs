@@ -32,11 +32,6 @@ object Dependencies {
     lazy val vault   = namespace %% "interop-commons-vault" % commonsVersion
   }
 
-  private[this] object cats {
-    lazy val namespace = "org.typelevel"
-    lazy val core      = namespace %% "cats-core" % catsVersion
-  }
-
   private[this] object logback {
     lazy val namespace = "ch.qos.logback"
     lazy val classic   = namespace % "logback-classic" % logbackVersion
@@ -86,7 +81,6 @@ object Dependencies {
       akka.serialization                 % Compile,
       akka.slf4j                         % Compile,
       akka.stream                        % Compile,
-      cats.core                          % Compile,
       kamon.bundle                       % Compile,
       kamon.prometheus                   % Compile,
       logback.classic                    % Compile,
