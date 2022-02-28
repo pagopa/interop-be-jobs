@@ -36,12 +36,11 @@ trait AttributeRegistryManagementDependency {
 }
 
 object Main extends App with CORSSupport with VaultServiceDependency with AttributeRegistryManagementDependency {
+  Kamon.init()
 
   implicit val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   logger.info("Loading attributes data...")
-
-  Kamon.init()
 
   lazy val jwtConfig: JWTInternalTokenConfig = JWTConfiguration.jwtInternalTokenConfig
 

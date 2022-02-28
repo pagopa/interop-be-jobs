@@ -6,18 +6,11 @@ object Dependencies {
 
   private[this] object akka {
     lazy val namespace     = "com.typesafe.akka"
-    lazy val actorTyped    = namespace                       %% "akka-actor-typed"           % akkaVersion
-    lazy val actor         = namespace                       %% "akka-actor"                 % akkaVersion
-    lazy val serialization = namespace                       %% "akka-serialization-jackson" % akkaVersion
-    lazy val stream        = namespace                       %% "akka-stream"                % akkaVersion
-    lazy val http          = namespace                       %% "akka-http"                  % akkaHttpVersion
-    lazy val httpJson      = namespace                       %% "akka-http-spray-json"       % akkaHttpVersion
-    lazy val managementLogLevels =
-      "com.lightbend.akka.management" %% "akka-management-loglevels-logback" % akkaManagementVersion
-    lazy val slf4j         = namespace %% "akka-slf4j"          % akkaVersion
-    lazy val httpTestkit   = namespace %% "akka-http-testkit"   % akkaHttpVersion
-    lazy val streamTestkit = namespace %% "akka-stream-testkit" % akkaVersion
-    lazy val testkit       = namespace %% "akka-testkit"        % akkaVersion
+    lazy val actorTyped    = namespace %% "akka-actor-typed"           % akkaVersion
+    lazy val actor         = namespace %% "akka-actor"                 % akkaVersion
+    lazy val serialization = namespace %% "akka-serialization-jackson" % akkaVersion
+    lazy val stream        = namespace %% "akka-stream"                % akkaVersion
+    lazy val slf4j         = namespace %% "akka-slf4j"                 % akkaVersion
 
   }
 
@@ -43,41 +36,13 @@ object Dependencies {
     lazy val prometheus = namespace %% "kamon-prometheus" % kamonVersion
   }
 
-  private[this] object scalatest {
-    lazy val namespace = "org.scalatest"
-    lazy val core      = namespace %% "scalatest" % scalatestVersion
-  }
-
-  private[this] object scalamock {
-    lazy val namespace = "org.scalamock"
-    lazy val core      = namespace %% "scalamock" % scalaMockVersion
-  }
-
-  private[this] object jackson {
-    lazy val namespace   = "com.fasterxml.jackson.core"
-    lazy val core        = namespace % "jackson-core"         % jacksonVersion
-    lazy val annotations = namespace % "jackson-annotations"  % jacksonVersion
-    lazy val databind    = namespace % "jackson-databind"     % jacksonVersion
-    lazy val scalaModule = namespace % "jackson-module-scala" % jacksonVersion
-  }
-
   object Jars {
-    lazy val overrides: Seq[ModuleID] =
-      Seq(
-        jackson.annotations % Compile,
-        jackson.core        % Compile,
-        jackson.databind    % Compile,
-        jackson.scalaModule % Compile
-      )
     lazy val cli: Seq[ModuleID] = Seq(
       // For making Java 12 happy
       "javax.annotation" % "javax.annotation-api" % "1.3.2" % "compile",
       //
       akka.actor                         % Compile,
       akka.actorTyped                    % Compile,
-      akka.http                          % Compile,
-      akka.httpJson                      % Compile,
-      akka.managementLogLevels           % Compile,
       akka.serialization                 % Compile,
       akka.slf4j                         % Compile,
       akka.stream                        % Compile,
@@ -87,12 +52,7 @@ object Dependencies {
       pagopa.attributeRegistryManagement % Compile,
       pagopa.commons                     % Compile,
       pagopa.jwt                         % Compile,
-      pagopa.vault                       % Compile,
-      akka.httpTestkit                   % Test,
-      akka.streamTestkit                 % Test,
-      akka.testkit                       % Test,
-      scalatest.core                     % Test,
-      scalamock.core                     % Test
+      pagopa.vault                       % Compile
     )
   }
 }
