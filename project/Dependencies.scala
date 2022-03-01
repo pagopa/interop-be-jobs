@@ -14,6 +14,25 @@ object Dependencies {
 
   }
 
+  private[this] object jackson {
+    lazy val namespace   = "com.fasterxml.jackson.core"
+    lazy val core        = namespace % "jackson-core"         % jacksonVersion
+    lazy val annotations = namespace % "jackson-annotations"  % jacksonVersion
+    lazy val databind    = namespace % "jackson-databind"     % jacksonVersion
+    lazy val scalaModule = namespace % "jackson-module-scala" % jacksonVersion
+  }
+
+  private[this] object kamon {
+    lazy val namespace  = "io.kamon"
+    lazy val bundle     = namespace %% "kamon-bundle"     % kamonVersion
+    lazy val prometheus = namespace %% "kamon-prometheus" % kamonVersion
+  }
+
+  private[this] object logback {
+    lazy val namespace = "ch.qos.logback"
+    lazy val classic   = namespace % "logback-classic" % logbackVersion
+  }
+
   private[this] object pagopa {
     lazy val namespace = "it.pagopa"
 
@@ -25,18 +44,14 @@ object Dependencies {
     lazy val vault   = namespace %% "interop-commons-vault" % commonsVersion
   }
 
-  private[this] object logback {
-    lazy val namespace = "ch.qos.logback"
-    lazy val classic   = namespace % "logback-classic" % logbackVersion
-  }
-
-  private[this] object kamon {
-    lazy val namespace  = "io.kamon"
-    lazy val bundle     = namespace %% "kamon-bundle"     % kamonVersion
-    lazy val prometheus = namespace %% "kamon-prometheus" % kamonVersion
-  }
-
   object Jars {
+    lazy val overrides: Seq[ModuleID] =
+      Seq(
+        jackson.annotations % Compile,
+        jackson.core        % Compile,
+        jackson.databind    % Compile,
+        jackson.scalaModule % Compile
+      )
     lazy val cli: Seq[ModuleID] = Seq(
       // For making Java 12 happy
       "javax.annotation" % "javax.annotation-api" % "1.3.2" % "compile",

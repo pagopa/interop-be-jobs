@@ -10,6 +10,7 @@ ThisBuild / libraryDependencies := Dependencies.Jars.cli.map(m =>
     m
 )
 
+ThisBuild / dependencyOverrides ++= Dependencies.Jars.overrides
 ThisBuild / version := ComputeVersion.version
 
 ThisBuild / resolvers += "Pagopa Nexus Snapshots" at s"https://gateway.interop.pdnd.dev/nexus/repository/maven-snapshots/"

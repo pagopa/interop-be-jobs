@@ -9,7 +9,6 @@ import it.pagopa.interop.commons.jwt._
 import it.pagopa.interop.commons.jwt.model.RSA
 import it.pagopa.interop.commons.jwt.service.InteropTokenGenerator
 import it.pagopa.interop.commons.jwt.service.impl.DefaultInteropTokenGenerator
-import it.pagopa.interop.commons.utils.CORSSupport
 import it.pagopa.interop.commons.utils.TypeConversions.TryOps
 import it.pagopa.interop.commons.vault.service.VaultService
 import it.pagopa.interop.commons.vault.service.impl.{DefaultVaultClient, DefaultVaultService}
@@ -17,10 +16,11 @@ import kamon.Kamon
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.Future
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 
 //shuts down the actor system in case of startup errors
-case object StartupErrorShutdown extends CoordinatedShutdown.Reason
+case object ErrorShutdown   extends CoordinatedShutdown.Reason
+case object SuccessShutdown extends CoordinatedShutdown.Reason
 
 trait VaultServiceDependency {
   val vaultService: VaultService = new DefaultVaultService with DefaultVaultClient.DefaultClientInstance
@@ -35,7 +35,7 @@ trait AttributeRegistryManagementDependency {
     AttributeRegistryManagementServiceImpl(AttributeRegistryManagementInvoker(), attributeRegistryManagementApi)
 }
 
-object Main extends App with CORSSupport with VaultServiceDependency with AttributeRegistryManagementDependency {
+object Main extends App with VaultServiceDependency with AttributeRegistryManagementDependency {
   Kamon.init()
 
   implicit val logger: Logger = LoggerFactory.getLogger(this.getClass)
@@ -44,15 +44,17 @@ object Main extends App with CORSSupport with VaultServiceDependency with Attrib
 
   lazy val jwtConfig: JWTInternalTokenConfig = JWTConfiguration.jwtInternalTokenConfig
 
-  val interopTokenGenerator: InteropTokenGenerator = new DefaultInteropTokenGenerator with PrivateKeysHolder {
+  val interopTokenGenerator: Try[InteropTokenGenerator] = Try(
+    new DefaultInteropTokenGenerator with PrivateKeysHolder {
     override val RSAPrivateKeyset: Map[KID, SerializedKey] =
       vaultService.readBase64EncodedData(ApplicationConfiguration.rsaPrivatePath)
     override val ECPrivateKeyset: Map[KID, SerializedKey] =
       Map.empty
-  }
+  })
 
   val result: Future[Unit] = for {
-    m2mToken <- interopTokenGenerator
+    tokenGenerator <- interopTokenGenerator.toFuture
+    m2mToken <- tokenGenerator
       .generateInternalToken(
         jwtAlgorithmType = RSA,
         subject = jwtConfig.subject,
@@ -67,8 +69,12 @@ object Main extends App with CORSSupport with VaultServiceDependency with Attrib
   } yield ()
 
   result.onComplete {
-    case Success(_)  => logger.info("Attributes load completed")
-    case Failure(ex) => logger.error("Attributes load failed", ex)
+    case Success(_) =>
+      logger.info("Attributes load completed")
+      CoordinatedShutdown(classicActorSystem).run(SuccessShutdown)
+    case Failure(ex) =>
+      logger.error("Attributes load failed", ex)
+      CoordinatedShutdown(classicActorSystem).run(ErrorShutdown)
   }
 
 }
