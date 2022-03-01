@@ -28,22 +28,15 @@ lazy val sharedSettings: SettingsDefinition = Seq(
     if (buildVersion == "latest") buildVersion
     else s"$buildVersion"
   }".toLowerCase,
-  Docker / packageName := s"${name.value}",
   Docker / maintainer := "https://pagopa.it",
-  dockerCommands += Cmd("LABEL", s"org.opencontainers.image.source https://github.com/pagopa/${name.value}"),
-  publishTo := {
-    val nexus = s"https://${System.getenv("MAVEN_REPO")}/nexus/repository/"
-    if (isSnapshot.value)
-      Some("snapshots" at nexus + "maven-snapshots/")
-    else
-      Some("releases" at nexus + "maven-releases/")
-  }
+  dockerCommands += Cmd("LABEL", s"org.opencontainers.image.source https://github.com/pagopa/${name.value}")
 )
 
 lazy val attributesLoader = project
   .in(file(attributesLoaderModuleName))
   .settings(
     name := "interop-be-attributes-loader",
+    Docker / packageName := s"${name.value}",
     sharedSettings,
     libraryDependencies ++= Dependencies.Jars.attributesLoader
   )
