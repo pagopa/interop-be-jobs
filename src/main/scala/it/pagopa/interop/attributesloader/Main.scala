@@ -42,13 +42,13 @@ object Main extends App with VaultServiceDependency with AttributeRegistryManage
 
   lazy val jwtConfig: JWTInternalTokenConfig = JWTConfiguration.jwtInternalTokenConfig
 
-  val interopTokenGenerator: Try[InteropTokenGenerator] = Try(
-    new DefaultInteropTokenGenerator with PrivateKeysHolder {
-    override val RSAPrivateKeyset: Map[KID, SerializedKey] =
-      vaultService.readBase64EncodedData(ApplicationConfiguration.rsaPrivatePath)
-    override val ECPrivateKeyset: Map[KID, SerializedKey] =
-      Map.empty
-  })
+  val interopTokenGenerator: Try[InteropTokenGenerator] =
+    Try(new DefaultInteropTokenGenerator with PrivateKeysHolder {
+      override val RSAPrivateKeyset: Map[KID, SerializedKey] =
+        vaultService.readBase64EncodedData(ApplicationConfiguration.rsaPrivatePath)
+      override val ECPrivateKeyset: Map[KID, SerializedKey] =
+        Map.empty
+    })
 
   val result: Future[Unit] = for {
     tokenGenerator <- interopTokenGenerator.toFuture
