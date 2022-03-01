@@ -46,7 +46,7 @@ object Dependencies {
         jackson.databind    % Compile,
         jackson.scalaModule % Compile
       )
-    lazy val cli: Seq[ModuleID] = Seq(
+    lazy val attributesLoader: Seq[ModuleID] = Seq(
       // For making Java 12 happy
       "javax.annotation" % "javax.annotation-api" % "1.3.2" % "compile",
       //
