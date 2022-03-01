@@ -9,6 +9,8 @@ ThisBuild / version := ComputeVersion.version
 ThisBuild / resolvers += "Pagopa Nexus Snapshots" at s"https://gateway.interop.pdnd.dev/nexus/repository/maven-snapshots/"
 ThisBuild / resolvers += "Pagopa Nexus Releases" at s"https://gateway.interop.pdnd.dev/nexus/repository/maven-releases/"
 
+ThisBuild / credentials += Credentials(Path.userHome / ".sbt" / ".credentials")
+
 lazy val attributesLoaderModuleName = "attributes-loader"
 
 cleanFiles += baseDirectory.value / attributesLoaderModuleName / "target"
@@ -16,7 +18,6 @@ cleanFiles += baseDirectory.value / attributesLoaderModuleName / "target"
 lazy val sharedSettings: SettingsDefinition = Seq(
   scalacOptions := Seq(),
   scalafmtOnCompile := true,
-  credentials += Credentials(Path.userHome / ".sbt" / ".credentials"),
   updateOptions := updateOptions.value.withGigahorse(false),
   Test / parallelExecution := false,
   dockerBuildOptions ++= Seq("--network=host"),
