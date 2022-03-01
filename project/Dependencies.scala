@@ -22,12 +22,6 @@ object Dependencies {
     lazy val scalaModule = namespace % "jackson-module-scala" % jacksonVersion
   }
 
-  private[this] object kamon {
-    lazy val namespace  = "io.kamon"
-    lazy val bundle     = namespace %% "kamon-bundle"     % kamonVersion
-    lazy val prometheus = namespace %% "kamon-prometheus" % kamonVersion
-  }
-
   private[this] object logback {
     lazy val namespace = "ch.qos.logback"
     lazy val classic   = namespace % "logback-classic" % logbackVersion
@@ -61,8 +55,6 @@ object Dependencies {
       akka.serialization                 % Compile,
       akka.slf4j                         % Compile,
       akka.stream                        % Compile,
-      kamon.bundle                       % Compile,
-      kamon.prometheus                   % Compile,
       logback.classic                    % Compile,
       pagopa.attributeRegistryManagement % Compile,
       pagopa.commons                     % Compile,

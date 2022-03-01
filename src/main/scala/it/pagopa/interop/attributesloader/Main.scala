@@ -12,7 +12,6 @@ import it.pagopa.interop.commons.jwt.service.impl.DefaultInteropTokenGenerator
 import it.pagopa.interop.commons.utils.TypeConversions.TryOps
 import it.pagopa.interop.commons.vault.service.VaultService
 import it.pagopa.interop.commons.vault.service.impl.{DefaultVaultClient, DefaultVaultService}
-import kamon.Kamon
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.concurrent.Future
@@ -36,7 +35,6 @@ trait AttributeRegistryManagementDependency {
 }
 
 object Main extends App with VaultServiceDependency with AttributeRegistryManagementDependency {
-  Kamon.init()
 
   implicit val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
@@ -65,7 +63,6 @@ object Main extends App with VaultServiceDependency with AttributeRegistryManage
       .toFuture
     _ = logger.info("M2M Token obtained")
     _ <- attributeRegistryManagementService.loadCertifiedAttributes(m2mToken)
-    _ = logger.info("Data load completed")
   } yield ()
 
   result.onComplete {
