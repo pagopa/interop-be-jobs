@@ -8,7 +8,7 @@ ThisBuild / version := ComputeVersion.version
 
 ThisBuild / resolvers += "Pagopa Nexus Snapshots" at s"https://gateway.interop.pdnd.dev/nexus/repository/maven-snapshots/"
 ThisBuild / resolvers += "Pagopa Nexus Releases" at s"https://gateway.interop.pdnd.dev/nexus/repository/maven-releases/"
-
+ThisBuild / publish / skip := true
 ThisBuild / credentials += Credentials(Path.userHome / ".sbt" / ".credentials")
 
 lazy val attributesLoaderModuleName = "attributes-loader"
@@ -30,15 +30,7 @@ lazy val sharedSettings: SettingsDefinition = Seq(
     else s"$buildVersion"
   }".toLowerCase,
   Docker / maintainer := "https://pagopa.it",
-  dockerCommands += Cmd("LABEL", s"org.opencontainers.image.source https://github.com/pagopa/${name.value}"),
-  publishTo := {
-    val nexus = s"https://${System.getenv("MAVEN_REPO")}/nexus/repository/"
-
-    if (isSnapshot.value)
-      Some("snapshots" at nexus + "maven-snapshots/")
-    else
-      Some("releases" at nexus + "maven-releases/")
-  }
+  dockerCommands += Cmd("LABEL", s"org.opencontainers.image.source https://github.com/pagopa/${name.value}")
 )
 
 lazy val attributesLoader = project
