@@ -30,7 +30,8 @@ lazy val sharedSettings: SettingsDefinition = Seq(
     else s"$buildVersion"
   }".toLowerCase,
   Docker / maintainer := "https://pagopa.it",
-  dockerCommands += Cmd("LABEL", s"org.opencontainers.image.source https://github.com/pagopa/${name.value}")
+  dockerCommands += Cmd("LABEL", s"org.opencontainers.image.source https://github.com/pagopa/${name.value}"),
+  publish / skip := true
 )
 
 lazy val attributesLoader = project
