@@ -31,7 +31,14 @@ lazy val sharedSettings: SettingsDefinition = Seq(
   }".toLowerCase,
   Docker / maintainer := "https://pagopa.it",
   dockerCommands += Cmd("LABEL", s"org.opencontainers.image.source https://github.com/pagopa/${name.value}"),
-  publish / skip := true
+  publishTo := {
+    val nexus = s"https://${System.getenv("MAVEN_REPO")}/nexus/repository/"
+
+    if (isSnapshot.value)
+      Some("snapshots" at nexus + "maven-snapshots/")
+    else
+      Some("releases" at nexus + "maven-releases/")
+  }
 )
 
 lazy val attributesLoader = project
