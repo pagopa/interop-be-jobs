@@ -25,11 +25,7 @@ lazy val sharedSettings: SettingsDefinition = Seq(
   dockerRepository := Some(System.getenv("DOCKER_REPO")),
   dockerBaseImage := "adoptopenjdk:11-jdk-hotspot",
   daemonUser := "daemon",
-  Docker / version := s"${
-    val buildVersion = (ThisBuild / version).value
-    if (buildVersion == "latest") buildVersion
-    else s"$buildVersion"
-  }".toLowerCase,
+  Docker / version := (ThisBuild / version).value.replaceAll("-SNAPSHOT", "-latest").toLowerCase,
   Docker / maintainer := "https://pagopa.it",
   dockerCommands += Cmd("LABEL", s"org.opencontainers.image.source https://github.com/pagopa/${name.value}")
 )
