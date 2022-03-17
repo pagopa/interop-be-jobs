@@ -34,7 +34,6 @@ pipeline {
     environment {
     NEXUS = "${env.NEXUS}"
     DOCKER_REPO = "${env.DOCKER_REPO}"
-    MAVEN_REPO = "${env.MAVEN_REPO}"
     GITHUB_PAT = credentials('github-pat')
     NEXUS_CREDENTIALS = credentials('pdnd-nexus')
     ECR_RW = credentials('ecr-rw')
@@ -50,7 +49,7 @@ pipeline {
         }
       }
     }
-    stage('Publish Client on Nexus and Docker Image on ECR') {
+    stage('Publish Docker Image on ECR') {
       when {
         anyOf {
           branch pattern: "[0-9]+\\.[0-9]+\\.x", comparator: "REGEXP"
@@ -61,7 +60,7 @@ pipeline {
         container('sbt-container') {
           script {
             ecrLogin()
-            sbtAction 'docker:publish "project client" publish'
+            sbtAction 'docker:publish'
           }
         }
       }
