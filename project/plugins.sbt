@@ -8,7 +8,7 @@ addSbtPlugin("com.github.sbt" % "sbt-native-packager" % "1.9.9")
 
 addSbtPlugin("ch.epfl.lamp" % "sbt-dotty" % "0.5.1")
 
-addSbtPlugin("io.github.davidgregory084" % "sbt-tpolecat" % "0.1.16")
+addSbtPlugin("io.github.davidgregory084" % "sbt-tpolecat" % "0.1.22")
 
 addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.4.6")
 
