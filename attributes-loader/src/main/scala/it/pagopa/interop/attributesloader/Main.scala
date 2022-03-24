@@ -46,13 +46,13 @@ object Main extends App with VaultServiceDependency with AttributeRegistryManage
     Try(new DefaultInteropTokenGenerator with PrivateKeysHolder {
       override val RSAPrivateKeyset: Map[KID, SerializedKey] =
         vaultService.readBase64EncodedData(ApplicationConfiguration.rsaPrivatePath)
-      override val ECPrivateKeyset: Map[KID, SerializedKey] =
+      override val ECPrivateKeyset: Map[KID, SerializedKey]  =
         Map.empty
     })
 
   val result: Future[Unit] = for {
     tokenGenerator <- interopTokenGenerator.toFuture
-    m2mToken <- tokenGenerator
+    m2mToken       <- tokenGenerator
       .generateInternalToken(
         jwtAlgorithmType = RSA,
         subject = jwtConfig.subject,
@@ -66,7 +66,7 @@ object Main extends App with VaultServiceDependency with AttributeRegistryManage
   } yield ()
 
   result.onComplete {
-    case Success(_) =>
+    case Success(_)  =>
       logger.info("Attributes load completed")
       CoordinatedShutdown(classicActorSystem).run(SuccessShutdown)
     case Failure(ex) =>
