@@ -39,7 +39,7 @@ object Dependencies {
   }
 
   object Jars {
-    lazy val overrides: Seq[ModuleID] =
+    lazy val overrides: Seq[ModuleID]        =
       Seq(
         jackson.annotations % Compile,
         jackson.core        % Compile,
@@ -48,7 +48,7 @@ object Dependencies {
       )
     lazy val attributesLoader: Seq[ModuleID] = Seq(
       // For making Java 12 happy
-      "javax.annotation" % "javax.annotation-api" % "1.3.2" % "compile",
+      "javax.annotation"                 % "javax.annotation-api" % "1.3.2" % "compile",
       //
       akka.actor                         % Compile,
       akka.actorTyped                    % Compile,
