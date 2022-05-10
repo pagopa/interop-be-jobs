@@ -5,6 +5,6 @@ object Versions {
 }
 
 object PagopaVersions {
-  lazy val attributeRegistryManagementVersion = "0.1.6"
-  lazy val commonsVersion                     = "0.1.5"
+  lazy val attributeRegistryManagementVersion = "0.1.x-SNAPSHOT"
+  lazy val commonsVersion                     = "0.1.x-SNAPSHOT"
 }
