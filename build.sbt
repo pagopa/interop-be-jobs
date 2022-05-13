@@ -13,8 +13,10 @@ ThisBuild / publish / skip := true
 ThisBuild / credentials += Credentials(Path.userHome / ".sbt" / ".credentials")
 
 lazy val attributesLoaderModuleName = "attributes-loader"
+lazy val tokenReaderModuleName      = "token-reader"
 
 cleanFiles += baseDirectory.value / attributesLoaderModuleName / "target"
+cleanFiles += baseDirectory.value / tokenReaderModuleName / "target"
 
 lazy val sharedSettings: SettingsDefinition = Seq(
   scalacOptions            := Seq(),
@@ -37,5 +39,15 @@ lazy val attributesLoader = project
     Docker / packageName := s"${name.value}",
     sharedSettings,
     libraryDependencies ++= Dependencies.Jars.attributesLoader
+  )
+  .enablePlugins(JavaAppPackaging, JavaAgent)
+
+lazy val tokenReader = project
+  .in(file(tokenReaderModuleName))
+  .settings(
+    name                 := "interop-be-token-reader",
+    Docker / packageName := s"${name.value}",
+    sharedSettings,
+    libraryDependencies ++= Dependencies.Jars.tokenReader
   )
   .enablePlugins(JavaAppPackaging, JavaAgent)

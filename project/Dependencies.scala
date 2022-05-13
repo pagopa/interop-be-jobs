@@ -33,9 +33,11 @@ object Dependencies {
     lazy val attributeRegistryManagement =
       namespace %% "interop-be-attribute-registry-management-client" % attributeRegistryManagementVersion
 
-    lazy val commons = namespace %% "interop-commons-utils" % commonsVersion
-    lazy val jwt     = namespace %% "interop-commons-jwt"   % commonsVersion
-    lazy val vault   = namespace %% "interop-commons-vault" % commonsVersion
+    lazy val commons = namespace %% "interop-commons-utils"         % commonsVersion
+    lazy val jwt     = namespace %% "interop-commons-jwt"           % commonsVersion
+    lazy val vault   = namespace %% "interop-commons-vault"         % commonsVersion
+    lazy val queue   = namespace %% "interop-commons-queue-manager" % commonsVersion
+    lazy val file    = namespace %% "interop-commons-file-manager"  % commonsVersion
   }
 
   object Jars {
@@ -60,6 +62,22 @@ object Dependencies {
       pagopa.commons                     % Compile,
       pagopa.jwt                         % Compile,
       pagopa.vault                       % Compile
+    )
+
+    lazy val tokenReader: Seq[ModuleID] = Seq(
+      // For making Java 12 happy
+      "javax.annotation"                 % "javax.annotation-api" % "1.3.2" % "compile",
+      //
+      akka.actor                         % Compile,
+      akka.actorTyped                    % Compile,
+      akka.serialization                 % Compile,
+      akka.slf4j                         % Compile,
+      akka.stream                        % Compile,
+      logback.classic                    % Compile,
+      pagopa.attributeRegistryManagement % Compile,
+      pagopa.commons                     % Compile,
+      pagopa.file                        % Compile,
+      pagopa.queue                       % Compile
     )
   }
 }

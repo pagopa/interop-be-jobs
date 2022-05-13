@@ -8,6 +8,7 @@ import it.pagopa.interop.attributesloader.system.{ApplicationConfiguration, clas
 import it.pagopa.interop.commons.jwt._
 import it.pagopa.interop.commons.jwt.service.InteropTokenGenerator
 import it.pagopa.interop.commons.jwt.service.impl.DefaultInteropTokenGenerator
+import it.pagopa.interop.commons.utils.CORRELATION_ID_HEADER
 import it.pagopa.interop.commons.utils.TypeConversions.TryOps
 import it.pagopa.interop.commons.vault.VaultClientConfiguration
 import it.pagopa.interop.commons.vault.service.VaultTransitService
@@ -49,6 +50,10 @@ object Main extends App with AttributeRegistryManagementDependency {
         }
       )
     )
+
+  implicit val contexts: Seq[(String, String)] = Seq(
+    CORRELATION_ID_HEADER -> s"interop-be-jobs-${System.currentTimeMillis()}"
+  )
 
   val result: Future[Unit] = for {
     tokenGenerator <- interopTokenGenerator.toFuture
