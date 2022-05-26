@@ -1,9 +1,6 @@
 package it.pagopa.interop.attributesloader
 
 import akka.actor.typed.ActorSystem
-import akka.{actor => classic}
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.scaladsl.adapter.TypedActorSystemOps
 import it.pagopa.interop.attributeregistrymanagement.client.api.AttributeApi
 import it.pagopa.interop.attributesloader.service.AttributeRegistryManagementInvoker
 import it.pagopa.interop.attributesloader.service.impl.AttributeRegistryManagementServiceImpl
