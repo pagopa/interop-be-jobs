@@ -4,6 +4,6 @@ import scala.concurrent.Future
 
 trait AttributeRegistryManagementService {
 
-  def loadCertifiedAttributes(bearerToken: String): Future[Unit]
+  def loadCertifiedAttributes(bearerToken: String)(implicit contexts: Seq[(String, String)]): Future[Unit]
 
 }
