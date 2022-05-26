@@ -1,57 +1,33 @@
 package it.pagopa.interop.attributesloader
 
 import akka.actor.CoordinatedShutdown
-import it.pagopa.interop.attributeregistrymanagement.client.api.AttributeApi
-import it.pagopa.interop.attributesloader.service.AttributeRegistryManagementInvoker
-import it.pagopa.interop.attributesloader.service.impl.AttributeRegistryManagementServiceImpl
-import it.pagopa.interop.attributesloader.system.{ApplicationConfiguration, classicActorSystem, executionContext}
-import it.pagopa.interop.commons.jwt._
-import it.pagopa.interop.commons.jwt.service.InteropTokenGenerator
-import it.pagopa.interop.commons.jwt.service.impl.DefaultInteropTokenGenerator
-import it.pagopa.interop.commons.utils.TypeConversions.TryOps
-import it.pagopa.interop.commons.vault.VaultClientConfiguration
-import it.pagopa.interop.commons.vault.service.VaultTransitService
-import it.pagopa.interop.commons.vault.service.impl.VaultTransitServiceImpl
-import org.slf4j.{Logger, LoggerFactory}
+import akka.actor.typed.ActorSystem
+import akka.{actor => classic}
+import akka.actor.typed.scaladsl.Behaviors
+import akka.actor.typed.scaladsl.adapter.TypedActorSystemOps
+import com.typesafe.scalalogging.{Logger, LoggerTakingImplicit}
+import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
 
-import scala.concurrent.Future
-import scala.util.{Failure, Success, Try}
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 //shuts down the actor system in case of startup errors
 case object ErrorShutdown   extends CoordinatedShutdown.Reason
 case object SuccessShutdown extends CoordinatedShutdown.Reason
 
-trait AttributeRegistryManagementDependency {
-  val attributeRegistryManagementApi: AttributeApi = AttributeApi(
-    ApplicationConfiguration.attributeRegistryManagementURL
-  )
+object Main extends App with Dependencies {
 
-  val attributeRegistryManagementService: AttributeRegistryManagementServiceImpl =
-    AttributeRegistryManagementServiceImpl(AttributeRegistryManagementInvoker(), attributeRegistryManagementApi)
-}
+  implicit val logger: LoggerTakingImplicit[ContextFieldsToLog] =
+    Logger.takingImplicit[ContextFieldsToLog](this.getClass)
 
-object Main extends App with AttributeRegistryManagementDependency {
-
-  implicit val logger: Logger = LoggerFactory.getLogger(this.getClass)
+  implicit val actorSystem: ActorSystem[Nothing] = ActorSystem[Nothing](Behaviors.empty, "interop-be-attributes-loader")
+  implicit val executionContext: ExecutionContext      = actorSystem.executionContext
+  implicit val classicActorSystem: classic.ActorSystem = actorSystem.toClassic
 
   logger.info("Loading attributes data...")
 
-  lazy val jwtConfig: JWTInternalTokenConfig = JWTConfiguration.jwtInternalTokenConfig
-  val vaultService: VaultTransitService      = new VaultTransitServiceImpl(VaultClientConfiguration.vaultConfig)
-
-  val interopTokenGenerator: Try[InteropTokenGenerator] =
-    Try(
-      new DefaultInteropTokenGenerator(
-        vaultService,
-        new PrivateKeysKidHolder {
-          override val RSAPrivateKeyset: Set[KID] = ApplicationConfiguration.rsaKeysIdentifiers
-          override val ECPrivateKeyset: Set[KID]  = ApplicationConfiguration.ecKeysIdentifiers
-        }
-      )
-    )
-
   val result: Future[Unit] = for {
-    tokenGenerator <- interopTokenGenerator.toFuture
+    tokenGenerator <- interopTokenGenerator
     m2mToken       <- tokenGenerator
       .generateInternalToken(
         subject = jwtConfig.subject,
