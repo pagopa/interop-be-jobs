@@ -15,7 +15,7 @@ import scala.util.{Failure, Success}
 case object ErrorShutdown   extends CoordinatedShutdown.Reason
 case object SuccessShutdown extends CoordinatedShutdown.Reason
 
-object Main                 extends App with Dependencies {
+object Main extends App with Dependencies {
 
   implicit val logger: LoggerTakingImplicit[ContextFieldsToLog] =
     Logger.takingImplicit[ContextFieldsToLog](this.getClass)
