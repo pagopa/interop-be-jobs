@@ -14,8 +14,8 @@ import scala.util.{Failure, Success}
 //shuts down the actor system in case of startup errors
 case object ErrorShutdown   extends CoordinatedShutdown.Reason
 case object SuccessShutdown extends CoordinatedShutdown.Reason
-
-object Main extends App with Dependencies {
+import cats.implicits._
+object Main                 extends App with Dependencies {
 
   implicit val logger: LoggerTakingImplicit[ContextFieldsToLog] =
     Logger.takingImplicit[ContextFieldsToLog](this.getClass)
