@@ -8,10 +8,9 @@ import it.pagopa.interop.attributesloader.system.ApplicationConfiguration
 import it.pagopa.interop.commons.jwt.service.InteropTokenGenerator
 import it.pagopa.interop.commons.jwt.service.impl.DefaultInteropTokenGenerator
 import it.pagopa.interop.commons.jwt.{JWTConfiguration, JWTInternalTokenConfig, KID, PrivateKeysKidHolder}
+import it.pagopa.interop.commons.signer.service.SignerService
+import it.pagopa.interop.commons.signer.service.impl.KMSSignerServiceImpl
 import it.pagopa.interop.commons.utils.TypeConversions.TryOps
-import it.pagopa.interop.commons.vault.VaultClientConfiguration
-import it.pagopa.interop.commons.vault.service.VaultTransitService
-import it.pagopa.interop.commons.vault.service.impl.VaultTransitServiceImpl
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
@@ -31,14 +30,13 @@ trait Dependencies {
       AttributeApi(ApplicationConfiguration.attributeRegistryManagementURL)
     )
 
-  def vaultService(implicit actorSystem: ActorSystem[_]): VaultTransitService = new VaultTransitServiceImpl(
-    VaultClientConfiguration.vaultConfig
-  )(actorSystem.classicSystem)
+  def signerService(implicit actorSystem: ActorSystem[_]): SignerService =
+    KMSSignerServiceImpl()(actorSystem.classicSystem)
 
   def interopTokenGenerator(implicit actorSystem: ActorSystem[_], ec: ExecutionContext): Future[InteropTokenGenerator] =
     Try(
       new DefaultInteropTokenGenerator(
-        vaultService,
+        signerService,
         new PrivateKeysKidHolder {
           override val RSAPrivateKeyset: Set[KID] = ApplicationConfiguration.rsaKeysIdentifiers
           override val ECPrivateKeyset: Set[KID]  = ApplicationConfiguration.ecKeysIdentifiers
