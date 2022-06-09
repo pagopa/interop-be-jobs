@@ -1,23 +1,19 @@
 package it.pagopa.interop.tokenreader
 
-import it.pagopa.interop.commons.queue.QueueConfiguration
+import cats.implicits.toFunctorOps
 import it.pagopa.interop.commons.queue.impl.{SQSDequeuedMessage, SQSSimpleHandler}
-import it.pagopa.interop.tokenreader.messages.JWTDetailsMessage
-import it.pagopa.interop.tokenreader.messages.JWTDetailsMessage.jwtDetailsMessageFormat
 import it.pagopa.interop.tokenreader.system.ApplicationConfiguration
 import it.pagopa.interop.tokenreader.utils.FileUtils
-import spray.json.enrichAny
-import cats.implicits.{toFunctorOps, toTraverseOps}
 import org.slf4j.{Logger, LoggerFactory}
+import spray.json.BasicFormats
 
 import scala.concurrent.{ExecutionContext, Future}
 
-final class JobExecution(val fileUtils: FileUtils)(implicit ec: ExecutionContext) {
+final case class JobExecution(fileUtils: FileUtils)(implicit ec: ExecutionContext) extends BasicFormats {
 
   val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
-  val sqsHandler: SQSSimpleHandler =
-    SQSSimpleHandler(QueueConfiguration.queueAccountInfo, ApplicationConfiguration.jwtQueueUrl)
+  val sqsHandler: SQSSimpleHandler = SQSSimpleHandler(ApplicationConfiguration.jwtQueueUrl)
 
   /**
    * Performs a series of iterations until the Queue of tokens is empty
@@ -58,9 +54,10 @@ final class JobExecution(val fileUtils: FileUtils)(implicit ec: ExecutionContext
 
     def recursion: Future[Unit] =
       sqsHandler
-        .processMessages(ApplicationConfiguration.maxNumberOfMessages, ApplicationConfiguration.visibilityTimeout)(
-          messageToString
-        )(jwtDetailsMessageFormat)
+        .processMessages[String, String](
+          ApplicationConfiguration.maxNumberOfMessages,
+          ApplicationConfiguration.visibilityTimeout
+        )(Future.successful)
         .flatMap(list => process(list))
         .recoverWith { case ex =>
           logger.error(
@@ -73,13 +70,11 @@ final class JobExecution(val fileUtils: FileUtils)(implicit ec: ExecutionContext
     recursion
   }
 
-  private def messageToString(m: JWTDetailsMessage): Future[String] = Future.successful(m.toJson.compactPrint)
-
   private def processEntries(entries: List[SQSDequeuedMessage[String]]) = for {
     _ <- fileUtils.writeOnFile(entries.map(_.value))
     _ <- deleteMessages(entries.map(_.receiptHandle))
   } yield ()
 
   private def deleteMessages(receiptHandles: List[String]): Future[Unit] =
-    receiptHandles.traverse(handle => sqsHandler.deleteMessage(handle)).void
+    Future.traverse(receiptHandles)(handle => sqsHandler.deleteMessage(handle)).void
 }

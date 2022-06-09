@@ -1,15 +1,16 @@
 package it.pagopa.interop.attributesloader.service.impl
 
-import scala.concurrent.{ExecutionContext, Future}
+import com.typesafe.scalalogging.Logger
 import it.pagopa.interop.attributeregistrymanagement.client.api.AttributeApi
 import it.pagopa.interop.attributeregistrymanagement.client.invoker.{ApiRequest, BearerToken}
 import it.pagopa.interop.attributesloader.service.{
   AttributeRegistryManagementInvoker,
   AttributeRegistryManagementService
 }
-import com.typesafe.scalalogging.Logger
 import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
 import it.pagopa.interop.commons.utils.CORRELATION_ID_HEADER
+
+import scala.concurrent.{ExecutionContext, Future}
 
 final case class AttributeRegistryManagementServiceImpl(invoker: AttributeRegistryManagementInvoker, api: AttributeApi)(
   implicit ec: ExecutionContext

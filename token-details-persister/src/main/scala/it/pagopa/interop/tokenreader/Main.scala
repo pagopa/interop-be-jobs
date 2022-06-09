@@ -30,7 +30,7 @@ object Main extends App {
 
   def execute(fileManager: FileManager): Unit = {
     logger.info("Reading tokens from queue...")
-    val jobExecution = new JobExecution(new FileUtils(fileManager))
+    val jobExecution = JobExecution(new FileUtils(fileManager))
     val result       = jobExecution.run()
     result.onComplete {
       case Success(_)  =>

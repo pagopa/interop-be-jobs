@@ -13,7 +13,7 @@ ThisBuild / publish / skip := true
 ThisBuild / credentials += Credentials(Path.userHome / ".sbt" / ".credentials")
 
 lazy val attributesLoaderModuleName = "attributes-loader"
-lazy val tokenReaderModuleName      = "token-reader"
+lazy val tokenReaderModuleName      = "token-details-persister"
 
 cleanFiles += baseDirectory.value / attributesLoaderModuleName / "target"
 cleanFiles += baseDirectory.value / tokenReaderModuleName / "target"
