@@ -31,7 +31,7 @@ final case class JobExecution(fileUtils: FileUtils)(implicit ec: ExecutionContex
       )
       if (list.isEmpty && messages.isEmpty) {
         logger.info("No more messages to process, Howdy ho!")
-        Future.successful(())
+        Future.unit
       } else if (list.isEmpty) {
         logger.debug("No more messages in the queue, let's persist {} messages already accumulated.", messages.size)
         processEntries(messages)
