@@ -55,7 +55,7 @@ final case class JobExecution(fileUtils: FileUtils)(implicit ec: ExecutionContex
     def recursion: Future[Unit] =
       sqsHandler
         .processMessages[String, String](
-          ApplicationConfiguration.maxNumberOfMessages,
+          ApplicationConfiguration.maxNumberOfMessagesPerFile,
           ApplicationConfiguration.visibilityTimeout
         )(Future.successful)
         .flatMap(list => process(list))
