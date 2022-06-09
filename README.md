@@ -7,4 +7,4 @@ This application aims to trigger the attributes load calling an `attribute-regis
 
 ## Token reader
 
-This application reads tokens stored in a queue and copies them in a bucket `attribute-registry-management` endpoint
+This application reads tokens stored in a queue and copies them in a bucket

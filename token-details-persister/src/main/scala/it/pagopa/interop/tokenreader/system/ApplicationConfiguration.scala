@@ -4,21 +4,18 @@ import com.typesafe.config.{Config, ConfigFactory}
 
 object ApplicationConfiguration {
 
-  lazy val config: Config = ConfigFactory.load()
+  val config: Config = ConfigFactory.load()
 
-  val batchSize: Long =
-    config.getLong("token-reader.batch-size")
+  val maxNumberOfMessagesPerFile: Int = config.getInt("token-reader.max-number-of-messages-per-file")
 
-  val maxNumberOfMessages: Int =
-    config.getInt("token-reader.queue.number-of-messages")
+  val batchSize: Long = config.getLong("token-reader.queue.batch-size")
 
-  val visibilityTimeout: Int =
-    config.getInt("token-reader.queue.visibility-timeout")
+  val visibilityTimeout: Int = config.getInt("token-reader.queue.visibility-timeout")
 
   val storageContainer: String = config.getString("token-reader.storage.container")
-  val tokenStoragePath: String = config.getString("token-reader.storage.eservice-docs-path")
+  val tokenStoragePath: String = config.getString("token-reader.storage.token-details-path")
 
   val jwtQueueUrl: String = config.getString("token-reader.jwt-queue-url")
 
-  require(maxNumberOfMessages <= 10, """Max value for "queue-number-of-messages" is 10.""")
+  require(maxNumberOfMessagesPerFile <= 10, """Max value for "max-number-of-messages-per-file" is 10.""")
 }
