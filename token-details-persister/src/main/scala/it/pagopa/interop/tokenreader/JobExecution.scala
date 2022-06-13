@@ -35,17 +35,17 @@ final case class JobExecution(fileUtils: FileUtils)(implicit ec: ExecutionContex
       } else if (list.isEmpty) {
         logger.debug("No more messages in the queue, let's persist {} messages already accumulated.", messages.size)
         processEntries(messages)
-      } else if (messages.size >= ApplicationConfiguration.batchSize) {
+      } else if (messages.size >= ApplicationConfiguration.maxNumberOfMessagesPerFile) {
         logger.debug(
           "More than {} messages handled, let's persist these {} messages...",
-          ApplicationConfiguration.batchSize,
+          ApplicationConfiguration.maxNumberOfMessagesPerFile,
           messages.size
         )
         processEntries(messages.appendedAll(list)).flatMap(_ => handle(List.empty))
       } else {
         logger.debug(
           "Less than {} messages to handle, continue to get them from the queue...",
-          ApplicationConfiguration.batchSize,
+          ApplicationConfiguration.maxNumberOfMessagesPerFile,
           messages.size
         )
         handle(messages.appendedAll(list))
@@ -55,7 +55,7 @@ final case class JobExecution(fileUtils: FileUtils)(implicit ec: ExecutionContex
     def recursion: Future[Unit] =
       sqsHandler
         .processMessages[String, String](
-          ApplicationConfiguration.maxNumberOfMessagesPerFile,
+          ApplicationConfiguration.batchSize,
           ApplicationConfiguration.visibilityTimeout
         )(Future.successful)
         .flatMap(list => process(list))

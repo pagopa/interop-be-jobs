@@ -8,7 +8,7 @@ object ApplicationConfiguration {
 
   val maxNumberOfMessagesPerFile: Int = config.getInt("token-reader.max-number-of-messages-per-file")
 
-  val batchSize: Long = config.getLong("token-reader.queue.batch-size")
+  val batchSize: Int = config.getInt("token-reader.queue.batch-size")
 
   val visibilityTimeout: Int = config.getInt("token-reader.queue.visibility-timeout")
 
@@ -17,5 +17,5 @@ object ApplicationConfiguration {
 
   val jwtQueueUrl: String = config.getString("token-reader.jwt-queue-url")
 
-  require(maxNumberOfMessagesPerFile <= 10, """Max value for "max-number-of-messages-per-file" is 10.""")
+  require(batchSize <= 10, """Max value for "batch-size" is 10.""")
 }
