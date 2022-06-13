@@ -5,6 +5,6 @@ This repository contains different applications that will be used as kubernetes 
 
 This application aims to trigger the attributes load calling an `attribute-registry-management` endpoint
 
-## Token reader
+## Token Details Persister
 
 This application reads tokens stored in a queue and copies them in a bucket
