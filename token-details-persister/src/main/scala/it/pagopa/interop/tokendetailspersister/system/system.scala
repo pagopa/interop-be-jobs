@@ -1,4 +1,4 @@
-package it.pagopa.interop.tokenreader
+package it.pagopa.interop.tokendetailspersister
 
 import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.Behaviors
@@ -12,7 +12,7 @@ import scala.concurrent.duration.DurationInt
 package object system {
 
   implicit val actorSystem: ActorSystem[Nothing] =
-    ActorSystem[Nothing](Behaviors.empty, "interop-be-token-reader")
+    ActorSystem[Nothing](Behaviors.empty, "interop-be-token-details-persister")
 
   implicit val executionContext: ExecutionContextExecutor = actorSystem.executionContext
 

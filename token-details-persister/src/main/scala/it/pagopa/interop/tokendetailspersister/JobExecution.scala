@@ -1,9 +1,9 @@
-package it.pagopa.interop.tokenreader
+package it.pagopa.interop.tokendetailspersister
 
 import cats.implicits.toFunctorOps
 import it.pagopa.interop.commons.queue.impl.{SQSDequeuedMessage, SQSSimpleHandler}
-import it.pagopa.interop.tokenreader.system.ApplicationConfiguration
-import it.pagopa.interop.tokenreader.utils.FileUtils
+import it.pagopa.interop.tokendetailspersister.system.ApplicationConfiguration
+import it.pagopa.interop.tokendetailspersister.utils.FileUtils
 import org.slf4j.{Logger, LoggerFactory}
 import spray.json.BasicFormats
 

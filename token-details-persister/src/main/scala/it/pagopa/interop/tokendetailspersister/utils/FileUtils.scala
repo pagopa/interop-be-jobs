@@ -1,9 +1,9 @@
-package it.pagopa.interop.tokenreader.utils
+package it.pagopa.interop.tokendetailspersister.utils
 
 import akka.http.scaladsl.model.ContentTypes
 import akka.http.scaladsl.server.directives.FileInfo
 import it.pagopa.interop.commons.files.service.FileManager
-import it.pagopa.interop.tokenreader.system.ApplicationConfiguration
+import it.pagopa.interop.tokendetailspersister.system.ApplicationConfiguration
 import org.slf4j.{Logger, LoggerFactory}
 
 import java.io.{BufferedWriter, File, FileWriter}

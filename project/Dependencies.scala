@@ -64,7 +64,7 @@ object Dependencies {
       pagopa.vault                       % Compile
     )
 
-    lazy val tokenReader: Seq[ModuleID] = Seq(
+    lazy val tokenDetailsPersister: Seq[ModuleID] = Seq(
       // For making Java 12 happy
       "javax.annotation"                 % "javax.annotation-api" % "1.3.2" % "compile",
       //

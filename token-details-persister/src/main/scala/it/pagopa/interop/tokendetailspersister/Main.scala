@@ -1,10 +1,10 @@
-package it.pagopa.interop.tokenreader
+package it.pagopa.interop.tokendetailspersister
 
 import akka.actor.CoordinatedShutdown
 import it.pagopa.interop.commons.files.StorageConfiguration
 import it.pagopa.interop.commons.files.service.FileManager
-import it.pagopa.interop.tokenreader.system.{classicActorSystem, executionContext}
-import it.pagopa.interop.tokenreader.utils.FileUtils
+import it.pagopa.interop.tokendetailspersister.system.{classicActorSystem, executionContext}
+import it.pagopa.interop.tokendetailspersister.utils.FileUtils
 import org.slf4j.{Logger, LoggerFactory}
 
 import scala.util.{Failure, Success, Try}
