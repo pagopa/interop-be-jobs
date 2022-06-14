@@ -33,9 +33,9 @@ object Dependencies {
     lazy val attributeRegistryManagement =
       namespace %% "interop-be-attribute-registry-management-client" % attributeRegistryManagementVersion
 
-    lazy val commons = namespace %% "interop-commons-utils" % commonsVersion
-    lazy val jwt     = namespace %% "interop-commons-jwt"   % commonsVersion
-    lazy val vault   = namespace %% "interop-commons-vault" % commonsVersion
+    lazy val commons = namespace %% "interop-commons-utils"  % commonsVersion
+    lazy val jwt     = namespace %% "interop-commons-jwt"    % commonsVersion
+    lazy val signer  = namespace %% "interop-commons-signer" % commonsVersion
   }
 
   object Jars {
@@ -59,7 +59,7 @@ object Dependencies {
       pagopa.attributeRegistryManagement % Compile,
       pagopa.commons                     % Compile,
       pagopa.jwt                         % Compile,
-      pagopa.vault                       % Compile
+      pagopa.signer                      % Compile
     )
   }
 }
