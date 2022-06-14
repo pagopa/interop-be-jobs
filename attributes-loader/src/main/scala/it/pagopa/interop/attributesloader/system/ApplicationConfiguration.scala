@@ -15,6 +15,8 @@ object ApplicationConfiguration {
   val ecKeysIdentifiers: Set[String] =
     config.getString("interop-be-attributes-loader.ec-keys-identifiers").split(",").toSet.filter(_.nonEmpty)
 
+  val signerMaxConnections: Int = config.getInt("interop-be-attributes-loader.signer-max-connections")
+
   require(
     rsaKeysIdentifiers.nonEmpty || ecKeysIdentifiers.nonEmpty,
     "You MUST provide at least one signing key (either RSA or EC)"
