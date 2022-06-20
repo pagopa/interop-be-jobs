@@ -35,7 +35,7 @@ object Dependencies {
 
     lazy val commons = namespace %% "interop-commons-utils"         % commonsVersion
     lazy val jwt     = namespace %% "interop-commons-jwt"           % commonsVersion
-    lazy val vault   = namespace %% "interop-commons-vault"         % commonsVersion
+    lazy val signer  = namespace %% "interop-commons-signer"        % commonsVersion
     lazy val queue   = namespace %% "interop-commons-queue-manager" % commonsVersion
     lazy val file    = namespace %% "interop-commons-file-manager"  % commonsVersion
   }
@@ -61,7 +61,7 @@ object Dependencies {
       pagopa.attributeRegistryManagement % Compile,
       pagopa.commons                     % Compile,
       pagopa.jwt                         % Compile,
-      pagopa.vault                       % Compile
+      pagopa.signer                      % Compile
     )
 
     lazy val tokenDetailsPersister: Seq[ModuleID] = Seq(
