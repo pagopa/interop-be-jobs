@@ -66,18 +66,11 @@ object Dependencies {
 
     lazy val tokenDetailsPersister: Seq[ModuleID] = Seq(
       // For making Java 12 happy
-      "javax.annotation"                 % "javax.annotation-api" % "1.3.2" % "compile",
+      "javax.annotation" % "javax.annotation-api" % "1.3.2" % "compile",
       //
-      akka.actor                         % Compile,
-      akka.actorTyped                    % Compile,
-      akka.serialization                 % Compile,
-      akka.slf4j                         % Compile,
-      akka.stream                        % Compile,
-      logback.classic                    % Compile,
-      pagopa.attributeRegistryManagement % Compile,
-      pagopa.commons                     % Compile,
-      pagopa.file                        % Compile,
-      pagopa.queue                       % Compile
+      logback.classic    % Compile,
+      pagopa.file        % Compile,
+      pagopa.queue       % Compile
     )
   }
 }
