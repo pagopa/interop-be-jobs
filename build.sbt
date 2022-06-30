@@ -13,8 +13,10 @@ ThisBuild / publish / skip := true
 ThisBuild / credentials += Credentials(Path.userHome / ".sbt" / ".credentials")
 
 lazy val attributesLoaderModuleName = "attributes-loader"
+lazy val tokenDetailsPersisterModuleName      = "token-details-persister"
 
 cleanFiles += baseDirectory.value / attributesLoaderModuleName / "target"
+cleanFiles += baseDirectory.value / tokenDetailsPersisterModuleName / "target"
 
 lazy val sharedSettings: SettingsDefinition = Seq(
   scalacOptions            := Seq(),
@@ -37,5 +39,15 @@ lazy val attributesLoader = project
     Docker / packageName := s"${name.value}",
     sharedSettings,
     libraryDependencies ++= Dependencies.Jars.attributesLoader
+  )
+  .enablePlugins(JavaAppPackaging, JavaAgent)
+
+lazy val tokenDetailsPersister = project
+  .in(file(tokenDetailsPersisterModuleName))
+  .settings(
+    name                 := "interop-be-token-details-persister",
+    Docker / packageName := s"${name.value}",
+    sharedSettings,
+    libraryDependencies ++= Dependencies.Jars.tokenDetailsPersister
   )
   .enablePlugins(JavaAppPackaging, JavaAgent)
