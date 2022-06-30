@@ -1,45 +1,26 @@
 package it.pagopa.interop.tokendetailspersister
 
-import akka.actor.CoordinatedShutdown
 import it.pagopa.interop.commons.files.StorageConfiguration
 import it.pagopa.interop.commons.files.service.FileManager
-import it.pagopa.interop.tokendetailspersister.system.{classicActorSystem, executionContext}
-import it.pagopa.interop.tokendetailspersister.utils.FileUtils
-import org.slf4j.{Logger, LoggerFactory}
+import it.pagopa.interop.tokendetailspersister.FileUtils
 
 import scala.util.{Failure, Success, Try}
-
-//shuts down the actor system in case of startup errors
-case object ErrorShutdown   extends CoordinatedShutdown.Reason
-case object SuccessShutdown extends CoordinatedShutdown.Reason
+import java.util.concurrent.Executors
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Await}
+import java.util.concurrent.ExecutorService
+import scala.concurrent.duration.Duration
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
+import com.typesafe.config.ConfigFactory
 
 object Main extends App {
+  val blockingThreadPool: ExecutorService  = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors())
+  val blockingEC: ExecutionContextExecutor = ExecutionContext.fromExecutor(blockingThreadPool)
 
-  val logger: Logger = LoggerFactory.getLogger(this.getClass)
+  val fileManager: FileManager = FileManager.get(FileManager.S3)(blockingEC)
+  val fileUtils: FileUtils     = new FileUtils(fileManager)
+  val job: JobExecution        = new JobExecution(fileUtils)(blockingEC)
+  val execution: Future[Unit]  = job.run().andThen(_ => blockingThreadPool.shutdown())(global)
 
-  val fileManager: Try[FileManager] = FileManager.getConcreteImplementation(StorageConfiguration.runtimeFileManager)
-
-  fileManager match {
-    case Success(manager) =>
-      logger.info("File manager instantiated, job can be executed")
-      execute(manager)
-    case Failure(ex)      =>
-      logger.error(s"No valid file manager instance existing for ${StorageConfiguration.runtimeFileManager}", ex)
-      CoordinatedShutdown(classicActorSystem).run(ErrorShutdown)
-  }
-
-  def execute(fileManager: FileManager): Unit = {
-    logger.info("Reading tokens from queue...")
-    val jobExecution = JobExecution(new FileUtils(fileManager))
-    val result       = jobExecution.run()
-    result.onComplete {
-      case Success(_)  =>
-        logger.info("Copy of tokens on storage bucket completed")
-        CoordinatedShutdown(classicActorSystem).run(SuccessShutdown)
-      case Failure(ex) =>
-        logger.error("Copy of tokens on storage bucket FAILED!", ex)
-        CoordinatedShutdown(classicActorSystem).run(ErrorShutdown)
-    }
-  }
-
+  Await.result(execution, Duration.Inf)
 }
