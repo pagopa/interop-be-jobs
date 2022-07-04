@@ -10,17 +10,21 @@ import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Await}
 import java.util.concurrent.ExecutorService
 import scala.concurrent.duration.Duration
 import scala.concurrent.Future
+import com.typesafe.scalalogging.Logger
 import scala.concurrent.ExecutionContext.Implicits.global
 import com.typesafe.config.ConfigFactory
 
 object Main extends App {
+  private val logger: Logger               = Logger(this.getClass)
   val blockingThreadPool: ExecutorService  = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors())
   val blockingEC: ExecutionContextExecutor = ExecutionContext.fromExecutor(blockingThreadPool)
 
+  logger.info("Starting token details persister job")
   val fileManager: FileManager = FileManager.get(FileManager.S3)(blockingEC)
   val fileUtils: FileUtils     = new FileUtils(fileManager)
   val job: JobExecution        = new JobExecution(fileUtils)(blockingEC)
   val execution: Future[Unit]  = job.run().andThen(_ => blockingThreadPool.shutdown())(global)
 
   Await.result(execution, Duration.Inf)
+  logger.info("Completed token details persister job")
 }

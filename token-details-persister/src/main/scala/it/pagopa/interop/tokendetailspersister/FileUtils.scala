@@ -4,7 +4,7 @@ import akka.http.scaladsl.model.ContentTypes
 import akka.http.scaladsl.server.directives.FileInfo
 import it.pagopa.interop.commons.files.service.FileManager
 import it.pagopa.interop.tokendetailspersister.ApplicationConfiguration
-import org.slf4j.{Logger, LoggerFactory}
+import com.typesafe.scalalogging.Logger
 
 import cats.implicits._
 import java.io.{BufferedWriter, File, FileWriter}
@@ -16,7 +16,7 @@ import scala.util.{Try, Using}
 
 final class FileUtils(val fileManager: FileManager) {
 
-  private val logger: Logger         = LoggerFactory.getLogger(this.getClass)
+  private val logger: Logger         = Logger(this.getClass)
   private val dtf: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")
   private val cPath: String          = ApplicationConfiguration.containerPath.stripMargin('/')
   private val fPath: String          = ApplicationConfiguration.tokenStoragePath.stripMargin('/')
