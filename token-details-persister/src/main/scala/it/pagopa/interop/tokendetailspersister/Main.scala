@@ -23,7 +23,12 @@ object Main extends App {
   val fileManager: FileManager = FileManager.get(FileManager.S3)(blockingEC)
   val fileUtils: FileUtils     = new FileUtils(fileManager)
   val job: JobExecution        = new JobExecution(fileUtils)(blockingEC)
-  val execution: Future[Unit]  = job.run().andThen(_ => blockingThreadPool.shutdown())(global)
+  val execution: Future[Unit]  = job
+    .run()
+    .recover { ex =>
+      logger.error("There was an error while running the job", ex)
+    }(global)
+    .andThen(_ => blockingThreadPool.shutdown())
 
   Await.result(execution, Duration.Inf)
   logger.info("Completed token details persister job")
