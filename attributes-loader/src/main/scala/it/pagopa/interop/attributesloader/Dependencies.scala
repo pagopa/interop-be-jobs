@@ -30,8 +30,8 @@ trait Dependencies {
       AttributeApi(ApplicationConfiguration.attributeRegistryManagementURL)
     )
 
-  def signerService(implicit actorSystem: ActorSystem[_], blockingEc: ExecutionContext): SignerService =
-    KMSSignerServiceImpl(ApplicationConfiguration.signerMaxConnections)(actorSystem.classicSystem, blockingEc)
+  def signerService(implicit blockingEc: ExecutionContext): SignerService =
+    KMSSignerServiceImpl(ApplicationConfiguration.signerMaxConnections)(blockingEc)
 
   def interopTokenGenerator(implicit
     actorSystem: ActorSystem[_],
