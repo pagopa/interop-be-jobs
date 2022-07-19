@@ -10,6 +10,7 @@ import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLo
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
+import scala.concurrent.ExecutionContextExecutor
 
 //shuts down the actor system in case of startup errors
 case object ErrorShutdown   extends CoordinatedShutdown.Reason
@@ -24,10 +25,12 @@ object Main extends App with Dependencies {
   implicit val executionContext: ExecutionContext      = actorSystem.executionContext
   implicit val classicActorSystem: classic.ActorSystem = actorSystem.toClassic
 
+  val blockingEc: ExecutionContextExecutor = actorSystem.dispatchers.lookup(classic.typed.DispatcherSelector.blocking())
+
   logger.info("Loading attributes data...")
 
   val result: Future[Unit] = for {
-    tokenGenerator <- interopTokenGenerator
+    tokenGenerator <- interopTokenGenerator(blockingEc)
     m2mToken       <- tokenGenerator
       .generateInternalToken(
         subject = jwtConfig.subject,
@@ -36,7 +39,7 @@ object Main extends App with Dependencies {
         secondsDuration = jwtConfig.durationInSeconds
       )
     _ = logger.info("M2M Token obtained")
-    _ <- attributeRegistryManagementService.loadCertifiedAttributes(m2mToken.serialized)
+    _ <- attributeRegistryManagementService(blockingEc).loadCertifiedAttributes(m2mToken.serialized)
   } yield ()
 
   result.onComplete {

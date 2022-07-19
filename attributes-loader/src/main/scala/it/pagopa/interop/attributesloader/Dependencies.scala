@@ -9,11 +9,12 @@ import it.pagopa.interop.commons.jwt.service.InteropTokenGenerator
 import it.pagopa.interop.commons.jwt.service.impl.DefaultInteropTokenGenerator
 import it.pagopa.interop.commons.jwt.{JWTConfiguration, JWTInternalTokenConfig, KID, PrivateKeysKidHolder}
 import it.pagopa.interop.commons.signer.service.SignerService
-import it.pagopa.interop.commons.signer.service.impl.KMSSignerServiceImpl
+import it.pagopa.interop.commons.signer.service.impl.KMSSignerService
 import it.pagopa.interop.commons.utils.TypeConversions.TryOps
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
+import scala.concurrent.ExecutionContextExecutor
 
 trait Dependencies {
 
@@ -21,25 +22,22 @@ trait Dependencies {
 
   val jwtConfig: JWTInternalTokenConfig = JWTConfiguration.jwtInternalTokenConfig
 
-  def attributeRegistryManagementService(implicit
-    actorSystem: ActorSystem[_],
-    ec: ExecutionContext
-  ): AttributeRegistryManagementServiceImpl =
+  def attributeRegistryManagementService(
+    blockingEc: ExecutionContextExecutor
+  )(implicit actorSystem: ActorSystem[_], ec: ExecutionContext): AttributeRegistryManagementServiceImpl =
     AttributeRegistryManagementServiceImpl(
-      AttributeRegistryManagementInvoker()(actorSystem.classicSystem),
+      AttributeRegistryManagementInvoker(blockingEc)(actorSystem.classicSystem),
       AttributeApi(ApplicationConfiguration.attributeRegistryManagementURL)
     )
 
-  def signerService(implicit blockingEc: ExecutionContext): SignerService =
-    KMSSignerServiceImpl(ApplicationConfiguration.signerMaxConnections)(blockingEc)
+  def signerService(implicit blockingEc: ExecutionContextExecutor): SignerService = new KMSSignerService(blockingEc)
 
-  def interopTokenGenerator(implicit
-    actorSystem: ActorSystem[_],
-    blockingEc: ExecutionContext
-  ): Future[InteropTokenGenerator] =
+  def interopTokenGenerator(
+    blockingEc: ExecutionContextExecutor
+  )(implicit actorSystem: ActorSystem[_], ec: ExecutionContext): Future[InteropTokenGenerator] =
     Try(
       new DefaultInteropTokenGenerator(
-        signerService,
+        signerService(blockingEc),
         new PrivateKeysKidHolder {
           override val RSAPrivateKeyset: Set[KID] = ApplicationConfiguration.rsaKeysIdentifiers
           override val ECPrivateKeyset: Set[KID]  = ApplicationConfiguration.ecKeysIdentifiers
