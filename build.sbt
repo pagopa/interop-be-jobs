@@ -1,12 +1,11 @@
 import com.typesafe.sbt.packager.docker.Cmd
 
-ThisBuild / scalaVersion     := "2.13.8"
-ThisBuild / organization     := "it.pagopa"
-ThisBuild / organizationName := "Pagopa S.p.A."
+ThisBuild / scalaVersion      := "2.13.8"
+ThisBuild / organization      := "it.pagopa"
+ThisBuild / organizationName  := "Pagopa S.p.A."
 ThisBuild / dependencyOverrides ++= Dependencies.Jars.overrides
-ThisBuild / version          := ComputeVersion.version
+ThisBuild / version           := ComputeVersion.version
 Global / onChangedBuildSource := ReloadOnSourceChanges
-
 
 ThisBuild / resolvers += "Pagopa Nexus Snapshots" at s"https://${System.getenv("MAVEN_REPO")}/nexus/repository/maven-snapshots/"
 ThisBuild / resolvers += "Pagopa Nexus Releases" at s"https://${System.getenv("MAVEN_REPO")}/nexus/repository/maven-releases/"
@@ -14,8 +13,8 @@ ThisBuild / resolvers += "Pagopa Nexus Releases" at s"https://${System.getenv("M
 ThisBuild / publish / skip := true
 ThisBuild / credentials += Credentials(Path.userHome / ".sbt" / ".credentials")
 
-lazy val attributesLoaderModuleName = "attributes-loader"
-lazy val tokenDetailsPersisterModuleName      = "token-details-persister"
+lazy val attributesLoaderModuleName      = "attributes-loader"
+lazy val tokenDetailsPersisterModuleName = "token-details-persister"
 
 cleanFiles += baseDirectory.value / attributesLoaderModuleName / "target"
 cleanFiles += baseDirectory.value / tokenDetailsPersisterModuleName / "target"
@@ -42,7 +41,7 @@ lazy val attributesLoader = project
     sharedSettings,
     libraryDependencies ++= Dependencies.Jars.attributesLoader
   )
-  .enablePlugins(JavaAppPackaging, JavaAgent)
+  .enablePlugins(JavaAppPackaging)
 
 lazy val tokenDetailsPersister = project
   .in(file(tokenDetailsPersisterModuleName))
@@ -52,4 +51,4 @@ lazy val tokenDetailsPersister = project
     sharedSettings,
     libraryDependencies ++= Dependencies.Jars.tokenDetailsPersister
   )
-  .enablePlugins(JavaAppPackaging, JavaAgent)
+  .enablePlugins(JavaAppPackaging)
