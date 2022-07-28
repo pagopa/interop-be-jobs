@@ -1,29 +1,26 @@
 package it.pagopa.interop.tokendetailspersister
 
-import it.pagopa.interop.commons.files.StorageConfiguration
-import it.pagopa.interop.commons.files.service.FileManager
-import it.pagopa.interop.tokendetailspersister.FileUtils
-
-import scala.util.{Failure, Success, Try}
-import java.util.concurrent.Executors
-import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Await}
-import java.util.concurrent.ExecutorService
-import scala.concurrent.duration.Duration
-import scala.concurrent.Future
 import com.typesafe.scalalogging.Logger
+import it.pagopa.interop.commons.files.service.FileManager
+import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
+import it.pagopa.interop.commons.utils.service.impl.OffsetDateTimeSupplierImpl
+
+import java.util.concurrent.{ExecutorService, Executors}
 import scala.concurrent.ExecutionContext.Implicits.global
-import com.typesafe.config.ConfigFactory
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
 
 object Main extends App {
   private val logger: Logger               = Logger(this.getClass)
-  val blockingThreadPool: ExecutorService  = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors())
+  val blockingThreadPool: ExecutorService  = Executors.newFixedThreadPool(Runtime.getRuntime.availableProcessors())
   val blockingEC: ExecutionContextExecutor = ExecutionContext.fromExecutor(blockingThreadPool)
 
   logger.info("Starting token details persister job")
-  val fileManager: FileManager = FileManager.get(FileManager.S3)(blockingEC)
-  val fileUtils: FileUtils     = new FileUtils(fileManager)
-  val job: JobExecution        = new JobExecution(fileUtils)(blockingEC)
-  val execution: Future[Unit]  = job
+  val fileManager: FileManager                 = FileManager.get(FileManager.S3)(blockingEC)
+  val dateTimeSupplier: OffsetDateTimeSupplier = OffsetDateTimeSupplierImpl
+  val fileUtils: FileUtils                     = new FileUtils(fileManager, dateTimeSupplier)
+  val job: JobExecution                        = JobExecution(fileUtils)(blockingEC)
+  val execution: Future[Unit]                  = job
     .run()
     .recover { ex =>
       logger.error("There was an error while running the job", ex)

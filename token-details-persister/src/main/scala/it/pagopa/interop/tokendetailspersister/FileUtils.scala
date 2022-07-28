@@ -1,36 +1,33 @@
 package it.pagopa.interop.tokendetailspersister
 
-import akka.http.scaladsl.model.ContentTypes
-import akka.http.scaladsl.server.directives.FileInfo
-import it.pagopa.interop.commons.files.service.FileManager
-import it.pagopa.interop.tokendetailspersister.ApplicationConfiguration
 import com.typesafe.scalalogging.Logger
+import it.pagopa.interop.commons.files.service.FileManager
+import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
 
-import cats.implicits._
-import java.io.{BufferedWriter, File, FileWriter}
+import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
-import java.time.{LocalDate, LocalDateTime}
 import java.util.UUID
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Try, Using}
+import scala.concurrent.Future
 
-final class FileUtils(val fileManager: FileManager) {
+final class FileUtils(val fileManager: FileManager, val dateTimeSupplier: OffsetDateTimeSupplier) {
 
   private val logger: Logger         = Logger(this.getClass)
+  private val df: DateTimeFormatter  = DateTimeFormatter.ofPattern("yyyyMMdd")
   private val dtf: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")
   private val cPath: String          = ApplicationConfiguration.containerPath.stripMargin('/')
   private val fPath: String          = ApplicationConfiguration.tokenStoragePath.stripMargin('/')
 
-  private def fileName(): String = s"${LocalDateTime.now().format(dtf)}.ndjson"
+  private def fileName(now: OffsetDateTime): String = s"${now.format(dtf)}${UUID.randomUUID()}.ndjson"
 
   def store(lines: List[String]): Future[String] = {
-    val fName: String    = fileName()
-    val resourceId: UUID = UUID.randomUUID()
-    logger.info(s"Storing ${lines.size} lines at $cPath/$fPath/${resourceId.toString}/$fName")
+    val now           = dateTimeSupplier.get
+    val today         = now.format(df)
+    val fName: String = fileName(now)
+    logger.info(s"Storing ${lines.size} lines at $cPath/$fPath/$today/$fName")
 
     // As long as each message is in json format, the file will be in ndjson format
     val content: Array[Byte] = lines.mkString("\n").getBytes()
-    fileManager.storeBytes(cPath, fPath)(resourceId, fName, content)
+    fileManager.storeBytes(cPath, fPath)(today, fName, content)
   }
 
 }
