@@ -17,7 +17,7 @@ final class FileUtils(val fileManager: FileManager, val dateTimeSupplier: Offset
   private val cPath: String          = ApplicationConfiguration.containerPath.stripMargin('/')
   private val fPath: String          = ApplicationConfiguration.tokenStoragePath.stripMargin('/')
 
-  private def fileName(now: OffsetDateTime): String = s"${now.format(dtf)}${UUID.randomUUID()}.ndjson"
+  private def fileName(now: OffsetDateTime): String = s"${now.format(dtf)}_${UUID.randomUUID()}.ndjson"
 
   def store(lines: List[String]): Future[String] = {
     val now           = dateTimeSupplier.get
