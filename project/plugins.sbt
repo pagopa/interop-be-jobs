@@ -1,6 +1,6 @@
 addSbtPlugin("org.scoverage" % "sbt-scoverage" % "2.0.0")
 
-addSbtPlugin("com.github.sbt" % "sbt-native-packager" % "1.9.9")
+addSbtPlugin("com.github.sbt" % "sbt-native-packager" % "1.9.10")
 
 addSbtPlugin("io.github.davidgregory084" % "sbt-tpolecat" % "0.3.3")
 
