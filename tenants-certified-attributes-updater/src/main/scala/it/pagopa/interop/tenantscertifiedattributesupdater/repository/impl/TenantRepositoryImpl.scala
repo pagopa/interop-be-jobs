@@ -12,7 +12,7 @@ final case class TenantRepositoryImpl(client: MongoClient) extends TenantReposit
 
   private val collection: MongoCollection[Document] =
     client
-      .getDatabase(ApplicationConfiguration.tenantsDatabase)
+      .getDatabase(ApplicationConfiguration.databaseName)
       .getCollection(ApplicationConfiguration.tenantsCollection)
 
   def getTenants(implicit ec: ExecutionContext): Future[List[PersistentTenant]] =

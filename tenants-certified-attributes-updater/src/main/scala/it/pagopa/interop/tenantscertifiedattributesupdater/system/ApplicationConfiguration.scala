@@ -12,23 +12,17 @@ object ApplicationConfiguration {
   val tenantProcessURL: String =
     config.getString("interop-be-tenants-certified-attributes-updater.services.tenant-process")
 
-  val attributesDatabaseURL: String =
-    config.getString("interop-be-tenants-certified-attributes-updater.databases.attributes.url")
+  val databaseURL: String =
+    config.getString("interop-be-tenants-certified-attributes-updater.database.url")
 
-  val attributesDatabase: String =
-    config.getString("interop-be-tenants-certified-attributes-updater.databases.attributes.db")
+  val databaseName: String =
+    config.getString("interop-be-tenants-certified-attributes-updater.database.db")
 
   val attributesCollection: String =
-    config.getString("interop-be-tenants-certified-attributes-updater.databases.attributes.collection")
-
-  val tenantsDatabaseUrl: String =
-    config.getString("interop-be-tenants-certified-attributes-updater.databases.tenants.url")
-
-  val tenantsDatabase: String =
-    config.getString("interop-be-tenants-certified-attributes-updater.databases.tenants.db")
+    config.getString("interop-be-tenants-certified-attributes-updater.database.collections.attributes")
 
   val tenantsCollection: String =
-    config.getString("interop-be-tenants-certified-attributes-updater.databases.tenants.collection")
+    config.getString("interop-be-tenants-certified-attributes-updater.databases.collections.tenants")
 
   val rsaKeysIdentifiers: Set[String] =
     config
@@ -43,9 +37,6 @@ object ApplicationConfiguration {
       .split(",")
       .toSet
       .filter(_.nonEmpty)
-
-  val signerMaxConnections: Int =
-    config.getInt("interop-be-tenants-certified-attributes-updater.signer-max-connections")
 
   require(
     rsaKeysIdentifiers.nonEmpty || ecKeysIdentifiers.nonEmpty,

@@ -12,7 +12,7 @@ final case class AttributesRepositoryImpl(client: MongoClient) extends Attribute
 
   private val collection =
     client
-      .getDatabase(ApplicationConfiguration.attributesDatabase)
+      .getDatabase(ApplicationConfiguration.databaseName)
       .getCollection(ApplicationConfiguration.attributesCollection)
 
   def getAttributes(implicit ec: ExecutionContext): Future[Seq[PersistentAttribute]] = {

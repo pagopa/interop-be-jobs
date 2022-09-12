@@ -23,6 +23,7 @@ import it.pagopa.interop.tenantscertifiedattributesupdater.service.impl.{
 import it.pagopa.interop.tenantscertifiedattributesupdater.service.{PartyRegistryProxyInvoker, TenantProcessInvoker}
 import it.pagopa.interop.tenantscertifiedattributesupdater.system.ApplicationConfiguration
 import it.pagopa.interop.tenantscertifiedattributesupdater.util.{AttributeInfo, TenantActions}
+import org.mongodb.scala.MongoClient
 
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
@@ -152,6 +153,11 @@ trait Dependencies {
         logger.info(s"Processing new tenants group (still ${xss.size} groups to process)")
         processActivations(tenantService, xss)
       }
+  }
+
+  def shutdown()(implicit client: MongoClient, actorSystem: ActorSystem[_]): Unit = {
+    client.close()
+    actorSystem.terminate()
   }
 
 }

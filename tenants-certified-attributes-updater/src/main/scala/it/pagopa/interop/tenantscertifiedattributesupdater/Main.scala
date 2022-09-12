@@ -35,7 +35,7 @@ object Main extends App with Dependencies {
   implicit val client: MongoClient = MongoClient(
     MongoClientSettings
       .builder()
-      .applyConnectionString(new ConnectionString(ApplicationConfiguration.tenantsDatabaseUrl))
+      .applyConnectionString(new ConnectionString(ApplicationConfiguration.databaseURL))
       .codecRegistry(DEFAULT_CODEC_REGISTRY)
       .streamFactoryFactory(NettyStreamFactoryFactory())
       .build()
@@ -65,12 +65,10 @@ object Main extends App with Dependencies {
   result.onComplete {
     case Failure(ex) =>
       logger.error(s"Failed tenants certified attributes updater job - ${ex.getMessage}")
-      client.close()
-      actorSystem.terminate()
+      shutdown()
     case Success(_)  =>
       logger.info("Completed tenants certified attributes updater job")
-      client.close()
-      actorSystem.terminate()
+      shutdown()
   }
 
   Await.result(result, Duration.Inf)
