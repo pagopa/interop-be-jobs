@@ -5,5 +5,5 @@ import it.pagopa.interop.attributeregistrymanagement.model.persistence.attribute
 import scala.concurrent.Future
 
 trait AttributesRepository {
-  def getAttributes: Future[Seq[PersistentAttribute]]
+  def getAttributes: Future[Seq[Either[Throwable, PersistentAttribute]]]
 }

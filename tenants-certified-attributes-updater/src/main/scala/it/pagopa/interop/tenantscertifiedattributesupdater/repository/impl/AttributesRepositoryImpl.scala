@@ -15,7 +15,7 @@ final case class AttributesRepositoryImpl(client: MongoClient) extends Attribute
       .getDatabase(ApplicationConfiguration.databaseName)
       .getCollection(ApplicationConfiguration.attributesCollection)
 
-  def getAttributes: Future[Seq[PersistentAttribute]] =
+  def getAttributes: Future[Seq[Either[Throwable, PersistentAttribute]]] =
     collection.find().map(extractData[PersistentAttribute]).toFuture()
 
 }

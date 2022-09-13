@@ -15,7 +15,7 @@ final case class TenantRepositoryImpl(client: MongoClient) extends TenantReposit
       .getDatabase(ApplicationConfiguration.databaseName)
       .getCollection(ApplicationConfiguration.tenantsCollection)
 
-  def getTenants: Future[Seq[PersistentTenant]] =
+  def getTenants: Future[Seq[Either[Throwable, PersistentTenant]]] =
     collection.find().map(extractData[PersistentTenant]).toFuture()
 
 }

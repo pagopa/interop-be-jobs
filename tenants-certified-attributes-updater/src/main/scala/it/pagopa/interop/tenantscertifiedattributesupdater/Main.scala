@@ -3,8 +3,12 @@ import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.scaladsl.adapter.TypedActorSystemOps
 import akka.{actor => classic}
+import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.{Logger, LoggerTakingImplicit}
+import it.pagopa.interop.attributeregistrymanagement.model.persistence.attribute.PersistentAttribute
 import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
+import it.pagopa.interop.commons.utils.TypeConversions._
+import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenant
 import it.pagopa.interop.tenantscertifiedattributesupdater.repository.impl.{
   AttributesRepositoryImpl,
   TenantRepositoryImpl
@@ -12,6 +16,7 @@ import it.pagopa.interop.tenantscertifiedattributesupdater.repository.impl.{
 import it.pagopa.interop.tenantscertifiedattributesupdater.repository.{AttributesRepository, TenantRepository}
 import it.pagopa.interop.tenantscertifiedattributesupdater.service.{PartyRegistryProxyService, TenantProcessService}
 import it.pagopa.interop.tenantscertifiedattributesupdater.system.ApplicationConfiguration
+import it.pagopa.interop.tenantscertifiedattributesupdater.util._
 import org.mongodb.scala.MongoClient.DEFAULT_CODEC_REGISTRY
 import org.mongodb.scala.connection.NettyStreamFactoryFactory
 import org.mongodb.scala.{ConnectionString, MongoClient, MongoClientSettings}
@@ -49,16 +54,20 @@ object Main extends App with Dependencies {
   val tenantRepository: TenantRepository         = TenantRepositoryImpl(client)
   val attributesRepository: AttributesRepository = AttributesRepositoryImpl(client)
 
+  def getAttributesAndTenants: Future[(Seq[PersistentAttribute], Seq[PersistentTenant])] =
+    attributesRepository.getAttributes
+      .flatMap(_.sequence.toFuture)
+      .zip(tenantRepository.getTenants.flatMap(_.sequence.toFuture))
+
   val result: Future[Unit] = for {
-    bearer     <- generateBearer(blockingEc)
-    attributes <- attributesRepository.getAttributes
-    tenants    <- tenantRepository.getTenants
+    bearer                <- generateBearer(jwtConfig, signerService(blockingEc))
+    (attributes, tenants) <- getAttributesAndTenants
     attributesIndex       = createAttributesIndex(attributes)
     institutionsRetriever = partyRegistryProxyService.getInstitutions(bearer)(_, _)
-    upsertTenant         = tenantProcessService.upsertTenant(bearer)(_)
+    tenantUpserter        = tenantProcessService.upsertTenant(bearer)(_)
     institutions <- retrieveAllInstitutions(institutionsRetriever, initPage, List.empty)
     action = createAction(institutions, tenants.toList, attributesIndex)
-    _ <- processActivations(tenantService, action.activations.grouped(groupDimension).toList)
+    _ <- processActivations(tenantUpserter, action.activations.grouped(groupDimension).toList)
     _ = logger.info(s"Activated tenants/attributes")
   } yield ()
 
