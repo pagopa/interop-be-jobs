@@ -55,7 +55,7 @@ object Main extends App with Dependencies {
     tenants    <- tenantRepository.getTenants
     attributesIndex       = createAttributesIndex(attributes)
     institutionsRetriever = partyRegistryProxyService.getInstitutions(bearer)(_, _)
-    tenantService         = tenantProcessService.upsertTenant(bearer)(_)
+    upsertTenant         = tenantProcessService.upsertTenant(bearer)(_)
     institutions <- retrieveAllInstitutions(institutionsRetriever, initPage, List.empty)
     action = createAction(institutions, tenants.toList, attributesIndex)
     _ <- processActivations(tenantService, action.activations.grouped(groupDimension).toList)
