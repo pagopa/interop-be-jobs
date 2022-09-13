@@ -22,9 +22,6 @@ final case class PartyRegistryProxyServiceImpl(invoker: PartyRegistryProxyInvoke
     bearerToken: String
   )(page: Int, limit: Int)(implicit contexts: Seq[(String, String)]): Future[Institutions] = {
     val request = api.searchInstitutions(page = Some(page), limit = Some(limit))(BearerToken(bearerToken))
-    invoker.execute(request).map(_.content).recoverWith { case ex =>
-      logger.error(s"Fail getting institutions page=${page.toString}/limit=${limit.toString}")
-      Future.failed(ex)
-    }
+    invoker.invoke(request, s"Getting institutions page=${page.toString}/limit=${limit.toString}")
   }
 }

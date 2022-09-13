@@ -1,5 +1,6 @@
 package it.pagopa.interop.tenantscertifiedattributesupdater.service.impl
 
+import cats.implicits._
 import com.typesafe.scalalogging.{Logger, LoggerTakingImplicit}
 import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
 import it.pagopa.interop.tenantprocess.client.api.TenantApi
@@ -26,7 +27,7 @@ final case class TenantProcessServiceImpl(invoker: TenantProcessInvoker, api: Te
 
     invoker
       .invoke(request, s"Upserting tenant ${seed.externalId.origin}/${seed.externalId.value}")
-      .map(_ => ())
+      .void
       .recoverWith { case _ =>
         logger.error(s"Fail upserting seed ${seed.toString}")
         Future.unit

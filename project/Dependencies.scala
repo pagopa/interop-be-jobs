@@ -14,6 +14,11 @@ object Dependencies {
 
   }
 
+  private[this] object cats {
+    lazy val namespace = "org.typelevel"
+    lazy val core      = namespace %% "cats-core" % catsVersion
+  }
+
   private[this] object jackson {
     lazy val namespace   = "com.fasterxml.jackson.core"
     lazy val core        = namespace % "jackson-core"         % jacksonVersion
@@ -44,7 +49,7 @@ object Dependencies {
       namespace %% "interop-be-party-registry-proxy-client" % partyRegistryProxyVersion
 
     lazy val tenantModels =
-      namespace %% "interop-be-tenant-management-models" % "addReadModel-SNAPSHOT"
+      namespace %% "interop-be-tenant-management-models" % tenantManagementVersion
 
     lazy val tenantProcess =
       namespace %% "interop-be-tenant-process-client" % tenantProcessVersion
@@ -54,7 +59,6 @@ object Dependencies {
     lazy val signer      = namespace %% "interop-commons-signer"        % commonsVersion
     lazy val queue       = namespace %% "interop-commons-queue-manager" % commonsVersion
     lazy val file        = namespace %% "interop-commons-file-manager"  % commonsVersion
-    lazy val commonsCqrs = namespace %% "interop-commons-cqrs"          % commonsVersion
   }
 
   object Jars {
@@ -94,10 +98,10 @@ object Dependencies {
       // For making Java 12 happy
       "javax.annotation"        % "javax.annotation-api" % "1.3.2" % "compile",
       //
+      cats.core                 % Compile,
       logback.classic           % Compile,
       mongodb.scalaDriver       % Compile,
       pagopa.attributeModels    % Compile,
-      pagopa.commonsCqrs        % Compile,
       pagopa.partyRegistryProxy % Compile,
       pagopa.tenantModels       % Compile,
       pagopa.tenantProcess      % Compile,

@@ -73,7 +73,7 @@ trait Dependencies {
   def interopTokenGenerator(
     blockingEc: ExecutionContextExecutor
   )(implicit actorSystem: ActorSystem[_], ec: ExecutionContext): Future[InteropTokenGenerator] =
-    Try(
+    Future(
       new DefaultInteropTokenGenerator(
         signerService(blockingEc),
         new PrivateKeysKidHolder {
@@ -81,7 +81,7 @@ trait Dependencies {
           override val ECPrivateKeyset: Set[KID]  = ApplicationConfiguration.ecKeysIdentifiers
         }
       )
-    ).toFuture
+    )
 
   def createAction(
     institutions: List[Institution],
@@ -104,7 +104,7 @@ trait Dependencies {
 
     val activations: List[InternalTenantSeed] =
       fromRegistry
-        .filter(i => !fromTenant.contains(i._1))
+        .filterNot(i => fromTenant.contains(i._1))
         .map { case (extId, attr) =>
           InternalTenantSeed(ExternalId(extId.origin, extId.value), Seq(InternalAttributeSeed(attr.origin, attr.code)))
         }
@@ -146,7 +146,7 @@ trait Dependencies {
     logger: LoggerTakingImplicit[ContextFieldsToLog]
   ): Future[Unit] = list match {
     case Nil       => Future.unit
-    case x :: Nil  => Future.traverse(x)(tenantService).map(_ => ())
+    case x :: Nil  => Future.traverse(x)(tenantService).void
     case xs :: xss =>
       logger.info(s"Processing group ${list.size}")
       Future.traverse(xs)(tenantService).flatMap { _ =>
