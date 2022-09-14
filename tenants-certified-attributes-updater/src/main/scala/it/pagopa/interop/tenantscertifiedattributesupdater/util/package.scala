@@ -46,10 +46,6 @@ package object util {
       )
     )
 
-  /*
-   This function provides two kind of action:
-   activations: when a
-   */
   def createAction(
     institutions: List[Institution],
     tenants: List[PersistentTenant],
