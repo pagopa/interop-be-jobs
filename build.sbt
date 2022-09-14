@@ -13,8 +13,9 @@ ThisBuild / resolvers += "Pagopa Nexus Releases" at s"https://${System.getenv("M
 ThisBuild / publish / skip := true
 ThisBuild / credentials += Credentials(Path.userHome / ".sbt" / ".credentials")
 
-lazy val attributesLoaderModuleName      = "attributes-loader"
-lazy val tokenDetailsPersisterModuleName = "token-details-persister"
+lazy val attributesLoaderModuleName                  = "attributes-loader"
+lazy val tokenDetailsPersisterModuleName             = "token-details-persister"
+lazy val tenantsCertifiedAttributesUpdaterModuleName = "tenants-certified-attributes-updater"
 
 cleanFiles += baseDirectory.value / attributesLoaderModuleName / "target"
 cleanFiles += baseDirectory.value / tokenDetailsPersisterModuleName / "target"
@@ -50,5 +51,15 @@ lazy val tokenDetailsPersister = project
     Docker / packageName := s"${name.value}",
     sharedSettings,
     libraryDependencies ++= Dependencies.Jars.tokenDetailsPersister
+  )
+  .enablePlugins(JavaAppPackaging)
+
+lazy val tenantsCertifiedAttributesUpdater = project
+  .in(file(tenantsCertifiedAttributesUpdaterModuleName))
+  .settings(
+    name                 := "interop-be-tenants-certified-attributes-updater",
+    Docker / packageName := s"${name.value}",
+    sharedSettings,
+    libraryDependencies ++= Dependencies.Jars.tenantsCertifiedAttributesUpdater
   )
   .enablePlugins(JavaAppPackaging)

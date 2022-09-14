@@ -14,6 +14,11 @@ object Dependencies {
 
   }
 
+  private[this] object cats {
+    lazy val namespace = "org.typelevel"
+    lazy val core      = namespace %% "cats-core" % catsVersion
+  }
+
   private[this] object jackson {
     lazy val namespace   = "com.fasterxml.jackson.core"
     lazy val core        = namespace % "jackson-core"         % jacksonVersion
@@ -27,17 +32,33 @@ object Dependencies {
     lazy val classic   = namespace % "logback-classic" % logbackVersion
   }
 
+  private[this] object mongodb {
+    lazy val scalaDriver = "org.mongodb.scala" %% "mongo-scala-driver" % mongodbScalaDriverVersion
+  }
+
   private[this] object pagopa {
     lazy val namespace = "it.pagopa"
 
     lazy val attributeRegistryManagement =
       namespace %% "interop-be-attribute-registry-management-client" % attributeRegistryManagementVersion
 
-    lazy val commons = namespace %% "interop-commons-utils"         % commonsVersion
-    lazy val jwt     = namespace %% "interop-commons-jwt"           % commonsVersion
-    lazy val signer  = namespace %% "interop-commons-signer"        % commonsVersion
-    lazy val queue   = namespace %% "interop-commons-queue-manager" % commonsVersion
-    lazy val file    = namespace %% "interop-commons-file-manager"  % commonsVersion
+    lazy val attributeModels =
+      namespace %% "interop-be-attribute-registry-management-models" % attributeRegistryManagementVersion
+
+    lazy val partyRegistryProxy =
+      namespace %% "interop-be-party-registry-proxy-client" % partyRegistryProxyVersion
+
+    lazy val tenantModels =
+      namespace %% "interop-be-tenant-management-models" % tenantManagementVersion
+
+    lazy val tenantProcess =
+      namespace %% "interop-be-tenant-process-client" % tenantProcessVersion
+
+    lazy val commons     = namespace %% "interop-commons-utils"         % commonsVersion
+    lazy val jwt         = namespace %% "interop-commons-jwt"           % commonsVersion
+    lazy val signer      = namespace %% "interop-commons-signer"        % commonsVersion
+    lazy val queue       = namespace %% "interop-commons-queue-manager" % commonsVersion
+    lazy val file        = namespace %% "interop-commons-file-manager"  % commonsVersion
   }
 
   object Jars {
@@ -71,6 +92,21 @@ object Dependencies {
       logback.classic    % Compile,
       pagopa.file        % Compile,
       pagopa.queue       % Compile
+    )
+
+    lazy val tenantsCertifiedAttributesUpdater: Seq[ModuleID] = Seq(
+      // For making Java 12 happy
+      "javax.annotation"        % "javax.annotation-api" % "1.3.2" % "compile",
+      //
+      cats.core                 % Compile,
+      logback.classic           % Compile,
+      mongodb.scalaDriver       % Compile,
+      pagopa.attributeModels    % Compile,
+      pagopa.partyRegistryProxy % Compile,
+      pagopa.tenantModels       % Compile,
+      pagopa.tenantProcess      % Compile,
+      pagopa.jwt                % Compile,
+      pagopa.signer             % Compile
     )
   }
 }
