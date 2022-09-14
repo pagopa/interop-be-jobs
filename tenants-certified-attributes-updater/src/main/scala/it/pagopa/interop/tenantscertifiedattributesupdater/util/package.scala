@@ -57,24 +57,33 @@ package object util {
         .map { institution =>
           PersistentExternalId(institution.origin, institution.originId) -> AttributeInfo(
             institution.origin,
-            institution.category
+            institution.category,
+            None
           )
         }
         .toMap
 
     val fromTenant: Map[PersistentExternalId, List[AttributeInfo]] =
-      tenants.map(tenant => tenant.externalId -> tenant.attributes.flatMap(attr => attributesIndex.get(attr.id))).toMap
+      tenants
+        .map(tenant =>
+          tenant.externalId -> tenant.attributes.flatMap(attr =>
+            AttributeInfo.addRevocationTimeStamp(attr, attributesIndex)
+          )
+        )
+        .toMap
 
     val activations: List[InternalTenantSeed] =
       fromRegistry
-        .filterNot { case (extId, attr) => fromTenant.get(extId).exists(_.contains(attr)) }
+        .filterNot { case (extId, attr) => fromTenant.get(extId).exists(AttributeInfo.stillExistsInTenant(attr)) }
         .map { case (extId, attr) =>
           InternalTenantSeed(ExternalId(extId.origin, extId.value), List(InternalAttributeSeed(attr.origin, attr.code)))
         }
         .toList
 
     val revocations: Map[PersistentExternalId, List[AttributeInfo]] =
-      fromTenant.filterNot { case (extId, attrs) => fromRegistry.get(extId).exists(attrs.contains) }
+      fromTenant.filterNot { case (extId, attrs) =>
+        fromRegistry.get(extId).exists(AttributeInfo.stillExistInRegistry(attrs))
+      }
 
     TenantActions(activations, revocations)
   }
@@ -83,7 +92,9 @@ package object util {
     attributes
       .filter(_.kind == Certified)
       .mapFilter(attribute =>
-        attribute.origin.zip(attribute.code).map { case (origin, code) => attribute.id -> AttributeInfo(origin, code) }
+        attribute.origin.zip(attribute.code).map { case (origin, code) =>
+          attribute.id -> AttributeInfo(origin, code, None)
+        }
       )
       .toMap
 
