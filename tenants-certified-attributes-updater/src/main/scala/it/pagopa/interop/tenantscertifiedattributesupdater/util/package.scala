@@ -73,12 +73,12 @@ package object util {
       fromRegistry
         .filterNot { case (extId, attr) => fromTenant.get(extId).exists(_.contains(attr)) }
         .map { case (extId, attr) =>
-          InternalTenantSeed(ExternalId(extId.origin, extId.value), Seq(InternalAttributeSeed(attr.origin, attr.code)))
+          InternalTenantSeed(ExternalId(extId.origin, extId.value), List(InternalAttributeSeed(attr.origin, attr.code)))
         }
         .toList
 
     val revocations: Map[PersistentExternalId, List[AttributeInfo]] =
-      fromTenant.filterNot { case (extId, attrs) => fromRegistry.get(extId).exists(attr => attrs.contains(attr)) }
+      fromTenant.filterNot { case (extId, attrs) => fromRegistry.get(extId).exists(attrs.contains) }
 
     TenantActions(activations, revocations)
   }
