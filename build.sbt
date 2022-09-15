@@ -57,7 +57,7 @@ lazy val tokenDetailsPersister = project
 lazy val tenantsCertifiedAttributesUpdater = project
   .in(file(tenantsCertifiedAttributesUpdaterModuleName))
   .settings(
-    name                 := "interop-be-tenants-certified-attributes-updater",
+    name                 := "interop-be-tenants-cert-attr-updater",
     Docker / packageName := s"${name.value}",
     sharedSettings,
     libraryDependencies ++= Dependencies.Jars.tenantsCertifiedAttributesUpdater
