@@ -54,11 +54,11 @@ object Dependencies {
     lazy val tenantProcess =
       namespace %% "interop-be-tenant-process-client" % tenantProcessVersion
 
-    lazy val commons     = namespace %% "interop-commons-utils"         % commonsVersion
-    lazy val jwt         = namespace %% "interop-commons-jwt"           % commonsVersion
-    lazy val signer      = namespace %% "interop-commons-signer"        % commonsVersion
-    lazy val queue       = namespace %% "interop-commons-queue-manager" % commonsVersion
-    lazy val file        = namespace %% "interop-commons-file-manager"  % commonsVersion
+    lazy val commons = namespace %% "interop-commons-utils"         % commonsVersion
+    lazy val jwt     = namespace %% "interop-commons-jwt"           % commonsVersion
+    lazy val signer  = namespace %% "interop-commons-signer"        % commonsVersion
+    lazy val queue   = namespace %% "interop-commons-queue-manager" % commonsVersion
+    lazy val file    = namespace %% "interop-commons-file-manager"  % commonsVersion
   }
 
   object Jars {
@@ -96,7 +96,7 @@ object Dependencies {
 
     lazy val tenantsCertifiedAttributesUpdater: Seq[ModuleID] = Seq(
       // For making Java 12 happy
-      "javax.annotation"        % "javax.annotation-api" % "1.3.2" % "compile",
+      "javax.annotation"        % "javax.annotation-api" % "1.3.2"  % "compile",
       //
       cats.core                 % Compile,
       logback.classic           % Compile,
@@ -106,7 +106,8 @@ object Dependencies {
       pagopa.tenantModels       % Compile,
       pagopa.tenantProcess      % Compile,
       pagopa.jwt                % Compile,
-      pagopa.signer             % Compile
+      pagopa.signer             % Compile,
+      "org.scalameta"          %% "munit"                % "0.7.29" % Test
     )
   }
 }
