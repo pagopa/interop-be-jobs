@@ -9,11 +9,10 @@ import it.pagopa.interop.tenantscertifiedattributesupdater.service.{
   PartyRegistryProxyInvoker,
   PartyRegistryProxyService
 }
-import scala.concurrent.{ExecutionContextExecutor, Future}
+import scala.concurrent.Future
 
-final case class PartyRegistryProxyServiceImpl(invoker: PartyRegistryProxyInvoker, api: InstitutionApi)(implicit
-  ec: ExecutionContextExecutor
-) extends PartyRegistryProxyService {
+final case class PartyRegistryProxyServiceImpl(invoker: PartyRegistryProxyInvoker, api: InstitutionApi)
+    extends PartyRegistryProxyService {
 
   implicit val logger: LoggerTakingImplicit[ContextFieldsToLog] =
     Logger.takingImplicit[ContextFieldsToLog](this.getClass)

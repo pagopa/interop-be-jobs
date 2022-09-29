@@ -20,7 +20,7 @@ final class FileUtils(val fileManager: FileManager, val dateTimeSupplier: Offset
   private def fileName(now: OffsetDateTime): String = s"${now.format(dtf)}_${UUID.randomUUID()}.ndjson"
 
   def store(lines: List[String]): Future[String] = {
-    val now           = dateTimeSupplier.get
+    val now           = dateTimeSupplier.get()
     val today         = now.format(df)
     val fName: String = fileName(now)
     logger.info(s"Storing ${lines.size} lines at $cPath/$fPath/$today/$fName")
