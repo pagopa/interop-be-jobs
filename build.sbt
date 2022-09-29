@@ -21,7 +21,6 @@ cleanFiles += baseDirectory.value / attributesLoaderModuleName / "target"
 cleanFiles += baseDirectory.value / tokenDetailsPersisterModuleName / "target"
 
 lazy val sharedSettings: SettingsDefinition = Seq(
-  scalacOptions            := Seq(),
   scalafmtOnCompile        := true,
   updateOptions            := updateOptions.value.withGigahorse(false),
   Test / parallelExecution := false,

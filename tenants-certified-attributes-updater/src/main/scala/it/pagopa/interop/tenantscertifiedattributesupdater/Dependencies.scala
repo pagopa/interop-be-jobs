@@ -23,11 +23,10 @@ trait Dependencies {
 
   def partyRegistryProxyService(
     blockingEc: ExecutionContextExecutor
-  )(implicit actorSystem: ActorSystem[_]): PartyRegistryProxyServiceImpl =
-    PartyRegistryProxyServiceImpl(
-      PartyRegistryProxyInvoker(blockingEc)(actorSystem.classicSystem),
-      InstitutionApi(ApplicationConfiguration.partyRegistryProxyURL)
-    )(blockingEc)
+  )(implicit actorSystem: ActorSystem[_]): PartyRegistryProxyServiceImpl = PartyRegistryProxyServiceImpl(
+    PartyRegistryProxyInvoker(blockingEc)(actorSystem.classicSystem),
+    InstitutionApi(ApplicationConfiguration.partyRegistryProxyURL)
+  )
 
   def tenantProcessService(
     blockingEc: ExecutionContextExecutor
