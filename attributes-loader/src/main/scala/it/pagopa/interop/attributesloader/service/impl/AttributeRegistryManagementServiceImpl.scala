@@ -10,11 +10,10 @@ import it.pagopa.interop.attributesloader.service.{
 import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
 import it.pagopa.interop.commons.utils.CORRELATION_ID_HEADER
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
-final case class AttributeRegistryManagementServiceImpl(invoker: AttributeRegistryManagementInvoker, api: AttributeApi)(
-  implicit ec: ExecutionContext
-) extends AttributeRegistryManagementService {
+final case class AttributeRegistryManagementServiceImpl(invoker: AttributeRegistryManagementInvoker, api: AttributeApi)
+    extends AttributeRegistryManagementService {
 
   implicit val logger = Logger.takingImplicit[ContextFieldsToLog](this.getClass)
 
