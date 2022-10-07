@@ -3,7 +3,7 @@ object Versions {
   lazy val catsVersion    = "2.8.0"
   lazy val jacksonVersion = "2.11.4" // This cannot be updated yet because akka-serialization use 2.11.x version
   lazy val logbackVersion = "1.4.3"
-  lazy val mongodbScalaDriverVersion = "4.6.1"
+  lazy val mongodbScalaDriverVersion = "4.7.2"
 }
 
 object PagopaVersions {
