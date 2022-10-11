@@ -54,11 +54,11 @@ object Dependencies {
     lazy val tenantProcess =
       namespace %% "interop-be-tenant-process-client" % tenantProcessVersion
 
-    lazy val commons     = namespace %% "interop-commons-utils"         % commonsVersion
-    lazy val jwt         = namespace %% "interop-commons-jwt"           % commonsVersion
-    lazy val signer      = namespace %% "interop-commons-signer"        % commonsVersion
-    lazy val queue       = namespace %% "interop-commons-queue-manager" % commonsVersion
-    lazy val file        = namespace %% "interop-commons-file-manager"  % commonsVersion
+    lazy val commons = namespace %% "interop-commons-utils"         % commonsVersion
+    lazy val jwt     = namespace %% "interop-commons-jwt"           % commonsVersion
+    lazy val signer  = namespace %% "interop-commons-signer"        % commonsVersion
+    lazy val queue   = namespace %% "interop-commons-queue-manager" % commonsVersion
+    lazy val file    = namespace %% "interop-commons-file-manager"  % commonsVersion
   }
 
   object Jars {
@@ -98,6 +98,7 @@ object Dependencies {
       // For making Java 12 happy
       "javax.annotation"        % "javax.annotation-api" % "1.3.2" % "compile",
       //
+      akka.actorTyped           % Compile,
       cats.core                 % Compile,
       logback.classic           % Compile,
       mongodb.scalaDriver       % Compile,
