@@ -1,6 +1,6 @@
 import com.typesafe.sbt.packager.docker.Cmd
 
-ThisBuild / scalaVersion      := "2.13.8"
+ThisBuild / scalaVersion      := "2.13.10"
 ThisBuild / organization      := "it.pagopa"
 ThisBuild / organizationName  := "Pagopa S.p.A."
 ThisBuild / dependencyOverrides ++= Dependencies.Jars.overrides
@@ -21,7 +21,6 @@ cleanFiles += baseDirectory.value / attributesLoaderModuleName / "target"
 cleanFiles += baseDirectory.value / tokenDetailsPersisterModuleName / "target"
 
 lazy val sharedSettings: SettingsDefinition = Seq(
-  scalacOptions            := Seq(),
   scalafmtOnCompile        := true,
   updateOptions            := updateOptions.value.withGigahorse(false),
   Test / parallelExecution := false,
@@ -57,7 +56,7 @@ lazy val tokenDetailsPersister = project
 lazy val tenantsCertifiedAttributesUpdater = project
   .in(file(tenantsCertifiedAttributesUpdaterModuleName))
   .settings(
-    name                 := "interop-be-tenants-certified-attributes-updater",
+    name                 := "interop-be-tenants-cert-attr-updater",
     Docker / packageName := s"${name.value}",
     sharedSettings,
     libraryDependencies ++= Dependencies.Jars.tenantsCertifiedAttributesUpdater

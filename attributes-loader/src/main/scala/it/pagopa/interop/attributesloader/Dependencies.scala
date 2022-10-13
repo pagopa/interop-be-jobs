@@ -24,7 +24,7 @@ trait Dependencies {
 
   def attributeRegistryManagementService(
     blockingEc: ExecutionContextExecutor
-  )(implicit actorSystem: ActorSystem[_], ec: ExecutionContext): AttributeRegistryManagementServiceImpl =
+  )(implicit actorSystem: ActorSystem[_]): AttributeRegistryManagementServiceImpl =
     AttributeRegistryManagementServiceImpl(
       AttributeRegistryManagementInvoker(blockingEc)(actorSystem.classicSystem),
       AttributeApi(ApplicationConfiguration.attributeRegistryManagementURL)
@@ -34,14 +34,13 @@ trait Dependencies {
 
   def interopTokenGenerator(
     blockingEc: ExecutionContextExecutor
-  )(implicit actorSystem: ActorSystem[_], ec: ExecutionContext): Future[InteropTokenGenerator] =
-    Try(
-      new DefaultInteropTokenGenerator(
-        signerService(blockingEc),
-        new PrivateKeysKidHolder {
-          override val RSAPrivateKeyset: Set[KID] = ApplicationConfiguration.rsaKeysIdentifiers
-          override val ECPrivateKeyset: Set[KID]  = ApplicationConfiguration.ecKeysIdentifiers
-        }
-      )
-    ).toFuture
+  )(implicit ec: ExecutionContext): Future[InteropTokenGenerator] = Try(
+    new DefaultInteropTokenGenerator(
+      signerService(blockingEc),
+      new PrivateKeysKidHolder {
+        override val RSAPrivateKeyset: Set[KID] = ApplicationConfiguration.rsaKeysIdentifiers
+        override val ECPrivateKeyset: Set[KID]  = ApplicationConfiguration.ecKeysIdentifiers
+      }
+    )
+  ).toFuture
 }

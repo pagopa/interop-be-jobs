@@ -3,7 +3,6 @@ package it.pagopa.interop.tokendetailspersister
 import com.typesafe.scalalogging.Logger
 import it.pagopa.interop.commons.files.service.FileManager
 import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
-import it.pagopa.interop.commons.utils.service.impl.OffsetDateTimeSupplierImpl
 
 import java.util.concurrent.{ExecutorService, Executors}
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -17,7 +16,7 @@ object Main extends App {
 
   logger.info("Starting token details persister job")
   val fileManager: FileManager                 = FileManager.get(FileManager.S3)(blockingEC)
-  val dateTimeSupplier: OffsetDateTimeSupplier = OffsetDateTimeSupplierImpl
+  val dateTimeSupplier: OffsetDateTimeSupplier = OffsetDateTimeSupplier
   val fileUtils: FileUtils                     = new FileUtils(fileManager, dateTimeSupplier)
   val job: JobExecution                        = JobExecution(fileUtils)(blockingEC)
   val execution: Future[Unit]                  = job

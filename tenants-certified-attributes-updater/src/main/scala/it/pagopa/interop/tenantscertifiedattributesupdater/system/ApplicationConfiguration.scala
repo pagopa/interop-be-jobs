@@ -22,7 +22,7 @@ object ApplicationConfiguration {
     config.getString("interop-be-tenants-certified-attributes-updater.database.collections.attributes")
 
   val tenantsCollection: String =
-    config.getString("interop-be-tenants-certified-attributes-updater.databases.collections.tenants")
+    config.getString("interop-be-tenants-certified-attributes-updater.database.collections.tenants")
 
   val rsaKeysIdentifiers: Set[String] =
     config

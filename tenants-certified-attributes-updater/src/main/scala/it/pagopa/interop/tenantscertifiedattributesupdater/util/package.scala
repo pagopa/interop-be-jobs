@@ -20,7 +20,6 @@ import scala.concurrent.{ExecutionContext, Future}
 
 package object util {
   def generateBearer(jwtConfig: JWTInternalTokenConfig, signerService: SignerService)(implicit
-    actorSystem: ActorSystem[_],
     ec: ExecutionContext
   ): Future[String] = for {
     tokenGenerator <- interopTokenGenerator(signerService)
@@ -35,16 +34,15 @@ package object util {
 
   private def interopTokenGenerator(
     signerService: SignerService
-  )(implicit actorSystem: ActorSystem[_], ec: ExecutionContext): Future[InteropTokenGenerator] =
-    Future(
-      new DefaultInteropTokenGenerator(
-        signerService,
-        new PrivateKeysKidHolder {
-          override val RSAPrivateKeyset: Set[KID] = ApplicationConfiguration.rsaKeysIdentifiers
-          override val ECPrivateKeyset: Set[KID]  = ApplicationConfiguration.ecKeysIdentifiers
-        }
-      )
+  )(implicit ec: ExecutionContext): Future[InteropTokenGenerator] = Future(
+    new DefaultInteropTokenGenerator(
+      signerService,
+      new PrivateKeysKidHolder {
+        override val RSAPrivateKeyset: Set[KID] = ApplicationConfiguration.rsaKeysIdentifiers
+        override val ECPrivateKeyset: Set[KID]  = ApplicationConfiguration.ecKeysIdentifiers
+      }
     )
+  )
 
   def createAction(
     institutions: List[Institution],
