@@ -49,7 +49,7 @@ package object util {
     tenants: List[PersistentTenant],
     attributesIndex: Map[UUID, AttributeInfo]
   ): TenantActions = {
-    val fromRegistry: Map[PersistentExternalId, AttributeInfo] =
+    val fromRegistry: List[(PersistentExternalId, AttributeInfo)] =
       institutions
         .filter(_.id.nonEmpty)
         .map { institution =>
@@ -59,7 +59,6 @@ package object util {
             None
           )
         }
-        .toMap
 
     val fromTenant: Map[PersistentExternalId, List[AttributeInfo]] =
       tenants
@@ -72,16 +71,29 @@ package object util {
 
     val activations: List[InternalTenantSeed] =
       fromRegistry
-        .filterNot { case (extId, attr) => fromTenant.get(extId).exists(AttributeInfo.stillExistsInTenant(attr)) }
-        .map { case (extId, attr) =>
-          InternalTenantSeed(ExternalId(extId.origin, extId.value), List(InternalAttributeSeed(attr.origin, attr.code)))
+        .filterNot { case (registryId, attributeFromRegistry) =>
+          fromTenant.get(registryId).exists(AttributeInfo.stillExistsInTenant(attributeFromRegistry))
         }
+        .map { case (externalId, attributeInfo) =>
+          ExternalId(externalId.origin, externalId.value) -> List(
+            InternalAttributeSeed(attributeInfo.origin, attributeInfo.code)
+          )
+        }
+        .groupMapReduce(_._1)(_._2)(_ ++ _)
         .toList
+        .map(Function.tupled(InternalTenantSeed))
 
     val revocations: Map[PersistentExternalId, List[AttributeInfo]] =
-      fromTenant.filterNot { case (extId, attrs) =>
-        fromRegistry.get(extId).exists(AttributeInfo.stillExistInRegistry(attrs))
-      }
+      fromTenant.toList
+        .flatMap { case (externalId, attrs) => List(externalId).zip(attrs) }
+        .filterNot { case (tenantId, attributeFromTenant) =>
+          fromRegistry.exists { case (registryId, attributeFromRegistry) =>
+            registryId == tenantId &&
+            attributeFromTenant.code == attributeFromRegistry.code &&
+            attributeFromTenant.origin == attributeFromRegistry.origin
+          }
+        }
+        .groupMap(_._1)(_._2)
 
     TenantActions(activations, revocations)
   }

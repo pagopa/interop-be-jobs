@@ -26,11 +26,4 @@ object AttributeInfo {
           attributeFromTenant.revocationTimestamp.isEmpty
       )
 
-  def stillExistInRegistry(attributesFromTenant: List[AttributeInfo]): AttributeInfo => Boolean =
-    attributeFromRegistry =>
-      attributesFromTenant.exists(attributeFromTenant =>
-        attributeFromTenant.code == attributeFromRegistry.code &&
-          attributeFromTenant.origin == attributeFromRegistry.origin &&
-          attributeFromTenant.revocationTimestamp.isEmpty
-      )
 }

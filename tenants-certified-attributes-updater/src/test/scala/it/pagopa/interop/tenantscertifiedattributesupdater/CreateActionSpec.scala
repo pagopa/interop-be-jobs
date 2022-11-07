@@ -31,7 +31,7 @@ class CreateActionSpec extends FunSuite {
 
     val result = createAction(institutions, tenants, attributesIndex)
 
-    val expectedActivations = List(
+    val expectedActivations = Set(
       InternalTenantSeed(
         externalId = ExternalId("IPA", "001"),
         certifiedAttributes = List(
@@ -46,7 +46,7 @@ class CreateActionSpec extends FunSuite {
     )
     val expectedRevocations = Map.empty[PersistentExternalId, List[AttributeInfo]]
 
-    assertEquals(result.activations, expectedActivations)
+    assertEquals(result.activations.toSet, expectedActivations)
     assertEquals(result.revocations, expectedRevocations)
   }
 
