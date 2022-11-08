@@ -93,7 +93,7 @@ package object util {
             attributeFromTenant.origin == attributeFromRegistry.origin
           }
         }
-        .groupMap(_._1)(_._2)
+        .groupMap[PersistentExternalId, AttributeInfo](_._1)(_._2)
 
     TenantActions(activations, revocations)
   }
