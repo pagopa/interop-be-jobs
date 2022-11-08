@@ -79,7 +79,7 @@ package object util {
             InternalAttributeSeed(attributeInfo.origin, attributeInfo.code)
           )
         }
-        .groupMapReduce(_._1)(_._2)(_ ++ _)
+        .groupMapReduce[ExternalId, List[InternalAttributeSeed]](_._1)(_._2)(_ ++ _)
         .toList
         .map(Function.tupled(InternalTenantSeed))
 
