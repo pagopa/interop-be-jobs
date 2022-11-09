@@ -61,6 +61,11 @@ object Dependencies {
     lazy val file    = namespace %% "interop-commons-file-manager"  % commonsVersion
   }
 
+  private[this] object scalameta {
+    lazy val namespace = "org.scalameta"
+    lazy val munit     = namespace %% "munit" % munitVersion
+  }
+
   object Jars {
     lazy val overrides: Seq[ModuleID]        =
       Seq(
@@ -107,7 +112,8 @@ object Dependencies {
       pagopa.tenantModels       % Compile,
       pagopa.tenantProcess      % Compile,
       pagopa.jwt                % Compile,
-      pagopa.signer             % Compile
+      pagopa.signer             % Compile,
+      scalameta.munit           % Test
     )
   }
 }
