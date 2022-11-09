@@ -61,6 +61,11 @@ object Dependencies {
     lazy val file    = namespace %% "interop-commons-file-manager"  % commonsVersion
   }
 
+  private[this] object scalameta {
+    lazy val namespace = "org.scalameta"
+    lazy val munit     = namespace %% "munit" % munitVersion
+  }
+
   object Jars {
     lazy val overrides: Seq[ModuleID]        =
       Seq(
@@ -96,7 +101,7 @@ object Dependencies {
 
     lazy val tenantsCertifiedAttributesUpdater: Seq[ModuleID] = Seq(
       // For making Java 12 happy
-      "javax.annotation"        % "javax.annotation-api" % "1.3.2"  % "compile",
+      "javax.annotation"        % "javax.annotation-api" % "1.3.2" % "compile",
       //
       akka.actorTyped           % Compile,
       cats.core                 % Compile,
@@ -108,7 +113,7 @@ object Dependencies {
       pagopa.tenantProcess      % Compile,
       pagopa.jwt                % Compile,
       pagopa.signer             % Compile,
-      "org.scalameta"          %% "munit"                % "0.7.29" % Test
+      scalameta.munit           % Test
     )
   }
 }
