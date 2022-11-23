@@ -7,6 +7,7 @@ ThisBuild / dependencyOverrides ++= Dependencies.Jars.overrides
 ThisBuild / version           := ComputeVersion.version
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
+ThisBuild / githubSuppressPublicationWarning := true
 ThisBuild / resolvers += Resolver.githubPackages("pagopa")
 
 lazy val attributesLoaderModuleName                  = "attributes-loader"
