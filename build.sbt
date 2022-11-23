@@ -7,11 +7,7 @@ ThisBuild / dependencyOverrides ++= Dependencies.Jars.overrides
 ThisBuild / version           := ComputeVersion.version
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
-ThisBuild / resolvers += "Pagopa Nexus Snapshots" at s"https://${System.getenv("MAVEN_REPO")}/nexus/repository/maven-snapshots/"
-ThisBuild / resolvers += "Pagopa Nexus Releases" at s"https://${System.getenv("MAVEN_REPO")}/nexus/repository/maven-releases/"
-
-ThisBuild / publish / skip := true
-ThisBuild / credentials += Credentials(Path.userHome / ".sbt" / ".credentials")
+ThisBuild / resolvers += Resolver.githubPackages("pagopa")
 
 lazy val attributesLoaderModuleName                  = "attributes-loader"
 lazy val tokenDetailsPersisterModuleName             = "token-details-persister"
@@ -25,7 +21,7 @@ lazy val sharedSettings: SettingsDefinition = Seq(
   updateOptions            := updateOptions.value.withGigahorse(false),
   Test / parallelExecution := false,
   dockerBuildOptions ++= Seq("--network=host"),
-  dockerRepository         := Some(System.getenv("DOCKER_REPO")),
+  dockerRepository         := Some(System.getenv("ECR_REGISTRY")),
   dockerBaseImage          := "adoptopenjdk:11-jdk-hotspot",
   daemonUser               := "daemon",
   Docker / version         := (ThisBuild / version).value.replaceAll("-SNAPSHOT", "-latest").toLowerCase,
@@ -42,6 +38,7 @@ lazy val attributesLoader = project
     libraryDependencies ++= Dependencies.Jars.attributesLoader
   )
   .enablePlugins(JavaAppPackaging)
+  .enablePlugins(NoPublishPlugin)
 
 lazy val tokenDetailsPersister = project
   .in(file(tokenDetailsPersisterModuleName))
@@ -52,6 +49,7 @@ lazy val tokenDetailsPersister = project
     libraryDependencies ++= Dependencies.Jars.tokenDetailsPersister
   )
   .enablePlugins(JavaAppPackaging)
+  .enablePlugins(NoPublishPlugin)
 
 lazy val tenantsCertifiedAttributesUpdater = project
   .in(file(tenantsCertifiedAttributesUpdaterModuleName))
@@ -62,3 +60,4 @@ lazy val tenantsCertifiedAttributesUpdater = project
     libraryDependencies ++= Dependencies.Jars.tenantsCertifiedAttributesUpdater
   )
   .enablePlugins(JavaAppPackaging)
+  .enablePlugins(NoPublishPlugin)
