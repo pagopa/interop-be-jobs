@@ -69,6 +69,7 @@ package object util {
         )
         .toMap
 
+    val tenantsMap: Map[PersistentExternalId, String] = tenants.map(t => (t.externalId, t.name)).toMap
     val activations: List[InternalTenantSeed] =
       fromRegistry
         .filterNot { case (registryId, attributeFromRegistry) =>
@@ -81,16 +82,13 @@ package object util {
         }
         .groupMapReduce[ExternalId, List[InternalAttributeSeed]](_._1)(_._2)(_ ++ _)
         .toList
-        .map(x =>
+        .map { case (extId, attrs) =>
           InternalTenantSeed(
-            x._1,
-            x._2,
-            tenants.find(t => t.externalId == PersistentExternalId(x._1.origin, x._1.value)) match {
-              case Some(pTenant) => pTenant.name
-              case None          => ""
-            }
+            extId,
+            attrs,
+            tenantsMap.getOrElse(PersistentExternalId(extId.origin, extId.value), "")
           )
-        )
+        }
 
     val revocations: Map[PersistentExternalId, List[AttributeInfo]] =
       fromTenant.toList
