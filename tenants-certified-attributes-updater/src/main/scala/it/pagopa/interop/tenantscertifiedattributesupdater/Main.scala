@@ -3,29 +3,41 @@ import akka.actor.typed.ActorSystem
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.scaladsl.adapter.TypedActorSystemOps
 import akka.{actor => classic}
-import cats.implicits.toTraverseOps
+import cats.syntax.all._
 import com.typesafe.scalalogging.{Logger, LoggerTakingImplicit}
-import it.pagopa.interop.attributeregistrymanagement.model.persistence.attribute.PersistentAttribute
 import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
-import it.pagopa.interop.commons.utils.TypeConversions._
-import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenant
+import it.pagopa.interop.commons.utils.SprayCommonFormats.uuidFormat
+import it.pagopa.interop.partyregistryproxy.client.model.Institution
+import it.pagopa.interop.tenantmanagement.client.model.TenantDelta
 import it.pagopa.interop.tenantscertifiedattributesupdater.repository.impl.{
   AttributesRepositoryImpl,
   TenantRepositoryImpl
 }
 import it.pagopa.interop.tenantscertifiedattributesupdater.repository.{AttributesRepository, TenantRepository}
-import it.pagopa.interop.tenantscertifiedattributesupdater.service.{PartyRegistryProxyService, TenantProcessService}
+import it.pagopa.interop.tenantscertifiedattributesupdater.service.{PartyRegistryProxyService, TenantManagementService}
 import it.pagopa.interop.tenantscertifiedattributesupdater.system.ApplicationConfiguration
 import it.pagopa.interop.tenantscertifiedattributesupdater.util._
 import org.mongodb.scala.MongoClient.DEFAULT_CODEC_REGISTRY
 import org.mongodb.scala.connection.NettyStreamFactoryFactory
 import org.mongodb.scala.{ConnectionString, MongoClient, MongoClientSettings}
+import spray.json.DefaultJsonProtocol._
 
+import java.util.UUID
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
 import scala.util.{Failure, Success}
+import spray.json._
 
 object Main extends App with Dependencies {
+
+  case class CompactExternalId(origin: String, value: String)
+  object CompactExternalId {
+    implicit val compactExternalIdFormat: RootJsonFormat[CompactExternalId] = jsonFormat2(CompactExternalId.apply)
+  }
+  case class CompactTenant(id: UUID, externalId: CompactExternalId)
+  object CompactTenant     {
+    implicit val compactTenantFormat: RootJsonFormat[CompactTenant] = jsonFormat2(CompactTenant.apply)
+  }
 
   implicit val logger: LoggerTakingImplicit[ContextFieldsToLog] =
     Logger.takingImplicit[ContextFieldsToLog](this.getClass)
@@ -46,37 +58,56 @@ object Main extends App with Dependencies {
       .build()
   )
 
-  logger.info("Starting tenants certified attributes updater job")
+  logger.info("Starting tenants name update")
 
   val partyRegistryProxyService: PartyRegistryProxyService = partyRegistryProxyService(blockingEc)
-  val tenantProcessService: TenantProcessService           = tenantProcessService(blockingEc)
+  val tenantManagementService: TenantManagementService     = tenantManagementService(blockingEc)
 
   val tenantRepository: TenantRepository         = TenantRepositoryImpl(client)
   val attributesRepository: AttributesRepository = AttributesRepositoryImpl(client)
 
-  def getAttributesAndTenants: Future[(Seq[PersistentAttribute], Seq[PersistentTenant])] =
-    attributesRepository.getAttributes
-      .flatMap(_.sequence.toFuture)
-      .zip(tenantRepository.getTenants.flatMap(_.sequence.toFuture))
+  def addTenantName(tenant: CompactTenant, institutions: Map[String, Institution])(bearer: String): Future[Unit] = {
+    val registryInstitution = institutions.get(tenant.externalId.value)
+    val tenantDelta         = TenantDelta(name = registryInstitution.map(_.description).getOrElse("Unknown"))
+
+    // TODO Re-enable this for real run
+    logger.info(s"Updating with name ${tenantDelta.name}")
+    val _ = bearer
+//    _ <- tenantManagementService.updateTenant(bearer)(tenant.id, tenantDelta)
+    Future.unit
+  }
+
+  def printReport(results: Seq[Either[Throwable, Unit]]): Unit = {
+    logger.info(s"Success: ${results.count(_.isRight)} Failures: ${results.count(_.isLeft)}")
+    results.collect { case Left(ex) => logger.error(ex.getMessage) }
+    ()
+  }
 
   val result: Future[Unit] = for {
-    bearer                <- generateBearer(jwtConfig, signerService(blockingEc))
-    (attributes, tenants) <- getAttributesAndTenants
-    attributesIndex       = createAttributesIndex(attributes)
+    bearer          <- generateBearer(jwtConfig, signerService(blockingEc))
+    toUpdateTenants <- tenantRepository.getTenantsWithoutName
+    totalCount            = toUpdateTenants.size
     institutionsRetriever = partyRegistryProxyService.getInstitutions(bearer)(_, _)
-    tenantUpserter        = tenantProcessService.upsertTenant(bearer)(_)
     institutions <- retrieveAllInstitutions(institutionsRetriever, initPage, List.empty)
-    action = createAction(institutions, tenants.toList, attributesIndex)
-    _ <- processActivations(tenantUpserter, action.activations.grouped(groupDimension).toList)
-    _ = logger.info(s"Activated tenants/attributes")
+    institutionsMap = institutions.map(i => (i.originId, i)).toMap
+    _               = logger.info(s"Found $totalCount tenants to update")
+    results <- toUpdateTenants.zipWithIndex.traverse {
+      case (Left(ex), index) =>
+        logger.error(s"Error deserializing element $index from read model", ex)
+        Future.successful(Left(ex))
+      case (Right(t), index) =>
+        logger.info(s"Processing element $index/$totalCount with id ${t.id}")
+        addTenantName(t, institutionsMap)(bearer).map(Right(_)).recoverWith(ex => Future.successful(Left(ex)))
+    }
+    _ = printReport(results)
   } yield ()
 
   result.onComplete {
     case Failure(ex) =>
-      logger.error(s"Failed tenants certified attributes updater job - ${ex.getMessage}")
+      logger.error(s"Failed tenants name update - ${ex.getMessage}")
       shutdown()
     case Success(_)  =>
-      logger.info("Completed tenants certified attributes updater job")
+      logger.info("Completed tenants name update")
       shutdown()
   }
 

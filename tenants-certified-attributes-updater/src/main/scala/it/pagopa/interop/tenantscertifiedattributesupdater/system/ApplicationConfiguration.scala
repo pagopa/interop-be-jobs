@@ -9,8 +9,10 @@ object ApplicationConfiguration {
   val partyRegistryProxyURL: String =
     config.getString("interop-be-tenants-certified-attributes-updater.services.party-registry-proxy")
 
-  val tenantProcessURL: String =
-    config.getString("interop-be-tenants-certified-attributes-updater.services.tenant-process")
+  val tenantProcessURL: String = ""
+
+  val tenantManagementURL: String =
+    config.getString("interop-be-tenants-certified-attributes-updater.services.tenant-management")
 
   val databaseURL: String =
     config.getString("interop-be-tenants-certified-attributes-updater.database.url")
@@ -18,8 +20,7 @@ object ApplicationConfiguration {
   val databaseName: String =
     config.getString("interop-be-tenants-certified-attributes-updater.database.db")
 
-  val attributesCollection: String =
-    config.getString("interop-be-tenants-certified-attributes-updater.database.collections.attributes")
+  val attributesCollection: String = "asdad"
 
   val tenantsCollection: String =
     config.getString("interop-be-tenants-certified-attributes-updater.database.collections.tenants")

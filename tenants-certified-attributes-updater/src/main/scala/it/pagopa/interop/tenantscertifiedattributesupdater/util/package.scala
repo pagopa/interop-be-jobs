@@ -10,8 +10,7 @@ import it.pagopa.interop.commons.jwt.{JWTInternalTokenConfig, KID, PrivateKeysKi
 import it.pagopa.interop.commons.logging.ContextFieldsToLog
 import it.pagopa.interop.commons.signer.service.SignerService
 import it.pagopa.interop.partyregistryproxy.client.model.{Institution, Institutions}
-import it.pagopa.interop.tenantmanagement.model.tenant.{PersistentExternalId, PersistentTenant}
-import it.pagopa.interop.tenantprocess.client.model.{ExternalId, InternalAttributeSeed, InternalTenantSeed}
+import it.pagopa.interop.tenantprocess.client.model.InternalTenantSeed
 import it.pagopa.interop.tenantscertifiedattributesupdater.system.ApplicationConfiguration
 import org.mongodb.scala.MongoClient
 
@@ -44,59 +43,59 @@ package object util {
     )
   )
 
-  def createAction(
-    institutions: List[Institution],
-    tenants: List[PersistentTenant],
-    attributesIndex: Map[UUID, AttributeInfo]
-  ): TenantActions = {
-    val fromRegistry: List[(PersistentExternalId, AttributeInfo)] =
-      institutions
-        .filter(_.id.nonEmpty)
-        .map { institution =>
-          PersistentExternalId(institution.origin, institution.originId) -> AttributeInfo(
-            institution.origin,
-            institution.category,
-            None
-          )
-        }
-
-    val fromTenant: Map[PersistentExternalId, List[AttributeInfo]] =
-      tenants
-        .map(tenant =>
-          tenant.externalId -> tenant.attributes.flatMap(attr =>
-            AttributeInfo.addRevocationTimeStamp(attr, attributesIndex)
-          )
-        )
-        .toMap
-
-    val activations: List[InternalTenantSeed] =
-      fromRegistry
-        .filterNot { case (registryId, attributeFromRegistry) =>
-          fromTenant.get(registryId).exists(AttributeInfo.stillExistsInTenant(attributeFromRegistry))
-        }
-        .map { case (externalId, attributeInfo) =>
-          ExternalId(externalId.origin, externalId.value) -> List(
-            InternalAttributeSeed(attributeInfo.origin, attributeInfo.code)
-          )
-        }
-        .groupMapReduce[ExternalId, List[InternalAttributeSeed]](_._1)(_._2)(_ ++ _)
-        .toList
-        .map(Function.tupled(InternalTenantSeed))
-
-    val revocations: Map[PersistentExternalId, List[AttributeInfo]] =
-      fromTenant.toList
-        .flatMap { case (externalId, attrs) => List(externalId).zip(attrs) }
-        .filterNot { case (tenantId, attributeFromTenant) =>
-          fromRegistry.exists { case (registryId, attributeFromRegistry) =>
-            registryId == tenantId &&
-            attributeFromTenant.code == attributeFromRegistry.code &&
-            attributeFromTenant.origin == attributeFromRegistry.origin
-          }
-        }
-        .groupMap[PersistentExternalId, AttributeInfo](_._1)(_._2)
-
-    TenantActions(activations, revocations)
-  }
+//  def createAction(
+//    institutions: List[Institution],
+//    tenants: List[PersistentTenant],
+//    attributesIndex: Map[UUID, AttributeInfo]
+//  ): TenantActions = {
+//    val fromRegistry: List[(PersistentExternalId, AttributeInfo)] =
+//      institutions
+//        .filter(_.id.nonEmpty)
+//        .map { institution =>
+//          PersistentExternalId(institution.origin, institution.originId) -> AttributeInfo(
+//            institution.origin,
+//            institution.category,
+//            None
+//          )
+//        }
+//
+//    val fromTenant: Map[PersistentExternalId, List[AttributeInfo]] =
+//      tenants
+//        .map(tenant =>
+//          tenant.externalId -> tenant.attributes.flatMap(attr =>
+//            AttributeInfo.addRevocationTimeStamp(attr, attributesIndex)
+//          )
+//        )
+//        .toMap
+//
+//    val activations: List[InternalTenantSeed] =
+//      fromRegistry
+//        .filterNot { case (registryId, attributeFromRegistry) =>
+//          fromTenant.get(registryId).exists(AttributeInfo.stillExistsInTenant(attributeFromRegistry))
+//        }
+//        .map { case (externalId, attributeInfo) =>
+//          ExternalId(externalId.origin, externalId.value) -> List(
+//            InternalAttributeSeed(attributeInfo.origin, attributeInfo.code)
+//          )
+//        }
+//        .groupMapReduce[ExternalId, List[InternalAttributeSeed]](_._1)(_._2)(_ ++ _)
+//        .toList
+//        .map(Function.tupled(InternalTenantSeed))
+//
+//    val revocations: Map[PersistentExternalId, List[AttributeInfo]] =
+//      fromTenant.toList
+//        .flatMap { case (externalId, attrs) => List(externalId).zip(attrs) }
+//        .filterNot { case (tenantId, attributeFromTenant) =>
+//          fromRegistry.exists { case (registryId, attributeFromRegistry) =>
+//            registryId == tenantId &&
+//            attributeFromTenant.code == attributeFromRegistry.code &&
+//            attributeFromTenant.origin == attributeFromRegistry.origin
+//          }
+//        }
+//        .groupMap[PersistentExternalId, AttributeInfo](_._1)(_._2)
+//
+//    TenantActions(activations, revocations)
+//  }
 
   def createAttributesIndex(attributes: Seq[PersistentAttribute]): Map[UUID, AttributeInfo] =
     attributes

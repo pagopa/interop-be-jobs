@@ -51,6 +51,9 @@ object Dependencies {
     lazy val tenantModels =
       namespace %% "interop-be-tenant-management-models" % tenantManagementVersion
 
+    lazy val tenantManagement =
+      namespace %% "interop-be-tenant-management-client" % tenantManagementVersion
+
     lazy val tenantProcess =
       namespace %% "interop-be-tenant-process-client" % tenantProcessVersion
 
@@ -110,6 +113,7 @@ object Dependencies {
       pagopa.attributeModels    % Compile,
       pagopa.partyRegistryProxy % Compile,
       pagopa.tenantModels       % Compile,
+      pagopa.tenantManagement   % Compile,
       pagopa.tenantProcess      % Compile,
       pagopa.jwt                % Compile,
       pagopa.signer             % Compile,
