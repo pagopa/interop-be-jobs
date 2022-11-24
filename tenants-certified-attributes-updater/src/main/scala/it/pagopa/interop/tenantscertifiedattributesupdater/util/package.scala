@@ -81,7 +81,16 @@ package object util {
         }
         .groupMapReduce[ExternalId, List[InternalAttributeSeed]](_._1)(_._2)(_ ++ _)
         .toList
-        .map(Function.tupled(InternalTenantSeed))
+        .map(x =>
+          InternalTenantSeed(
+            x._1,
+            x._2,
+            tenants.find(t => t.externalId == PersistentExternalId(x._1.origin, x._1.value)) match {
+              case Some(pTenant) => pTenant.name
+              case None          => ""
+            }
+          )
+        )
 
     val revocations: Map[PersistentExternalId, List[AttributeInfo]] =
       fromTenant.toList
