@@ -74,3 +74,8 @@ lazy val tenantsCertifiedAttributesUpdater = project
   )
   .enablePlugins(JavaAppPackaging)
   .enablePlugins(DockerPlugin)
+
+lazy val jobs = project
+  .in(file("."))
+  .aggregate(tenantsCertifiedAttributesUpdater, tokenDetailsPersister, attributesLoader)
+  .settings(Docker / publish := {})

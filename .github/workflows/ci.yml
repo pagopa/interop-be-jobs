@@ -118,14 +118,6 @@ jobs:
           tar xf targets.tar
           rm targets.tar
 
-      - name: Install node 16
-        uses: actions/setup-node@v3
-        with:
-          node-version: 16
-
-      - name: Installing openapi-generator-cli
-        run: npm install -g @openapitools/openapi-generator-cli
-
       - name: Get 1.0.x-SNAPSHOTS versionIds
         id: version
         if: github.ref == 'refs/heads/1.0.x'
