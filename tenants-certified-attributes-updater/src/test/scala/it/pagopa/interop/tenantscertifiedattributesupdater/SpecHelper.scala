@@ -25,7 +25,9 @@ object SpecHelper {
     features = Nil,
     attributes = attributes,
     createdAt = timestamp,
-    updatedAt = None
+    updatedAt = None,
+    mails = Nil,
+    name = "test_name"
   )
 
   def institution(origin: String, originId: String, category: String): Institution = Institution(
