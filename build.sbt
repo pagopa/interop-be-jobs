@@ -36,10 +36,14 @@ lazy val attributesLoader = project
     name                 := "interop-be-attributes-loader",
     Docker / packageName := s"${name.value}",
     sharedSettings,
-    libraryDependencies ++= Dependencies.Jars.attributesLoader
+    libraryDependencies ++= Dependencies.Jars.attributesLoader,
+    publish / skip       := true,
+    publish              := (()),
+    publishLocal         := (()),
+    publishTo            := None
   )
   .enablePlugins(JavaAppPackaging)
-  .enablePlugins(NoPublishPlugin)
+  .enablePlugins(DockerPlugin)
 
 lazy val tokenDetailsPersister = project
   .in(file(tokenDetailsPersisterModuleName))
@@ -47,10 +51,14 @@ lazy val tokenDetailsPersister = project
     name                 := "interop-be-token-details-persister",
     Docker / packageName := s"${name.value}",
     sharedSettings,
-    libraryDependencies ++= Dependencies.Jars.tokenDetailsPersister
+    libraryDependencies ++= Dependencies.Jars.tokenDetailsPersister,
+    publish / skip       := true,
+    publish              := (()),
+    publishLocal         := (()),
+    publishTo            := None
   )
   .enablePlugins(JavaAppPackaging)
-  .enablePlugins(NoPublishPlugin)
+  .enablePlugins(DockerPlugin)
 
 lazy val tenantsCertifiedAttributesUpdater = project
   .in(file(tenantsCertifiedAttributesUpdaterModuleName))
@@ -58,7 +66,11 @@ lazy val tenantsCertifiedAttributesUpdater = project
     name                 := "interop-be-tenants-cert-attr-updater",
     Docker / packageName := s"${name.value}",
     sharedSettings,
-    libraryDependencies ++= Dependencies.Jars.tenantsCertifiedAttributesUpdater
+    libraryDependencies ++= Dependencies.Jars.tenantsCertifiedAttributesUpdater,
+    publish / skip       := true,
+    publish              := (()),
+    publishLocal         := (()),
+    publishTo            := None
   )
   .enablePlugins(JavaAppPackaging)
-  .enablePlugins(NoPublishPlugin)
+  .enablePlugins(DockerPlugin)
