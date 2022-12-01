@@ -48,6 +48,7 @@ object Main extends App with Dependencies {
   implicit val classicActorSystem: classic.ActorSystem = actorSystem.toClassic
 
   val blockingEc: ExecutionContextExecutor = actorSystem.dispatchers.lookup(classic.typed.DispatcherSelector.blocking())
+//  val tenThreadsEc                         = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(10))
 
   implicit val client: MongoClient = MongoClient(
     MongoClientSettings
@@ -71,10 +72,11 @@ object Main extends App with Dependencies {
     val tenantDelta         = TenantDelta(name = registryInstitution.map(_.description).getOrElse("Unknown"))
 
     // TODO Re-enable this for real run
-    logger.info(s"Updating with name ${tenantDelta.name}")
-    val _ = bearer
-//    _ <- tenantManagementService.updateTenant(bearer)(tenant.id, tenantDelta)
-    Future.unit
+//    logger.info(s"Updating with name ${tenantDelta.name}")
+//    val _ = bearer
+//    Future.unit
+
+    tenantManagementService.updateTenant(bearer)(tenant.id, tenantDelta)
   }
 
   def printReport(results: Seq[Either[Throwable, Unit]]): Unit = {
@@ -97,7 +99,9 @@ object Main extends App with Dependencies {
         Future.successful(Left(ex))
       case (Right(t), index) =>
         logger.info(s"Processing element $index/$totalCount with id ${t.id}")
-        addTenantName(t, institutionsMap)(bearer).map(Right(_)).recoverWith(ex => Future.successful(Left(ex)))
+        addTenantName(t, institutionsMap)(bearer)
+          .map(Right(_))
+          .recoverWith(ex => Future.successful(Left(ex)))
     }
     _ = printReport(results)
   } yield ()
