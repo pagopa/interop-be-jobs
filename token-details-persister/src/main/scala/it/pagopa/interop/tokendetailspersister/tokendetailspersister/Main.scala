@@ -1,4 +1,4 @@
-package it.pagopa.interop.tokendetailspersister
+package it.pagopa.interop.tokendetailspersister.tokendetailspersister
 
 import com.typesafe.scalalogging.Logger
 import it.pagopa.interop.commons.files.service.FileManager

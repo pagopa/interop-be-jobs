@@ -9,6 +9,8 @@ import it.pagopa.interop.tenantscertifiedattributesupdater.service.{
   PartyRegistryProxyInvoker,
   PartyRegistryProxyService
 }
+
+import java.util.UUID
 import scala.concurrent.Future
 
 final case class PartyRegistryProxyServiceImpl(invoker: PartyRegistryProxyInvoker, api: InstitutionApi)
@@ -20,7 +22,10 @@ final case class PartyRegistryProxyServiceImpl(invoker: PartyRegistryProxyInvoke
   def getInstitutions(
     bearerToken: String
   )(page: Int, limit: Int)(implicit contexts: Seq[(String, String)]): Future[Institutions] = {
-    val request = api.searchInstitutions(page = Some(page), limit = Some(limit))(BearerToken(bearerToken))
+    val request =
+      api.searchInstitutions(page = Some(page), limit = Some(limit), xCorrelationId = UUID.randomUUID().toString)(
+        BearerToken(bearerToken)
+      )
     invoker.invoke(request, s"Getting institutions page=${page.toString}/limit=${limit.toString}")
   }
 }

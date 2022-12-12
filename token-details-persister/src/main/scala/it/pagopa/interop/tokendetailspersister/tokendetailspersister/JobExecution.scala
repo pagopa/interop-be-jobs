@@ -1,9 +1,7 @@
-package it.pagopa.interop.tokendetailspersister
+package it.pagopa.interop.tokendetailspersister.tokendetailspersister
 
 import cats.implicits._
 import it.pagopa.interop.commons.queue.impl.SQSHandler
-import it.pagopa.interop.tokendetailspersister.ApplicationConfiguration
-import it.pagopa.interop.tokendetailspersister.FileUtils
 import com.typesafe.scalalogging.Logger
 import spray.json.BasicFormats
 
