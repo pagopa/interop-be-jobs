@@ -15,12 +15,12 @@ object Utils {
   def getMeasurableEServices(eService: CatalogItem): Boolean = eService.descriptors.exists(_.state != Draft)
 
   def createMetric(
-                    metricFunc: (String, OffsetDateTime, FileMetricInfo) => Metric
-                  )(descriptor: CatalogDescriptor)(implicit ec: ExecutionContext, fileManager: FileManager): Future[Metric] =
+    metricGenerator: (String, OffsetDateTime, FileMetricInfo) => Metric
+  )(descriptor: CatalogDescriptor)(implicit ec: ExecutionContext, fileManager: FileManager): Future[Metric] =
     for {
-      stream <- fileManager.get(ApplicationConfiguration.containerPath)(descriptor.interface.get.path)
+      stream         <- fileManager.get(ApplicationConfiguration.interfacesContainer)(descriptor.interface.get.path)
       fileMetricInfo <- getFileMetricInfo(stream.toByteArray).toFuture
-    } yield metricFunc(descriptor.version, descriptor.activatedAt.getOrElse(defaultActivatedAt), fileMetricInfo)
+    } yield metricGenerator(descriptor.version, descriptor.activatedAt.getOrElse(defaultActivatedAt), fileMetricInfo)
 
   def getFileMetricInfo(bytes: Array[Byte]): Either[Throwable, FileMetricInfo] =
     getJsonMetricInfo(bytes) orElse getXMLMetricInfo(bytes)

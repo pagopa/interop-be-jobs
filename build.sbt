@@ -13,7 +13,7 @@ ThisBuild / resolvers += Resolver.githubPackages("pagopa")
 lazy val attributesLoaderModuleName                  = "attributes-loader"
 lazy val tokenDetailsPersisterModuleName             = "token-details-persister"
 lazy val tenantsCertifiedAttributesUpdaterModuleName = "tenants-certified-attributes-updater"
-lazy val metricsReportGeneratorName                  = "metrics-report-generator"
+lazy val metricsReportGeneratorModuleName            = "metrics-report-generator"
 
 cleanFiles += baseDirectory.value / attributesLoaderModuleName / "target"
 cleanFiles += baseDirectory.value / tokenDetailsPersisterModuleName / "target"
@@ -77,7 +77,7 @@ lazy val tenantsCertifiedAttributesUpdater = project
   .enablePlugins(DockerPlugin)
 
 lazy val metricsReportGenerator = project
-  .in(file(metricsReportGeneratorName))
+  .in(file(metricsReportGeneratorModuleName))
   .settings(
     name                 := "interop-be-metrics-report-generator",
     Docker / packageName := s"${name.value}",

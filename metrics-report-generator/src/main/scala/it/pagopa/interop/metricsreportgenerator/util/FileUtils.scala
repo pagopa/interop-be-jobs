@@ -14,18 +14,16 @@ final class FileUtils(val fileManager: FileManager, val dateTimeSupplier: Offset
   private val logger: Logger         = Logger(this.getClass)
   private val df: DateTimeFormatter  = DateTimeFormatter.ofPattern("yyyyMMdd")
   private val dtf: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")
-  private val cPath: String          = ApplicationConfiguration.containerPath.stripMargin('/')
-  private val fPath: String          = ApplicationConfiguration.tokenStoragePath.stripMargin('/')
+  private val cPath: String          = ApplicationConfiguration.metricsContainer.stripMargin('/')
+  private val fPath: String          = ApplicationConfiguration.metricsStoragePath.stripMargin('/')
 
   private def fileName(now: OffsetDateTime): String = s"${now.format(dtf)}_${UUID.randomUUID()}.ndjson"
 
   def store(lines: List[String]): Future[String] = {
-    val now           = dateTimeSupplier.get()
-    val today         = now.format(df)
-    val fName: String = fileName(now)
-    logger.info(s"Storing ${lines.size} lines at $cPath/$fPath/$today/$fName")
-
-    // As long as each message is in json format, the file will be in ndjson format
+    val now: OffsetDateTime  = dateTimeSupplier.get()
+    val today: String        = now.format(df)
+    val fName: String        = fileName(now)
+    logger.info(s"Storing ${lines.size} lines at $cPath/$today/$fName")
     val content: Array[Byte] = lines.mkString("\n").getBytes()
     fileManager.storeBytes(cPath, fPath)(today, fName, content)
   }

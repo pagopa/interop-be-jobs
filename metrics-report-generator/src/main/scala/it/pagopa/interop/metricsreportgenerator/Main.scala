@@ -1,18 +1,17 @@
 package it.pagopa.interop.metricsreportgenerator
 
 import cats.implicits._
-import com.typesafe.scalalogging.{Logger, LoggerTakingImplicit}
+import com.typesafe.scalalogging.Logger
 import io.circe.syntax._
 import it.pagopa.interop.catalogmanagement.model.CatalogItem
 import it.pagopa.interop.commons.files.service.FileManager
-import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
 import it.pagopa.interop.commons.utils.TypeConversions.EitherOps
 import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
 import it.pagopa.interop.metricsreportgenerator.models.Metric
 import it.pagopa.interop.metricsreportgenerator.repository.impl.{CatalogRepositoryImpl, TenantRepositoryImpl}
 import it.pagopa.interop.metricsreportgenerator.repository.{CatalogRepository, TenantRepository}
-import it.pagopa.interop.metricsreportgenerator.util.{ApplicationConfiguration, FileUtils}
 import it.pagopa.interop.metricsreportgenerator.util.Utils.{createMetric, getMeasurableEServices}
+import it.pagopa.interop.metricsreportgenerator.util.{ApplicationConfiguration, FileUtils}
 import org.mongodb.scala.MongoClient.DEFAULT_CODEC_REGISTRY
 import org.mongodb.scala.connection.NettyStreamFactoryFactory
 import org.mongodb.scala.{ConnectionString, MongoClient, MongoClientSettings}
@@ -23,10 +22,7 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
 object Main extends App {
 
-  implicit val logger: LoggerTakingImplicit[ContextFieldsToLog] =
-    Logger.takingImplicit[ContextFieldsToLog](this.getClass)
-
-  implicit val contexts: Seq[(String, String)] = Seq.empty
+  private val logger: Logger = Logger(this.getClass)
 
   val blockingThreadPool: ExecutorService = Executors.newFixedThreadPool(Runtime.getRuntime.availableProcessors())
   implicit val blockingEC: ExecutionContextExecutor = ExecutionContext.fromExecutor(blockingThreadPool)
@@ -52,22 +48,22 @@ object Main extends App {
   def createMetrics: CatalogItem => Future[List[Metric]] = eService =>
     for {
       producer <- tenantRepository.getTenant(eService.producerId)
-      metricFunc = Metric.create(
+      metricGenerator = Metric.generator(
         originId = producer.externalId.value,
         origin = producer.externalId.origin,
         name = eService.name,
         technology = eService.technology.toString
       )(dateTimeSupplier)
-      metrics <- Future.traverse(eService.descriptors)(createMetric(metricFunc))
+      metrics <- Future.traverse(eService.descriptors)(createMetric(metricGenerator))
     } yield metrics.toList
 
-  val execution: Future[String] = for {
+  val execution: Future[Unit] = for {
     eServices <- catalogRepository.getEServices.flatMap(_.sequence.toFuture)
     measurable = eServices.toList.filter(getMeasurableEServices)
     metrics <- measurable.flatTraverse(createMetrics)
     records = metrics.map(_.asJson.noSpaces)
-    result <- fileUtils.store(records)
-  } yield result
+    _ <- fileUtils.store(records)
+  } yield ()
 
   execution
     .recover { ex =>

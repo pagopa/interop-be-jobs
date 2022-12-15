@@ -133,7 +133,6 @@ object Dependencies {
       // For making Java 12 happy
       "javax.annotation"     % "javax.annotation-api" % "1.3.2" % "compile",
       //
-      akka.actorTyped        % Compile,
       cats.core              % Compile,
       circe.core             % Compile,
       circe.generic          % Compile,
@@ -145,6 +144,15 @@ object Dependencies {
       pagopa.commons         % Compile,
       pagopa.file            % Compile,
       pagopa.parser          % Compile
+    )
+
+    lazy val utils: Seq[ModuleID] = Seq(
+      // For making Java 12 happy
+      "javax.annotation" % "javax.annotation-api" % "1.3.2" % "compile",
+      //
+      logback.classic    % Compile,
+      pagopa.commons     % Compile,
+      pagopa.file        % Compile
     )
   }
 }

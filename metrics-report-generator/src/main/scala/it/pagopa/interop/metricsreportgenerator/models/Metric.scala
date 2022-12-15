@@ -10,7 +10,7 @@ final case class Metric(
   origin: String,
   name: String,
   technology: String,
-  opendata: String,
+  openData: Boolean,
   version: String,
   fingerPrint: String,
   endpointsCount: Int,
@@ -22,7 +22,7 @@ object Metric {
 
   implicit val metricEncoder: Encoder.AsObject[Metric] = deriveEncoder[Metric]
 
-  def create(originId: String, origin: String, name: String, technology: String, opendata: String = "F")(
+  def generator(originId: String, origin: String, name: String, technology: String, openData: Boolean = false)(
     dateTimeSupplier: OffsetDateTimeSupplier
   ): (String, OffsetDateTime, FileMetricInfo) => Metric = (version, activatedAt, fileMetricInfo) =>
     Metric(
@@ -30,7 +30,7 @@ object Metric {
       origin = origin,
       name = name,
       technology = technology,
-      opendata = opendata,
+      openData = openData,
       version = version,
       fingerPrint = fileMetricInfo.fingerPrint,
       endpointsCount = fileMetricInfo.endpointsCount,
