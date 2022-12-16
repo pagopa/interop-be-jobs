@@ -24,6 +24,8 @@ object Main extends App {
 
   private val logger: Logger = Logger(this.getClass)
 
+  logger.info("Starting metrics report generator job")
+
   val blockingThreadPool: ExecutorService = Executors.newFixedThreadPool(Runtime.getRuntime.availableProcessors())
   implicit val blockingEC: ExecutionContextExecutor = ExecutionContext.fromExecutor(blockingThreadPool)
 
@@ -35,8 +37,6 @@ object Main extends App {
       .streamFactoryFactory(NettyStreamFactoryFactory())
       .build()
   )
-
-  logger.info("Starting metrics report generator job")
 
   implicit val fileManager: FileManager = FileManager.get(FileManager.S3)(blockingEC)
 
