@@ -52,6 +52,7 @@ object Main extends App {
         originId = producer.externalId.value,
         origin = producer.externalId.origin,
         name = eService.name,
+        eServiceId = eService.id.toString,
         technology = eService.technology.toString
       )(dateTimeSupplier)
       metrics <- Future.traverse(eService.descriptors)(createMetric(metricGenerator))

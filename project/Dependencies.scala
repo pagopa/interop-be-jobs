@@ -44,9 +44,6 @@ object Dependencies {
   private[this] object pagopa {
     lazy val namespace = "it.pagopa"
 
-    lazy val agreementModels =
-      namespace %% "interop-be-agreement-management-models" % tenantManagementVersion
-
     lazy val attributeRegistryManagement =
       namespace %% "interop-be-attribute-registry-management-client" % attributeRegistryManagementVersion
 
@@ -131,19 +128,18 @@ object Dependencies {
 
     lazy val metricsReportGenerator: Seq[ModuleID] = Seq(
       // For making Java 12 happy
-      "javax.annotation"     % "javax.annotation-api" % "1.3.2" % "compile",
+      "javax.annotation"   % "javax.annotation-api" % "1.3.2" % "compile",
       //
-      cats.core              % Compile,
-      circe.core             % Compile,
-      circe.generic          % Compile,
-      logback.classic        % Compile,
-      mongodb.scalaDriver    % Compile,
-      pagopa.agreementModels % Compile,
-      pagopa.catalogModels   % Compile,
-      pagopa.tenantModels    % Compile,
-      pagopa.commons         % Compile,
-      pagopa.file            % Compile,
-      pagopa.parser          % Compile
+      cats.core            % Compile,
+      circe.core           % Compile,
+      circe.generic        % Compile,
+      logback.classic      % Compile,
+      mongodb.scalaDriver  % Compile,
+      pagopa.catalogModels % Compile,
+      pagopa.tenantModels  % Compile,
+      pagopa.commons       % Compile,
+      pagopa.file          % Compile,
+      pagopa.parser        % Compile
     )
 
     lazy val utils: Seq[ModuleID] = Seq(

@@ -20,7 +20,7 @@ object Utils {
     for {
       stream         <- fileManager.get(ApplicationConfiguration.interfacesContainer)(descriptor.interface.get.path)
       fileMetricInfo <- getFileMetricInfo(stream.toByteArray).toFuture
-    } yield metricGenerator(descriptor.version, descriptor.activatedAt.getOrElse(defaultActivatedAt), fileMetricInfo)
+    } yield metricGenerator(descriptor.version, defaultActivatedAt, fileMetricInfo)
 
   def getFileMetricInfo(bytes: Array[Byte]): Either[Throwable, FileMetricInfo] =
     getJsonMetricInfo(bytes) orElse getXMLMetricInfo(bytes)
@@ -34,7 +34,7 @@ object Utils {
 
   private def getXMLMetricInfo(bytes: Array[Byte]): Either[Throwable, FileMetricInfo] =
     InterfaceParser
-      .parseSoap(bytes)
+      .parseWSDL(bytes)
       .flatMap(xml =>
         InterfaceParserUtils.getEndpoints(xml).map(es => FileMetricInfo(Digester.toSha256(bytes), es.size))
       )
