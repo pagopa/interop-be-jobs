@@ -1,4 +1,4 @@
-package it.pagopa.interop.tokendetailspersister.tokendetailspersister
+package it.pagopa.interop.tokendetailspersister
 
 import com.typesafe.config.{Config, ConfigFactory}
 

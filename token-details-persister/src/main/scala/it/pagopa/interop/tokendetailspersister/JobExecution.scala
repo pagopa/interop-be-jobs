@@ -1,4 +1,4 @@
-package it.pagopa.interop.tokendetailspersister.tokendetailspersister
+package it.pagopa.interop.tokendetailspersister
 
 import cats.implicits._
 import it.pagopa.interop.commons.queue.impl.SQSHandler
