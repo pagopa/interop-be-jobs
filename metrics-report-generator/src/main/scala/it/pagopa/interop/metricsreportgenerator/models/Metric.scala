@@ -31,7 +31,7 @@ object Metric {
     eServiceId: String,
     technology: String,
     openData: Boolean = false
-  )(dateTimeSupplier: OffsetDateTimeSupplier): (String, OffsetDateTime, FileMetricInfo) => Metric =
+  )(dateTimeSupplier: OffsetDateTimeSupplier): (String, OffsetDateTime, FileExtractedMetrics) => Metric =
     (version, activatedAt, fileMetricInfo) =>
       Metric(
         originId = originId,
