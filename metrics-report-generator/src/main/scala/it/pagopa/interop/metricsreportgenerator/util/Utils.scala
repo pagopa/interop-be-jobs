@@ -12,7 +12,7 @@ object Utils {
 
   final val defaultActivatedAt: OffsetDateTime = OffsetDateTime.of(2022, 12, 15, 12, 0, 0, 0, ZoneOffset.UTC)
 
-  def getMeasurableEServices(eService: CatalogItem): Boolean = eService.descriptors.exists(_.state != Draft)
+  def hasMeasurableEServices(eService: CatalogItem): Boolean = eService.descriptors.exists(_.state != Draft)
 
   def createMetric(
     metricGenerator: (String, OffsetDateTime, FileExtractedMetrics) => Metric

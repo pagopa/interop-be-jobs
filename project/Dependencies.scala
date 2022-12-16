@@ -66,6 +66,7 @@ object Dependencies {
     lazy val jwt     = namespace %% "interop-commons-jwt"           % commonsVersion
     lazy val signer  = namespace %% "interop-commons-signer"        % commonsVersion
     lazy val queue   = namespace %% "interop-commons-queue-manager" % commonsVersion
+    lazy val cqrs    = namespace %% "interop-commons-cqrs"          % commonsVersion
     lazy val file    = namespace %% "interop-commons-file-manager"  % commonsVersion
     lazy val parser  = namespace %% "interop-commons-parser"        % commonsVersion
   }
@@ -138,6 +139,7 @@ object Dependencies {
       pagopa.catalogModels % Compile,
       pagopa.tenantModels  % Compile,
       pagopa.commons       % Compile,
+      pagopa.cqrs          % Compile,
       pagopa.file          % Compile,
       pagopa.parser        % Compile
     )

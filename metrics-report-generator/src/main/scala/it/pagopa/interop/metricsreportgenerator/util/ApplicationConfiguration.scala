@@ -1,6 +1,7 @@
 package it.pagopa.interop.metricsreportgenerator.util
 
 import com.typesafe.config.{Config, ConfigFactory}
+import it.pagopa.interop.commons.cqrs.model.ReadModelConfig
 
 object ApplicationConfiguration {
 
@@ -11,12 +12,14 @@ object ApplicationConfiguration {
   val metricsContainer: String   = config.getString("report-generator.storage.metrics-container")
   val metricsStoragePath: String = config.getString("report-generator.storage.metrics-storage-path")
 
-  val databaseURL: String = config.getString("report-generator.database.url")
+  val catalogCollection: String = config.getString("report-generator.read-model.collections.eservices")
+  val tenantCollection: String  = config.getString("report-generator.read-model.collections.tenants")
 
-  val databaseName: String = config.getString("report-generator.database.db")
+  val readModelConfig: ReadModelConfig = {
+    val connectionString: String = config.getString("report-generator.read-model.db.connection-string")
+    val dbName: String           = config.getString("report-generator.read-model.db.name")
 
-  val catalogCollection: String = config.getString("report-generator.database.collections.eservices")
-
-  val tenantCollection: String = config.getString("report-generator.database.collections.tenants")
+    ReadModelConfig(connectionString, dbName)
+  }
 
 }
