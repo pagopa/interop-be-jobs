@@ -3,7 +3,7 @@ package it.pagopa.interop.metricsreportgenerator
 import cats.implicits._
 import com.typesafe.scalalogging.Logger
 import io.circe.syntax._
-import it.pagopa.interop.catalogmanagement.model.CatalogItem
+import it.pagopa.interop.catalogmanagement.model.{CatalogItem, Draft}
 import it.pagopa.interop.commons.cqrs.service.ReadModelService
 import it.pagopa.interop.commons.files.service.FileManager
 import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
@@ -37,7 +37,7 @@ object Main extends App {
   def createMetrics: CatalogItem => Future[List[Metric]] = eService =>
     for {
       producer <- ReadModelQueries.getTenant(eService.producerId)
-      metricGenerator = Metric.generator(
+      metricGenerator       = Metric.generator(
         originId = producer.externalId.value,
         origin = producer.externalId.origin,
         name = eService.name,
@@ -45,13 +45,14 @@ object Main extends App {
         technology = eService.technology.toString,
         createdAt = dateTimeSupplier.get()
       )
-      metrics <- Future.traverse(eService.descriptors)(createMetric(metricGenerator))
+      measurableDescriptors = eService.descriptors.filter(_.state != Draft)
+      metrics <- Future.traverse(measurableDescriptors)(createMetric(metricGenerator))
     } yield metrics.toList
 
   val execution: Future[Unit] = for {
     eServices <- retrieveAllEServices(ReadModelQueries.getEServices, 0, Seq.empty)
-    measurable = eServices.toList.filter(hasMeasurableEServices)
-    metrics <- measurable.flatTraverse(createMetrics)
+    measurableEServices = eServices.toList.filter(hasMeasurableEServices)
+    metrics <- measurableEServices.flatTraverse(createMetrics)
     records = metrics.map(_.asJson.noSpaces)
     _ <- fileUtils.store(records)
   } yield ()
