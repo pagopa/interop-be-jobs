@@ -4,6 +4,7 @@ import it.pagopa.interop.catalogmanagement.model.CatalogItem
 import it.pagopa.interop.catalogmanagement.model.persistence.JsonFormats._
 import it.pagopa.interop.commons.cqrs.service.ReadModelService
 import it.pagopa.interop.commons.utils.TypeConversions.OptionOps
+import it.pagopa.interop.metricsreportgenerator.util.Error.TenantNotFound
 import it.pagopa.interop.tenantmanagement.model.persistence.JsonFormats._
 import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenant
 import org.mongodb.scala.model.Filters
@@ -23,5 +24,5 @@ object ReadModelQueries {
   )(implicit ec: ExecutionContext, readModelService: ReadModelService): Future[PersistentTenant] =
     readModelService
       .findOne[PersistentTenant](ApplicationConfiguration.tenantCollection, Filters.eq("data.id", tenantId.toString))
-      .flatMap(_.toFuture(new RuntimeException()))
+      .flatMap(_.toFuture(TenantNotFound(tenantId)))
 }

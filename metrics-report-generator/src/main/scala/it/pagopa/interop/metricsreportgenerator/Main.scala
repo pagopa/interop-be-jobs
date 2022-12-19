@@ -15,6 +15,7 @@ import java.util.concurrent.{ExecutorService, Executors}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
+
 object Main extends App {
 
   private val logger: Logger = Logger(this.getClass)
