@@ -3,14 +3,12 @@ import it.pagopa.interop.catalogmanagement.model.{CatalogDescriptor, CatalogItem
 import it.pagopa.interop.commons.files.service.FileManager
 import it.pagopa.interop.commons.parser.{InterfaceParser, InterfaceParserUtils}
 import it.pagopa.interop.commons.utils.Digester
-import it.pagopa.interop.commons.utils.TypeConversions.EitherOps
+import it.pagopa.interop.commons.utils.TypeConversions.{EitherOps, OptionOps}
 import it.pagopa.interop.metricsreportgenerator.models.{FileExtractedMetrics, Metric}
 
-import java.time.{OffsetDateTime, ZoneOffset}
+import java.time.OffsetDateTime
 import scala.concurrent.{ExecutionContext, Future}
 object Utils {
-
-  final val defaultActivatedAt: OffsetDateTime = OffsetDateTime.of(2022, 12, 15, 12, 0, 0, 0, ZoneOffset.UTC)
 
   def hasMeasurableEServices(eService: CatalogItem): Boolean = eService.descriptors.exists(_.state != Draft)
 
@@ -20,7 +18,8 @@ object Utils {
     for {
       stream <- fileManager.get(ApplicationConfiguration.interfacesContainer)(descriptor.interface.get.path)
       fileExtractedMetrics <- getFileExtractedMetrics(stream.toByteArray).toFuture
-    } yield metricGenerator(descriptor.version, defaultActivatedAt, fileExtractedMetrics)
+      activatedAt          <- descriptor.activatedAt.toFuture(Error.DescriptorNotAllowed(descriptor.id))
+    } yield metricGenerator(descriptor.version, activatedAt, fileExtractedMetrics)
 
   def getFileExtractedMetrics(bytes: Array[Byte]): Either[Throwable, FileExtractedMetrics] =
     getOpenApiExtractedMetrics(bytes) orElse getWSDLExtractedMetrics(bytes)
