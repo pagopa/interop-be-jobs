@@ -18,7 +18,7 @@ object Utils {
     for {
       stream <- fileManager.get(ApplicationConfiguration.interfacesContainer)(descriptor.interface.get.path)
       fileExtractedMetrics <- getFileExtractedMetrics(stream.toByteArray).toFuture
-      activatedAt          <- descriptor.activatedAt.toFuture(Error.DescriptorNotAllowed(descriptor.id))
+      activatedAt          <- descriptor.activatedAt.toFuture(Error.MissingActivationTimestamp(descriptor.id))
     } yield metricGenerator(descriptor.version, activatedAt, fileExtractedMetrics)
 
   def getFileExtractedMetrics(bytes: Array[Byte]): Either[Throwable, FileExtractedMetrics] =

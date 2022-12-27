@@ -35,6 +35,35 @@ object Main extends App {
 
   val fileUtils = new FileUtils(fileManager, dateTimeSupplier)
 
+  val execution: Future[Unit] = for {
+    eServices <- retrieveAllEServices(ReadModelQueries.getEServices, 0, Seq.empty)
+    measurableEServices = eServices.toList.filter(hasMeasurableEServices)
+    metrics <- measurableEServices.flatTraverse(createMetrics)
+    records = metrics.map(_.asJson.noSpaces)
+    _ <- fileUtils.store(records)
+  } yield ()
+
+  execution
+    .recover { ex =>
+      logger.error("There was an error while running the job", ex)
+    }(global)
+    .andThen(_ => blockingThreadPool.shutdown())
+
+  Await.result(execution, Duration.Inf)
+  logger.info("Completed metrics report generator job")
+
+  def retrieveAllEServices(
+    eServicesRetriever: (Int, Int) => Future[Seq[CatalogItem]],
+    offset: Int,
+    acc: Seq[CatalogItem]
+  ): Future[Seq[CatalogItem]] =
+    eServicesRetriever(offset, maxLimit).flatMap(eServices =>
+      if (eServices.isEmpty) {
+        logger.info(s"EServices load completed size ${acc.size}")
+        Future.successful(acc)
+      } else retrieveAllEServices(eServicesRetriever, offset + maxLimit, acc ++ eServices)
+    )
+
   def createMetrics: CatalogItem => Future[List[Metric]] = eService =>
     for {
       producer <- ReadModelQueries.getTenant(eService.producerId)
@@ -49,34 +78,5 @@ object Main extends App {
       measurableDescriptors = eService.descriptors.filter(_.state != Draft)
       metrics <- Future.traverse(measurableDescriptors)(createMetric(metricGenerator))
     } yield metrics.toList
-
-  val execution: Future[Unit] = for {
-    eServices <- retrieveAllEServices(ReadModelQueries.getEServices, 0, Seq.empty)
-    measurableEServices = eServices.toList.filter(hasMeasurableEServices)
-    metrics <- measurableEServices.flatTraverse(createMetrics)
-    records = metrics.map(_.asJson.noSpaces)
-    _ <- fileUtils.store(records)
-  } yield ()
-
-  def retrieveAllEServices(
-    eServicesRetriever: (Int, Int) => Future[Seq[CatalogItem]],
-    offset: Int,
-    acc: Seq[CatalogItem]
-  ): Future[Seq[CatalogItem]] =
-    eServicesRetriever(offset, maxLimit).flatMap(eServices =>
-      if (eServices.isEmpty) {
-        logger.info(s"EServices load completed size ${acc.size}")
-        Future.successful(acc)
-      } else retrieveAllEServices(eServicesRetriever, offset + maxLimit, acc ++ eServices)
-    )
-
-  execution
-    .recover { ex =>
-      logger.error("There was an error while running the job", ex)
-    }(global)
-    .andThen(_ => blockingThreadPool.shutdown())
-
-  Await.result(execution, Duration.Inf)
-  logger.info("Completed metrics report generator job")
 
 }
