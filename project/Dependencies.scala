@@ -19,6 +19,12 @@ object Dependencies {
     lazy val core      = namespace %% "cats-core" % catsVersion
   }
 
+  private[this] object circe {
+    lazy val namespace = "io.circe"
+    lazy val core      = namespace %% "circe-core"    % circeVersion
+    lazy val generic   = namespace %% "circe-generic" % circeVersion
+  }
+
   private[this] object jackson {
     lazy val namespace   = "com.fasterxml.jackson.core"
     lazy val core        = namespace % "jackson-core"         % jacksonVersion
@@ -45,6 +51,9 @@ object Dependencies {
     lazy val attributeModels =
       namespace %% "interop-be-attribute-registry-management-models" % attributeRegistryManagementVersion
 
+    lazy val catalogModels =
+      namespace %% "interop-be-catalog-management-models" % catalogManagementVersion
+
     lazy val partyRegistryProxy =
       namespace %% "interop-be-party-registry-proxy-client" % partyRegistryProxyVersion
 
@@ -59,6 +68,8 @@ object Dependencies {
     lazy val signer  = namespace %% "interop-commons-signer"        % commonsVersion
     lazy val queue   = namespace %% "interop-commons-queue-manager" % commonsVersion
     lazy val file    = namespace %% "interop-commons-file-manager"  % commonsVersion
+    lazy val cqrs    = namespace %% "interop-commons-cqrs"          % commonsVersion
+    lazy val parser  = namespace %% "interop-commons-parser"        % commonsVersion
   }
 
   private[this] object scalameta {
@@ -114,6 +125,23 @@ object Dependencies {
       pagopa.jwt                % Compile,
       pagopa.signer             % Compile,
       scalameta.munit           % Test
+    )
+
+    lazy val metricsReportGenerator: Seq[ModuleID] = Seq(
+      // For making Java 12 happy
+      "javax.annotation"   % "javax.annotation-api" % "1.3.2" % "compile",
+      //
+      cats.core            % Compile,
+      circe.core           % Compile,
+      circe.generic        % Compile,
+      logback.classic      % Compile,
+      mongodb.scalaDriver  % Compile,
+      pagopa.catalogModels % Compile,
+      pagopa.tenantModels  % Compile,
+      pagopa.commons       % Compile,
+      pagopa.cqrs          % Compile,
+      pagopa.file          % Compile,
+      pagopa.parser        % Compile
     )
   }
 }
