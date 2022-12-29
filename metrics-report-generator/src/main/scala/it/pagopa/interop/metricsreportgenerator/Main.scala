@@ -7,9 +7,10 @@ import it.pagopa.interop.catalogmanagement.model.{CatalogItem, Draft}
 import it.pagopa.interop.commons.cqrs.service.ReadModelService
 import it.pagopa.interop.commons.files.service.FileManager
 import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
-import it.pagopa.interop.metricsreportgenerator.models.Metric
+import it.pagopa.interop.metricsreportgenerator.models.{ActiveAgreement, Metric, Purpose}
 import it.pagopa.interop.metricsreportgenerator.util.Utils.{createMetric, hasMeasurableEServices}
 import it.pagopa.interop.metricsreportgenerator.util.{ApplicationConfiguration, FileUtils, ReadModelQueries}
+import spray.json.enrichAny
 
 import java.util.concurrent.{ExecutorService, Executors}
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -35,11 +36,15 @@ object Main extends App {
 
   val fileUtils = new FileUtils(fileManager, dateTimeSupplier)
 
-  val execution: Future[Unit] = for {
+  def execution: Future[Unit] = for {
     eServices <- retrieveAllEServices(ReadModelQueries.getEServices, 0, Seq.empty)
     measurableEServices = eServices.toList.filter(hasMeasurableEServices)
     metrics <- measurableEServices.flatTraverse(createMetrics)
     records = metrics.map(_.asJson.noSpaces)
+    activeAgreements <- retrieveAllActiveAgreements(ReadModelQueries.getActiveAgreements, 0, Seq.empty)
+    purposes         <- retrieveAllPurposes(ReadModelQueries.getPurposes, 0, Seq.empty)
+    _ = activeAgreements.map(_.toJson.compactPrint).foreach(println)
+    _ = purposes.map(_.toJson.compactPrint).foreach(println)
     _ <- fileUtils.store(records)
   } yield ()
 
@@ -78,5 +83,29 @@ object Main extends App {
       measurableDescriptors = eService.descriptors.filter(_.state != Draft)
       metrics <- Future.traverse(measurableDescriptors)(createMetric(metricGenerator))
     } yield metrics.toList
+
+  def retrieveAllActiveAgreements(
+    agreementsRetriever: (Int, Int) => Future[Seq[ActiveAgreement]],
+    offset: Int,
+    acc: Seq[ActiveAgreement]
+  ): Future[Seq[ActiveAgreement]] =
+    agreementsRetriever(offset, maxLimit).flatMap(agreements =>
+      if (agreements.isEmpty) {
+        logger.info(s"Active agreements load completed size ${acc.size}")
+        Future.successful(acc)
+      } else retrieveAllActiveAgreements(agreementsRetriever, offset + maxLimit, acc ++ agreements)
+    )
+
+  def retrieveAllPurposes(
+    purposesRetriever: (Int, Int) => Future[Seq[Purpose]],
+    offset: Int,
+    acc: Seq[Purpose]
+  ): Future[Seq[Purpose]] =
+    purposesRetriever(offset, maxLimit).flatMap(purposes =>
+      if (purposes.isEmpty) {
+        logger.info(s"Purposes load completed size ${acc.size}")
+        Future.successful(acc)
+      } else retrieveAllPurposes(purposesRetriever, offset + maxLimit, acc ++ purposes)
+    )
 
 }

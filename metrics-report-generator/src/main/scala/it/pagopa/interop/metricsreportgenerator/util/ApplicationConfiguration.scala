@@ -14,6 +14,8 @@ object ApplicationConfiguration {
 
   val catalogCollection: String = config.getString("report-generator.read-model.collections.eservices")
   val tenantCollection: String  = config.getString("report-generator.read-model.collections.tenants")
+  val agreementCollection: String  = config.getString("report-generator.read-model.collections.agreements")
+  val purposeCollection: String  = config.getString("report-generator.read-model.collections.purposes")
 
   val readModelConfig: ReadModelConfig = {
     val connectionString: String = config.getString("report-generator.read-model.db.connection-string")
