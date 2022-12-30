@@ -4,7 +4,7 @@ import it.pagopa.interop.catalogmanagement.model.CatalogItem
 import it.pagopa.interop.catalogmanagement.model.persistence.JsonFormats._
 import it.pagopa.interop.commons.cqrs.service.ReadModelService
 import it.pagopa.interop.commons.utils.TypeConversions.OptionOps
-import it.pagopa.interop.metricsreportgenerator.models.{ActiveAgreement, Purpose}
+import it.pagopa.interop.metricsreportgenerator.models.{Agreement, Purpose}
 import it.pagopa.interop.metricsreportgenerator.util.Error.TenantNotFound
 import it.pagopa.interop.tenantmanagement.model.persistence.JsonFormats._
 import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenant
@@ -35,7 +35,7 @@ object ReadModelQueries {
   def getActiveAgreements(offset: Int, limit: Int)(implicit
     ec: ExecutionContext,
     readModelService: ReadModelService
-  ): Future[Seq[ActiveAgreement]] = {
+  ): Future[Seq[Agreement]] = {
     val firstProjection: Bson = project(
       fields(
         fields(
@@ -81,7 +81,7 @@ object ReadModelQueries {
       )
 
     readModelService
-      .aggregate[ActiveAgreement](ApplicationConfiguration.agreementCollection, aggregation, offset, limit)
+      .aggregate[Agreement](ApplicationConfiguration.agreementCollection, aggregation, offset, limit)
   }
 
   def getPurposes(offset: Int, limit: Int)(implicit

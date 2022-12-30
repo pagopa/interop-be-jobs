@@ -1,4 +1,4 @@
-package it.pagopa.interop.metricsreportgenerator.models
+package it.pagopa.interop.metricsreportgenerator.report
 
 import io.circe._
 import io.circe.generic.semiauto._

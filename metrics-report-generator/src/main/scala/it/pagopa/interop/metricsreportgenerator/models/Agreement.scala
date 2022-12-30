@@ -3,15 +3,16 @@ package it.pagopa.interop.metricsreportgenerator.models
 import spray.json.DefaultJsonProtocol._
 import spray.json.RootJsonFormat
 
-final case class ActiveAgreement(
+final case class Agreement(
   activationDate: String,
   agreementId: String,
   eserviceId: String,
   eservice: String,
   producer: String,
-  consumer: String
+  consumer: String,
+  consumerId: String
 )
 
-object ActiveAgreement {
-  implicit val format: RootJsonFormat[ActiveAgreement] = jsonFormat6(ActiveAgreement.apply)
+object Agreement {
+  implicit val format: RootJsonFormat[Agreement] = jsonFormat7(Agreement.apply)
 }
