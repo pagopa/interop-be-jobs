@@ -35,7 +35,7 @@ final class FileWriters(fileUtils: FileUtils, dateTimeSupplier: OffsetDateTimeSu
     val fileName: String = s"${dateTimeSupplier.get().format(dtf)}_${UUID.randomUUID()}.csv"
     fileUtils.store(
       ApplicationConfiguration.agreementsContainer,
-      s"${ApplicationConfiguration.agreementsCsvStoragePath}",
+      ApplicationConfiguration.agreementsCsvStoragePath,
       fileName
     )(AgreementRecord.csv(agreementRecords))
   }
