@@ -26,7 +26,7 @@ final class FileWriters(fileUtils: FileUtils, dateTimeSupplier: OffsetDateTimeSu
     val fileName: String = s"${dateTimeSupplier.get().format(dtf)}_${UUID.randomUUID()}.ndjson"
     fileUtils.store(
       ApplicationConfiguration.agreementsContainer,
-      s"${ApplicationConfiguration.agreementsJsonStoragePath}",
+      ApplicationConfiguration.agreementsJsonStoragePath,
       fileName
     )(agreementRecords.map(_.toJson.compactPrint))
   }
