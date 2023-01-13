@@ -2,14 +2,12 @@ package it.pagopa.interop.metricsreportgenerator
 
 import cats.implicits._
 import com.typesafe.scalalogging.Logger
-import io.circe.syntax._
-import it.pagopa.interop.catalogmanagement.model.{CatalogItem, Draft}
 import it.pagopa.interop.commons.cqrs.service.ReadModelService
 import it.pagopa.interop.commons.files.service.FileManager
 import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
-import it.pagopa.interop.metricsreportgenerator.models.Metric
-import it.pagopa.interop.metricsreportgenerator.util.Utils.{createMetric, hasMeasurableEServices}
-import it.pagopa.interop.metricsreportgenerator.util.{ApplicationConfiguration, FileUtils, ReadModelQueries}
+import it.pagopa.interop.metricsreportgenerator.report.AgreementRecord
+import it.pagopa.interop.metricsreportgenerator.util.Utils.hasMeasurableEServices
+import it.pagopa.interop.metricsreportgenerator.util._
 
 import java.util.concurrent.{ExecutorService, Executors}
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -18,65 +16,37 @@ import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Futu
 
 object Main extends App {
 
-  private val logger: Logger = Logger(this.getClass)
+  implicit val logger: Logger = Logger(this.getClass)
 
   logger.info("Starting metrics report generator job")
 
-  final val maxLimit = 10
-
   val blockingThreadPool: ExecutorService = Executors.newFixedThreadPool(Runtime.getRuntime.availableProcessors())
-  implicit val blockingEC: ExecutionContextExecutor = ExecutionContext.fromExecutor(blockingThreadPool)
 
-  implicit val fileManager: FileManager = FileManager.get(FileManager.S3)(blockingEC)
+  implicit val blockingEC: ExecutionContextExecutor     = ExecutionContext.fromExecutor(blockingThreadPool)
+  implicit val fileManager: FileManager                 = FileManager.get(FileManager.S3)(blockingEC)
+  implicit val readModelService: ReadModelService       = new ReadModelService(ApplicationConfiguration.readModelConfig)
+  implicit val dateTimeSupplier: OffsetDateTimeSupplier = OffsetDateTimeSupplier
 
-  implicit val readModelService: ReadModelService = new ReadModelService(ApplicationConfiguration.readModelConfig)
+  val fileUtils: FileUtils     = new FileUtils(fileManager, dateTimeSupplier)
+  val fileWriters: FileWriters = new FileWriters(fileUtils, dateTimeSupplier)
 
-  val dateTimeSupplier: OffsetDateTimeSupplier = OffsetDateTimeSupplier
-
-  val fileUtils = new FileUtils(fileManager, dateTimeSupplier)
-
-  val execution: Future[Unit] = for {
-    eServices <- retrieveAllEServices(ReadModelQueries.getEServices, 0, Seq.empty)
-    measurableEServices = eServices.toList.filter(hasMeasurableEServices)
-    metrics <- measurableEServices.flatTraverse(createMetrics)
-    records = metrics.map(_.asJson.noSpaces)
-    _ <- fileUtils.store(records)
+  def execution(): Future[Unit] = for {
+    eServices <- Utils.retrieveAllEServices(ReadModelQueries.getEServices, 0, Seq.empty)
+    measurableEServices = eServices.filter(hasMeasurableEServices)
+    metrics          <- measurableEServices.flatTraverse(Utils.createMetrics)
+    activeAgreements <- Utils.retrieveAllActiveAgreements(ReadModelQueries.getActiveAgreements, 0, Seq.empty)
+    purposes         <- Utils.retrieveAllPurposes(ReadModelQueries.getPurposes, 0, Seq.empty)
+    agreementRecords = AgreementRecord.join(activeAgreements, purposes)
+    _ <- fileWriters.paDigitaleWriter(metrics)
+    _ <- fileWriters.agreementsJsonWriter(agreementRecords)
+    _ <- fileWriters.agreementsCsvWriter(agreementRecords)
   } yield ()
 
-  execution
-    .recover { ex =>
-      logger.error("There was an error while running the job", ex)
-    }(global)
+  def run() = execution()
+    .recover(ex => logger.error("There was an error while running the job", ex))(global)
     .andThen(_ => blockingThreadPool.shutdown())
 
-  Await.result(execution, Duration.Inf)
+  Await.result(run(), Duration.Inf)
   logger.info("Completed metrics report generator job")
-
-  def retrieveAllEServices(
-    eServicesRetriever: (Int, Int) => Future[Seq[CatalogItem]],
-    offset: Int,
-    acc: Seq[CatalogItem]
-  ): Future[Seq[CatalogItem]] =
-    eServicesRetriever(offset, maxLimit).flatMap(eServices =>
-      if (eServices.isEmpty) {
-        logger.info(s"EServices load completed size ${acc.size}")
-        Future.successful(acc)
-      } else retrieveAllEServices(eServicesRetriever, offset + maxLimit, acc ++ eServices)
-    )
-
-  def createMetrics: CatalogItem => Future[List[Metric]] = eService =>
-    for {
-      producer <- ReadModelQueries.getTenant(eService.producerId)
-      metricGenerator       = Metric.generator(
-        originId = producer.externalId.value,
-        origin = producer.externalId.origin,
-        name = eService.name,
-        eServiceId = eService.id.toString,
-        technology = eService.technology.toString,
-        createdAt = dateTimeSupplier.get()
-      )
-      measurableDescriptors = eService.descriptors.filter(_.state != Draft)
-      metrics <- Future.traverse(measurableDescriptors)(createMetric(metricGenerator))
-    } yield metrics.toList
 
 }
