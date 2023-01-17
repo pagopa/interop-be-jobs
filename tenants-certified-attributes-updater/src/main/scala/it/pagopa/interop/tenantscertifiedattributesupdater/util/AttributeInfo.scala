@@ -1,14 +1,11 @@
 package it.pagopa.interop.tenantscertifiedattributesupdater.util
 
 import it.pagopa.interop.tenantmanagement.model.tenant.{PersistentCertifiedAttribute, PersistentTenantAttribute}
-import it.pagopa.interop.tenantprocess.client.model.InternalAttributeSeed
 
 import java.time.OffsetDateTime
 import java.util.UUID
 
-final case class AttributeInfo(origin: String, code: String, revocationTimestamp: Option[OffsetDateTime]) {
-  def toInternalAttributeSeed: InternalAttributeSeed = InternalAttributeSeed(origin, code)
-}
+final case class AttributeInfo(origin: String, code: String, revocationTimestamp: Option[OffsetDateTime])
 
 object AttributeInfo {
   def addRevocationTimeStamp(

@@ -1,4 +1,4 @@
-package it.pagopa.interop.tenantscertifiedattributesupdater
+package it.pagopa.interop.tenantscertifiedattributesupdater.util
 
 import akka.actor.typed.ActorSystem
 import cats.implicits._
@@ -11,14 +11,25 @@ import it.pagopa.interop.commons.logging.ContextFieldsToLog
 import it.pagopa.interop.commons.signer.service.SignerService
 import it.pagopa.interop.partyregistryproxy.client.model.{Institution, Institutions}
 import it.pagopa.interop.tenantmanagement.model.tenant.{PersistentExternalId, PersistentTenant}
-import it.pagopa.interop.tenantprocess.client.model.InternalTenantSeed
+import it.pagopa.interop.tenantprocess.client.model.{ExternalId, InternalAttributeSeed, InternalTenantSeed}
 import it.pagopa.interop.tenantscertifiedattributesupdater.system.ApplicationConfiguration
 import org.mongodb.scala.MongoClient
 
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
-package object util {
+object Utils {
+
+  implicit class AttributeInfoOps(val a: AttributeInfo) extends AnyVal {
+    def toInternalAttributeSeed: InternalAttributeSeed = InternalAttributeSeed(a.origin, a.code)
+  }
+
+  implicit class TenantIdOps(val t: TenantId) extends AnyVal {
+    def toPersistentExternalId: PersistentExternalId = PersistentExternalId(t.origin, t.value)
+
+    def toExternalId: ExternalId = ExternalId(t.origin, t.value)
+  }
+
   def generateBearer(jwtConfig: JWTInternalTokenConfig, signerService: SignerService)(implicit
     ec: ExecutionContext
   ): Future[String] = for {

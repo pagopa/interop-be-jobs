@@ -16,7 +16,7 @@ import it.pagopa.interop.tenantscertifiedattributesupdater.repository.impl.{
 import it.pagopa.interop.tenantscertifiedattributesupdater.repository.{AttributesRepository, TenantRepository}
 import it.pagopa.interop.tenantscertifiedattributesupdater.service.{PartyRegistryProxyService, TenantProcessService}
 import it.pagopa.interop.tenantscertifiedattributesupdater.system.ApplicationConfiguration
-import it.pagopa.interop.tenantscertifiedattributesupdater.util._
+import it.pagopa.interop.tenantscertifiedattributesupdater.util.Utils._
 import org.mongodb.scala.MongoClient.DEFAULT_CODEC_REGISTRY
 import org.mongodb.scala.connection.NettyStreamFactoryFactory
 import org.mongodb.scala.{ConnectionString, MongoClient, MongoClientSettings}

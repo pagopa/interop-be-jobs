@@ -8,7 +8,8 @@ import it.pagopa.interop.tenantmanagement.model.tenant.{
 }
 import it.pagopa.interop.tenantprocess.client.model.{ExternalId, InternalAttributeSeed, InternalTenantSeed}
 import it.pagopa.interop.tenantscertifiedattributesupdater.SpecHelper._
-import it.pagopa.interop.tenantscertifiedattributesupdater.util.{AttributeInfo, createAction}
+import it.pagopa.interop.tenantscertifiedattributesupdater.util.AttributeInfo
+import it.pagopa.interop.tenantscertifiedattributesupdater.util.Utils._
 import munit.FunSuite
 
 import java.util.UUID
