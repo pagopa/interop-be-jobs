@@ -38,12 +38,12 @@ class CreateActionSpec extends FunSuite {
           InternalAttributeSeed(attributeOrigin1, attributeCode1),
           InternalAttributeSeed(attributeOrigin2, attributeCode2)
         ),
-        name = ""
+        name = defaultName
       ),
       InternalTenantSeed(
         externalId = ExternalId("IPA", "002"),
         certifiedAttributes = List(InternalAttributeSeed(attributeOrigin2, attributeCode2)),
-        name = ""
+        name = defaultName
       )
     )
     val expectedRevocations = Map.empty[PersistentExternalId, List[AttributeInfo]]
@@ -72,7 +72,7 @@ class CreateActionSpec extends FunSuite {
           InternalAttributeSeed(attributeOrigin1, attributeCode1),
           InternalAttributeSeed(attributeOrigin2, attributeCode2)
         ),
-        name = "test_name"
+        name = defaultName
       )
     )
     val expectedRevocations = Map.empty[PersistentExternalId, List[AttributeInfo]]
@@ -153,7 +153,7 @@ class CreateActionSpec extends FunSuite {
       InternalTenantSeed(
         externalId = ExternalId("IPA", "001"),
         certifiedAttributes = List(InternalAttributeSeed(attributeOrigin, attributeCode)),
-        name = "test_name"
+        name = defaultName
       )
     )
     val expectedRevocations = Map.empty[PersistentExternalId, List[AttributeInfo]]
