@@ -1,4 +1,4 @@
-package it.pagopa.interop.tenantscertifiedattributesupdater
+package it.pagopa.interop.tenantscertifiedattributesupdater.util
 
 import akka.actor.typed.ActorSystem
 import cats.implicits._
@@ -18,7 +18,18 @@ import org.mongodb.scala.MongoClient
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
-package object util {
+object Utils {
+
+  implicit class AttributeInfoOps(val a: AttributeInfo) extends AnyVal {
+    def toInternalAttributeSeed: InternalAttributeSeed = InternalAttributeSeed(a.origin, a.code)
+  }
+
+  implicit class TenantIdOps(val t: TenantId) extends AnyVal {
+    def toPersistentExternalId: PersistentExternalId = PersistentExternalId(t.origin, t.value)
+
+    def toExternalId: ExternalId = ExternalId(t.origin, t.value)
+  }
+
   def generateBearer(jwtConfig: JWTInternalTokenConfig, signerService: SignerService)(implicit
     ec: ExecutionContext
   ): Future[String] = for {
@@ -49,16 +60,15 @@ package object util {
     tenants: List[PersistentTenant],
     attributesIndex: Map[UUID, AttributeInfo]
   ): TenantActions = {
-    val fromRegistry: List[(PersistentExternalId, AttributeInfo)] =
+    val fromRegistry: List[TenantSeed] =
       institutions
         .filter(_.id.nonEmpty)
-        .map { institution =>
-          PersistentExternalId(institution.origin, institution.originId) -> AttributeInfo(
-            institution.origin,
-            institution.category,
-            None
+        .map(institution =>
+          TenantSeed(
+            TenantId(institution.origin, institution.originId, institution.description),
+            AttributeInfo(institution.origin, institution.category, None)
           )
-        }
+        )
 
     val fromTenant: Map[PersistentExternalId, List[AttributeInfo]] =
       tenants
@@ -72,28 +82,29 @@ package object util {
     val tenantsMap: Map[PersistentExternalId, String] = tenants.map(t => (t.externalId, t.name)).toMap
     val activations: List[InternalTenantSeed]         =
       fromRegistry
-        .filterNot { case (registryId, attributeFromRegistry) =>
-          fromTenant.get(registryId).exists(AttributeInfo.stillExistsInTenant(attributeFromRegistry))
-        }
-        .map { case (externalId, attributeInfo) =>
-          ExternalId(externalId.origin, externalId.value) -> List(
-            InternalAttributeSeed(attributeInfo.origin, attributeInfo.code)
-          )
-        }
-        .groupMapReduce[ExternalId, List[InternalAttributeSeed]](_._1)(_._2)(_ ++ _)
+        .filterNot(tenantSeed =>
+          fromTenant
+            .get(tenantSeed.id.toPersistentExternalId)
+            .exists(AttributeInfo.stillExistsInTenant(tenantSeed.attributeInfo))
+        )
+        .groupMapReduce[TenantId, List[AttributeInfo]](_.id)(tenantSeed => List(tenantSeed.attributeInfo))(_ ++ _)
         .toList
-        .map { case (extId, attrs) =>
-          InternalTenantSeed(extId, attrs, tenantsMap.getOrElse(PersistentExternalId(extId.origin, extId.value), ""))
+        .map { case (tenantId, attrs) =>
+          InternalTenantSeed(
+            tenantId.toExternalId,
+            attrs.map(_.toInternalAttributeSeed),
+            tenantsMap.getOrElse(tenantId.toPersistentExternalId, tenantId.name)
+          )
         }
 
     val revocations: Map[PersistentExternalId, List[AttributeInfo]] =
       fromTenant.toList
         .flatMap { case (externalId, attrs) => List(externalId).zip(attrs) }
         .filterNot { case (tenantId, attributeFromTenant) =>
-          fromRegistry.exists { case (registryId, attributeFromRegistry) =>
-            registryId == tenantId &&
-            attributeFromTenant.code == attributeFromRegistry.code &&
-            attributeFromTenant.origin == attributeFromRegistry.origin
+          fromRegistry.exists { tenantSeed =>
+            tenantSeed.id.toPersistentExternalId == tenantId &&
+            attributeFromTenant.code == tenantSeed.attributeInfo.code &&
+            attributeFromTenant.origin == tenantSeed.attributeInfo.origin
           }
         }
         .groupMap[PersistentExternalId, AttributeInfo](_._1)(_._2)

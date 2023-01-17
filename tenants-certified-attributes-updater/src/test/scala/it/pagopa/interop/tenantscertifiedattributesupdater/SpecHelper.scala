@@ -14,6 +14,8 @@ object SpecHelper {
 
   final val timestamp: OffsetDateTime = OffsetDateTime.of(2022, 12, 31, 11, 22, 33, 0, ZoneOffset.UTC)
 
+  final val defaultName: String = "test_name"
+
   def persistentTenant(
     origin: String,
     value: String,
@@ -27,7 +29,7 @@ object SpecHelper {
     createdAt = timestamp,
     updatedAt = None,
     mails = Nil,
-    name = "test_name"
+    name = defaultName
   )
 
   def institution(origin: String, originId: String, category: String): Institution = Institution(
@@ -38,7 +40,7 @@ object SpecHelper {
     aoo = None,
     taxCode = "taxCode",
     category = category,
-    description = "",
+    description = defaultName,
     digitalAddress = "",
     address = "",
     zipCode = "",
