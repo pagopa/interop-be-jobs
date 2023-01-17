@@ -90,10 +90,10 @@ package object util {
       fromTenant.toList
         .flatMap { case (externalId, attrs) => List(externalId).zip(attrs) }
         .filterNot { case (tenantId, attributeFromTenant) =>
-          fromRegistry.exists { tenantRawDetails =>
-            tenantRawDetails.id.toPersistentExternalId == tenantId &&
-            attributeFromTenant.code == tenantRawDetails.attributeInfo.code &&
-            attributeFromTenant.origin == tenantRawDetails.attributeInfo.origin
+          fromRegistry.exists { tenantSeed =>
+            tenantSeed.id.toPersistentExternalId == tenantId &&
+            attributeFromTenant.code == tenantSeed.attributeInfo.code &&
+            attributeFromTenant.origin == tenantSeed.attributeInfo.origin
           }
         }
         .groupMap[PersistentExternalId, AttributeInfo](_._1)(_._2)
