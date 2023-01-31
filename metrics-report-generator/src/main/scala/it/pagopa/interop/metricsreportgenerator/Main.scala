@@ -44,12 +44,13 @@ object Main extends App {
     _ <- fileWriters.agreementsCsvWriter(agreementRecords)
   } yield ()
 
-  def run() = execution()
+  def run(): Future[Unit] = execution()
     .recover(ex => logger.error("There was an error while running the job", ex))(global)
     .andThen { _ =>
+      fileManager.close()
       readModelService.close()
       blockingThreadPool.shutdown()
-    }
+    }(global)
 
   Await.result(run(), Duration.Inf)
   logger.info("Completed metrics report generator job")
