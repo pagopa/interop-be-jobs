@@ -2,7 +2,7 @@ package it.pagopa.interop.metricsreportgenerator
 
 import cats.implicits._
 import com.typesafe.scalalogging.Logger
-import it.pagopa.interop.commons.cqrs.service.ReadModelService
+import it.pagopa.interop.commons.cqrs.service.{MongoDbReadModelService, ReadModelService}
 import it.pagopa.interop.commons.files.service.FileManager
 import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
 import it.pagopa.interop.metricsreportgenerator.report.AgreementRecord
@@ -24,7 +24,9 @@ object Main extends App {
 
   implicit val blockingEC: ExecutionContextExecutor     = ExecutionContext.fromExecutor(blockingThreadPool)
   implicit val fileManager: FileManager                 = FileManager.get(FileManager.S3)(blockingEC)
-  implicit val readModelService: ReadModelService       = new ReadModelService(ApplicationConfiguration.readModelConfig)
+  implicit val readModelService: ReadModelService       = new MongoDbReadModelService(
+    ApplicationConfiguration.readModelConfig
+  )
   implicit val dateTimeSupplier: OffsetDateTimeSupplier = OffsetDateTimeSupplier
 
   val fileUtils: FileUtils     = new FileUtils(fileManager, dateTimeSupplier)
@@ -44,7 +46,10 @@ object Main extends App {
 
   def run() = execution()
     .recover(ex => logger.error("There was an error while running the job", ex))(global)
-    .andThen(_ => blockingThreadPool.shutdown())
+    .andThen { _ =>
+      readModelService.close()
+      blockingThreadPool.shutdown()
+    }
 
   Await.result(run(), Duration.Inf)
   logger.info("Completed metrics report generator job")
