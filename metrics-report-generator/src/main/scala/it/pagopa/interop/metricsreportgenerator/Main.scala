@@ -13,6 +13,7 @@ import java.util.concurrent.{ExecutorService, Executors}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
+import java.util.concurrent.TimeUnit
 
 object Main extends App {
 
@@ -50,24 +51,27 @@ object Main extends App {
       fileManager.close()
       readModelService.close()
       blockingThreadPool.shutdown()
+      val wasShutDown: Boolean = blockingThreadPool.awaitTermination(20, TimeUnit.SECONDS)
+      println(s"The blocking thread pool was shut down: $wasShutDown")
     }(global)
 
   Await.result(run(), Duration.Inf)
 
   def printReport(): Unit = {
     import scala.jdk.CollectionConverters.SetHasAsScala
+    System.out.printf("%-30s \t %s \t %s \t %s\n", "NAME", "STATE", "PRIORITY", "KIND");
     Thread.getAllStackTraces().keySet().asScala.toList.foreach { thread =>
       val name: String        = thread.getName
       val state: Thread.State = thread.getState
       val priority: Integer   = thread.getPriority
       val kind                = if (thread.isDaemon) "Daemon" else "Normal"
-      System.out.printf("%-30s \t %s \t %d \t %s\n", "NAME", "STATE", "PRIORITY", "KIND");
-      System.out.printf("%-30s \t %s \t %d \t %s\n", name, state, priority, kind);
+      System.out.printf("%-60s \t %s \t %d \t %s\n", name, state, priority, kind);
     }
   }
 
+  Thread.sleep(5000)
   printReport()
-  Thread.sleep(20_000)
+  Thread.sleep(5000)
   printReport()
 
   logger.info("Completed metrics report generator job")
