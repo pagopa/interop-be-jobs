@@ -53,14 +53,22 @@ object Main extends App {
     }(global)
 
   Await.result(run(), Duration.Inf)
-  import scala.jdk.CollectionConverters.SetHasAsScala
-  Thread.getAllStackTraces().keySet().asScala.toList.foreach { thread =>
-    val name: String        = thread.getName
-    val state: Thread.State = thread.getState
-    val priority: Integer   = thread.getPriority
-    val kind                = if (thread.isDaemon) "Daemon" else "Normal"
-    System.out.printf("%-20s \t %s \t %d \t %s\n", name, state, priority, kind);
-  }
-  logger.info("Completed metrics report generator job")
 
+  def printReport(): Unit = {
+    import scala.jdk.CollectionConverters.SetHasAsScala
+    Thread.getAllStackTraces().keySet().asScala.toList.foreach { thread =>
+      val name: String        = thread.getName
+      val state: Thread.State = thread.getState
+      val priority: Integer   = thread.getPriority
+      val kind                = if (thread.isDaemon) "Daemon" else "Normal"
+      System.out.printf("%-30s \t %s \t %d \t %s\n", "NAME", "STATE", "PRIORITY", "KIND");
+      System.out.printf("%-30s \t %s \t %d \t %s\n", name, state, priority, kind);
+    }
+  }
+
+  printReport()
+  Thread.sleep(20_000)
+  printReport()
+
+  logger.info("Completed metrics report generator job")
 }
