@@ -13,6 +13,7 @@ final case class Metric(
   technology: String,
   openData: Boolean,
   version: String,
+  state: String,
   fingerPrint: String,
   endpointsCount: Int,
   activatedAt: Long,
@@ -31,8 +32,8 @@ object Metric {
     technology: String,
     createdAt: OffsetDateTime,
     openData: Boolean = false
-  ): (String, OffsetDateTime, FileExtractedMetrics) => Metric =
-    (version, activatedAt, fileMetricInfo) =>
+  ): (String, String, OffsetDateTime, FileExtractedMetrics) => Metric =
+    (version, state, activatedAt, fileMetricInfo) =>
       Metric(
         originId = originId,
         origin = origin,
@@ -41,6 +42,7 @@ object Metric {
         technology = technology,
         openData = openData,
         version = version,
+        state = state,
         fingerPrint = fileMetricInfo.fingerPrint,
         endpointsCount = fileMetricInfo.endpointsCount,
         activatedAt = activatedAt.toMillis,
