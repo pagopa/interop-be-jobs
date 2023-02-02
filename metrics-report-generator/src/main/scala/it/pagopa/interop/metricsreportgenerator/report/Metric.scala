@@ -16,8 +16,9 @@ final case class Metric(
   state: String,
   fingerPrint: String,
   endpointsCount: Int,
+  createdAt: Long,
   activatedAt: Long,
-  createdAt: Long
+  timestamp: Long
 )
 
 object Metric {
@@ -30,10 +31,10 @@ object Metric {
     name: String,
     eServiceId: String,
     technology: String,
-    createdAt: OffsetDateTime,
+    timestamp: OffsetDateTime,
     openData: Boolean = false
-  ): (String, String, OffsetDateTime, FileExtractedMetrics) => Metric =
-    (version, state, activatedAt, fileMetricInfo) =>
+  ): MetricGeneratorSeed => Metric =
+    seed =>
       Metric(
         originId = originId,
         origin = origin,
@@ -41,12 +42,13 @@ object Metric {
         eServiceId = eServiceId,
         technology = technology,
         openData = openData,
-        version = version,
-        state = state,
-        fingerPrint = fileMetricInfo.fingerPrint,
-        endpointsCount = fileMetricInfo.endpointsCount,
-        activatedAt = activatedAt.toMillis,
-        createdAt = createdAt.toMillis
+        version = seed.version,
+        state = seed.state,
+        fingerPrint = seed.fileExtractedMetrics.fingerPrint,
+        endpointsCount = seed.fileExtractedMetrics.endpointsCount,
+        createdAt = seed.createdAt.toMillis,
+        activatedAt = seed.activatedAt.toMillis,
+        timestamp = timestamp.toMillis
       )
 
 }
