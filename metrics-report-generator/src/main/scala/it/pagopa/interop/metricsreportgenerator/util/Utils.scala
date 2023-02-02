@@ -52,13 +52,13 @@ object Utils {
     } yield metrics
 
   private def createMetric(
-    metricGenerator: (String, OffsetDateTime, FileExtractedMetrics) => Metric
+    metricGenerator: (String, String, OffsetDateTime, FileExtractedMetrics) => Metric
   )(descriptor: CatalogDescriptor)(implicit ec: ExecutionContext, fileManager: FileManager): Future[Metric] =
     for {
       stream <- fileManager.get(ApplicationConfiguration.interfacesContainer)(descriptor.interface.get.path)
       fileExtractedMetrics <- getFileExtractedMetrics(stream.toByteArray).toFuture
       activatedAt          <- descriptor.activatedAt.toFuture(Error.MissingActivationTimestamp(descriptor.id))
-    } yield metricGenerator(descriptor.version, activatedAt, fileExtractedMetrics)
+    } yield metricGenerator(descriptor.version, descriptor.state.toString, activatedAt, fileExtractedMetrics)
 
   def retrieveAllActiveAgreements(
     agreementsRetriever: (Int, Int) => Future[Seq[Agreement]],
