@@ -8,9 +8,8 @@ import it.pagopa.interop.commons.utils.Digester
 import it.pagopa.interop.commons.utils.TypeConversions.{EitherOps, OptionOps}
 import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
 import it.pagopa.interop.metricsreportgenerator.models.{Agreement, Purpose}
-import it.pagopa.interop.metricsreportgenerator.report.{FileExtractedMetrics, Metric}
+import it.pagopa.interop.metricsreportgenerator.report.{FileExtractedMetrics, Metric, MetricGeneratorSeed}
 
-import java.time.OffsetDateTime
 import scala.concurrent.{ExecutionContext, Future}
 
 object Utils {
@@ -45,20 +44,28 @@ object Utils {
         name = eService.name,
         eServiceId = eService.id.toString,
         technology = eService.technology.toString,
-        createdAt = dateTimeSupplier.get()
+        timestamp = dateTimeSupplier.get()
       )
       measurableDescriptors = eService.descriptors.filter(_.state != Draft)
       metrics <- Future.traverse(measurableDescriptors)(createMetric(metricGenerator))
     } yield metrics
 
   private def createMetric(
-    metricGenerator: (String, String, OffsetDateTime, FileExtractedMetrics) => Metric
+    metricGenerator: MetricGeneratorSeed => Metric
   )(descriptor: CatalogDescriptor)(implicit ec: ExecutionContext, fileManager: FileManager): Future[Metric] =
     for {
       stream <- fileManager.get(ApplicationConfiguration.interfacesContainer)(descriptor.interface.get.path)
       fileExtractedMetrics <- getFileExtractedMetrics(stream.toByteArray).toFuture
       activatedAt          <- descriptor.activatedAt.toFuture(Error.MissingActivationTimestamp(descriptor.id))
-    } yield metricGenerator(descriptor.version, descriptor.state.toString, activatedAt, fileExtractedMetrics)
+    } yield metricGenerator(
+      MetricGeneratorSeed(
+        descriptor.version,
+        descriptor.state.toString,
+        descriptor.createdAt,
+        activatedAt,
+        fileExtractedMetrics
+      )
+    )
 
   def retrieveAllActiveAgreements(
     agreementsRetriever: (Int, Int) => Future[Seq[Agreement]],
