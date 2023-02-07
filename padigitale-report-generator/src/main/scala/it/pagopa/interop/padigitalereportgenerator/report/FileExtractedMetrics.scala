@@ -1,3 +1,3 @@
-package it.pagopa.interop.metricsreportgenerator.report
+package it.pagopa.interop.padigitalereportgenerator.report
 
 final case class FileExtractedMetrics(fingerPrint: String, endpointsCount: Int)

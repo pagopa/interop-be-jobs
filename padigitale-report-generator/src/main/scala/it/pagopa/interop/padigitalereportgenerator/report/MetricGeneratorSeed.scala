@@ -1,4 +1,4 @@
-package it.pagopa.interop.metricsreportgenerator.report
+package it.pagopa.interop.padigitalereportgenerator.report
 
 import java.time.OffsetDateTime
 

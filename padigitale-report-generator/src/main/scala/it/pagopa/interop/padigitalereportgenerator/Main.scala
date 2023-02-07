@@ -1,11 +1,12 @@
-package it.pagopa.interop.metricsreportgenerator
+package it.pagopa.interop.padigitalereportgenerator
 
+import cats.implicits._
 import com.typesafe.scalalogging.Logger
 import it.pagopa.interop.commons.cqrs.service.{MongoDbReadModelService, ReadModelService}
 import it.pagopa.interop.commons.files.service.FileManager
 import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
-import it.pagopa.interop.metricsreportgenerator.report.AgreementRecord
-import it.pagopa.interop.metricsreportgenerator.util._
+import it.pagopa.interop.padigitalereportgenerator.util.Utils.hasMeasurableEServices
+import it.pagopa.interop.padigitalereportgenerator.util._
 
 import java.util.concurrent.{ExecutorService, Executors}
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -16,7 +17,7 @@ object Main extends App {
 
   implicit val logger: Logger = Logger(this.getClass)
 
-  logger.info("Starting metrics report generator job")
+  logger.info("Starting padigitale report generator job")
 
   val blockingThreadPool: ExecutorService = Executors.newFixedThreadPool(Runtime.getRuntime.availableProcessors())
 
@@ -31,11 +32,10 @@ object Main extends App {
   val fileWriters: FileWriters = new FileWriters(fileUtils, dateTimeSupplier)
 
   def execution(): Future[Unit] = for {
-    activeAgreements <- Utils.retrieveAllActiveAgreements(ReadModelQueries.getActiveAgreements, 0, Seq.empty)
-    purposes         <- Utils.retrieveAllPurposes(ReadModelQueries.getPurposes, 0, Seq.empty)
-    agreementRecords = AgreementRecord.join(activeAgreements, purposes)
-    _ <- fileWriters.agreementsJsonWriter(agreementRecords)
-    _ <- fileWriters.agreementsCsvWriter(agreementRecords)
+    eServices <- Utils.retrieveAllEServices(ReadModelQueries.getEServices, 0, Seq.empty)
+    measurableEServices = eServices.filter(hasMeasurableEServices)
+    metrics <- measurableEServices.flatTraverse(Utils.createMetrics)
+    _       <- fileWriters.paDigitaleWriter(metrics)
   } yield ()
 
   def run(): Future[Unit] = execution()
@@ -47,5 +47,5 @@ object Main extends App {
     }(global)
 
   Await.result(run(), Duration.Inf)
-  logger.info("Completed metrics report generator job")
+  logger.info("Completed padigitale report generator job")
 }
