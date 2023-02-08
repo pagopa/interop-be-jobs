@@ -7,7 +7,7 @@ object ApplicationConfiguration {
 
   val config: Config = ConfigFactory.load()
 
-  val interfacesContainer: String = config.getString("report-generator.storage.interfaces-container")
+  val interfacesContainer: String = config.getString("report-generator.storage.eservices-interfaces.container")
 
   val paDigitaleContainer: String   = config.getString("report-generator.storage.pa-digitale.container")
   val paDigitaleStoragePath: String = config.getString("report-generator.storage.pa-digitale.storage-path")
