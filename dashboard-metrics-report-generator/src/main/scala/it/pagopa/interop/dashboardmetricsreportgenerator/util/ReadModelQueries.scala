@@ -3,7 +3,6 @@ package it.pagopa.interop.dashboardmetricsreportgenerator.util
 import it.pagopa.interop.commons.cqrs.service.ReadModelService
 import it.pagopa.interop.commons.utils.TypeConversions.OptionOps
 import it.pagopa.interop.dashboardmetricsreportgenerator.models.{Agreement, Purpose}
-import it.pagopa.interop.dashboardmetricsreportgenerator.util.Error.TenantNotFound
 import it.pagopa.interop.tenantmanagement.model.persistence.JsonFormats._
 import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenant
 import org.mongodb.scala.Document
@@ -21,8 +20,8 @@ object ReadModelQueries {
     tenantId: UUID
   )(implicit ec: ExecutionContext, readModelService: ReadModelService): Future[PersistentTenant] =
     readModelService
-      .findOne[PersistentTenant](ApplicationConfiguration.tenantCollection, Filters.eq("data.id", tenantId.toString))
-      .flatMap(_.toFuture(TenantNotFound(tenantId)))
+      .findOne[PersistentTenant]("tenants", Filters.eq("data.id", tenantId.toString))
+      .flatMap(_.toFuture(new Exception(tenantId.toString())))
 
   def getActiveAgreements(offset: Int, limit: Int)(implicit
     ec: ExecutionContext,
@@ -73,7 +72,7 @@ object ReadModelQueries {
       )
 
     readModelService
-      .aggregate[Agreement](ApplicationConfiguration.agreementCollection, aggregation, offset, limit)
+      .aggregate[Agreement]("agreements", aggregation, offset, limit)
   }
 
   def getPurposes(offset: Int, limit: Int)(implicit
@@ -89,7 +88,7 @@ object ReadModelQueries {
         exclude("_id")
       )
     )
-    readModelService.aggregate[Purpose](ApplicationConfiguration.purposeCollection, Seq(projection), offset, limit)
+    readModelService.aggregate[Purpose]("purposes", Seq(projection), offset, limit)
   }
 
 }

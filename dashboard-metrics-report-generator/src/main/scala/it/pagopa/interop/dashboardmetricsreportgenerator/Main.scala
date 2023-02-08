@@ -3,49 +3,77 @@ package it.pagopa.interop.dashboardmetricsreportgenerator
 import com.typesafe.scalalogging.Logger
 import it.pagopa.interop.commons.cqrs.service.{MongoDbReadModelService, ReadModelService}
 import it.pagopa.interop.commons.files.service.FileManager
-import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
-import it.pagopa.interop.dashboardmetricsreportgenerator.report.AgreementRecord
-import it.pagopa.interop.dashboardmetricsreportgenerator.util._
-
+import it.pagopa.interop.dashboardmetricsreportgenerator.Configuration
+import it.pagopa.interop.commons.cqrs.model.ReadModelConfig
+import spray.json._
 import java.util.concurrent.{ExecutorService, Executors}
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.ExecutionContext.global
+import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Await
 import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
 
 object Main extends App {
 
-  implicit val logger: Logger = Logger(this.getClass)
+  val logger: Logger = Logger(this.getClass)
 
-  logger.info("Starting metrics report generator job")
+  logger.info("Starting dashboard metrics report generator job")
 
-  val blockingThreadPool: ExecutorService = Executors.newFixedThreadPool(Runtime.getRuntime.availableProcessors())
+  def getFileManager(): Future[(FileManager, ExecutorService)] = Future {
+    val blockingThreadPool: ExecutorService = Executors.newFixedThreadPool(Runtime.getRuntime.availableProcessors() - 1)
+    (FileManager.get(FileManager.S3)(ExecutionContext.fromExecutor(blockingThreadPool)), blockingThreadPool)
+  }(global)
 
-  implicit val blockingEC: ExecutionContextExecutor     = ExecutionContext.fromExecutor(blockingThreadPool)
-  implicit val fileManager: FileManager                 = FileManager.get(FileManager.S3)(blockingEC)
-  implicit val readModelService: ReadModelService       = new MongoDbReadModelService(
-    ApplicationConfiguration.readModelConfig
-  )
-  implicit val dateTimeSupplier: OffsetDateTimeSupplier = OffsetDateTimeSupplier
+  def getReadModel(readModelConfig: ReadModelConfig): Future[ReadModelService] = Future {
+    new MongoDbReadModelService(readModelConfig)
+  }(global)
 
-  val fileUtils: FileUtils     = new FileUtils(fileManager, dateTimeSupplier)
-  val fileWriters: FileWriters = new FileWriters(fileUtils, dateTimeSupplier)
+  def resources()(implicit
+    global: ExecutionContext
+  ): Future[(Configuration, FileManager, ReadModelService, ExecutorService)] = for {
+    config   <- Configuration.read()
+    (fm, es) <- getFileManager()
+    rm       <- getReadModel(config.readModel)
+  } yield (config, fm, rm, es)
 
-  def execution(): Future[Unit] = for {
-    activeAgreements <- Utils.retrieveAllActiveAgreements(ReadModelQueries.getActiveAgreements, 0, Seq.empty)
-    purposes         <- Utils.retrieveAllPurposes(ReadModelQueries.getPurposes, 0, Seq.empty)
-    agreementRecords = AgreementRecord.join(activeAgreements, purposes)
-    _ <- fileWriters.agreementsJsonWriter(agreementRecords)
-    _ <- fileWriters.agreementsCsvWriter(agreementRecords)
-  } yield ()
+  def saveIntoBucket(fm: FileManager, config: StorageBucketConfiguration, logger: Logger)(
+    data: DashboardData
+  ): Future[Unit] = {
+    logger.info(s"Saving dashboard information at ${config.bucket}/${config.path}/dashboard/dashboard.json")
+    fm.storeBytes(config.bucket, config.path)("dashboard", "dashboard.json", data.toJson.compactPrint.getBytes())
+      .map(_ => ())(scala.concurrent.ExecutionContext.parasitic)
+  }
 
-  def run(): Future[Unit] = execution()
-    .recover(ex => logger.error("There was an error while running the job", ex))(global)
-    .andThen { _ =>
-      fileManager.close()
-      readModelService.close()
-      blockingThreadPool.shutdown()
-    }(global)
+  def job(config: Configuration, fm: FileManager, rm: ReadModelService)(implicit
+    global: ExecutionContext
+  ): Future[Unit] = {
+    // * These are val on purpose, to let them start in parallel
+    val descriptorsF: Future[DescriptorsData] = Jobs.getDescriptorData(rm, config.collections)
+    val tenantsF: Future[TenantsData]         = Jobs.getTenantsData(rm, config.collections)
+    val agreementsF: Future[AgreementsData]   = Jobs.getAgreementsData(rm, config.collections)
+    val purposesF: Future[PurposesData]       = Jobs.getPurposesData(rm, config.collections)
+    val tokensF: Future[TokensData]           = Jobs.getTokensData(fm, config.tokensStorage)
 
-  Await.result(run(), Duration.Inf)
-  logger.info("Completed metrics report generator job")
+    for {
+      descriptors <- descriptorsF
+      tenants     <- tenantsF
+      agreements  <- agreementsF
+      purposes    <- purposesF
+      tokens      <- tokensF
+      data = DashboardData(descriptors, tenants, agreements, purposes, tokens)
+      _ <- saveIntoBucket(fm, config.storage, logger)(data)
+    } yield ()
+  }
+
+  def app()(implicit global: ExecutionContext): Future[Unit] = resources().flatMap { case (config, fm, rm, ec) =>
+    job(config, fm, rm).andThen { _ =>
+      fm.close()
+      rm.close()
+      ec.shutdown()
+    }
+  }
+
+  // !Add logging!
+
+  Await.ready(app()(global), Duration.Inf)
+  logger.info("Completed dashboard metrics report generator job")
 }
