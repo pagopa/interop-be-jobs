@@ -15,6 +15,7 @@ lazy val tokenDetailsPersisterModuleName             = "token-details-persister"
 lazy val tenantsCertifiedAttributesUpdaterModuleName = "tenants-certified-attributes-updater"
 lazy val metricsReportGeneratorModuleName            = "metrics-report-generator"
 lazy val paDigitaleReportGeneratorModuleName         = "padigitale-report-generator"
+lazy val dashboardMetricsGeneratorModuleName         = "dashboard-metrics-report-generator"
 
 cleanFiles += baseDirectory.value / attributesLoaderModuleName / "target"
 cleanFiles += baseDirectory.value / tokenDetailsPersisterModuleName / "target"
@@ -107,10 +108,26 @@ lazy val metricsReportGenerator = project
   .enablePlugins(JavaAppPackaging)
   .enablePlugins(DockerPlugin)
 
+lazy val dashboardMetricsGenerator = project
+  .in(file(dashboardMetricsGeneratorModuleName))
+  .settings(
+    name                 := "interop-be-dashboard-metrics-report-generator",
+    Docker / packageName := s"${name.value}",
+    sharedSettings,
+    libraryDependencies ++= Dependencies.Jars.dashboardMetricsReportGenerator,
+    publish / skip       := true,
+    publish              := (()),
+    publishLocal         := (()),
+    publishTo            := None
+  )
+  .enablePlugins(JavaAppPackaging)
+  .enablePlugins(DockerPlugin)
+
 lazy val jobs = project
   .in(file("."))
   .aggregate(
     paDigitaleReportGenerator,
+    dashboardMetricsGenerator,
     tenantsCertifiedAttributesUpdater,
     tokenDetailsPersister,
     attributesLoader,

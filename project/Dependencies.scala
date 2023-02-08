@@ -144,6 +144,20 @@ object Dependencies {
       pagopa.parser        % Compile
     )
 
+    lazy val dashboardMetricsReportGenerator: Seq[ModuleID] = Seq(
+      cats.core            % Compile,
+      circe.core           % Compile,
+      circe.generic        % Compile,
+      logback.classic      % Compile,
+      mongodb.scalaDriver  % Compile,
+      pagopa.catalogModels % Compile,
+      pagopa.tenantModels  % Compile,
+      pagopa.commons       % Compile,
+      pagopa.cqrs          % Compile,
+      pagopa.file          % Compile,
+      pagopa.parser        % Compile
+    )
+
     val paDigitaleReportGenerator: Seq[ModuleID] = Seq(
       cats.core            % Compile,
       circe.core           % Compile,
