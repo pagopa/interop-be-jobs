@@ -19,11 +19,19 @@ object Dependencies {
     lazy val core      = namespace %% "cats-core" % catsVersion
   }
 
-  private[this] object circe   {
+  private[this] object circe {
     lazy val namespace = "io.circe"
     lazy val core      = namespace %% "circe-core"    % circeVersion
     lazy val generic   = namespace %% "circe-generic" % circeVersion
+    lazy val parser    = namespace %% "circe-parser"  % circeVersion
+
   }
+
+  private[this] object courier {
+    lazy val namespace = "com.github.daddykotex"
+    lazy val mail      = namespace %% "courier" % courierVersion
+  }
+
   private[this] object jackson {
     lazy val namespace   = "com.fasterxml.jackson.core"
     lazy val core        = namespace % "jackson-core"         % jacksonVersion
@@ -157,6 +165,17 @@ object Dependencies {
       pagopa.file          % Compile,
       pagopa.parser        % Compile
     )
+
+    val certifiedMailSenderDependencies: Seq[ModuleID] =
+      Seq(
+        circe.core      % Compile,
+        circe.generic   % Compile,
+        circe.parser,
+        courier.mail    % Compile,
+        logback.classic % Compile,
+        pagopa.commons  % Compile,
+        pagopa.queue    % Compile
+      )
 
   }
 }
