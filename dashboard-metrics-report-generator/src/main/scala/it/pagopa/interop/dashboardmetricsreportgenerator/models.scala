@@ -13,7 +13,7 @@ final case class DashboardData(
   tokens: TokensData
 )
 
-final case class GraphElement(value: Int, time: OffsetDateTime)
+final case class GraphElement(time: OffsetDateTime, value: Int)
 final case class DescriptorsData(active: Int, producers: Int, graph: List[GraphElement])
 final case class TenantsData(total: Int, lastTwoWeeks: Int, graph: List[GraphElement])
 final case class AgreementsData(total: Int, consumers: Int, graph: List[GraphElement])
