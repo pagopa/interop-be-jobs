@@ -22,10 +22,8 @@ object Main extends App {
 
   def execution: Future[Unit] = job
     .run()
-    .recover { ex =>
-      logger.error("There was an error while running the job", ex)
-    }(global)
-    .andThen(_ => blockingThreadPool.shutdown())
+    .recover(ex => logger.error("There was an error while running the job", ex))
+    .andThen(_ => blockingThreadPool.shutdown())(global)
 
   Await.result(execution, Duration.Inf)
   logger.info("Completed certified mails sender job")

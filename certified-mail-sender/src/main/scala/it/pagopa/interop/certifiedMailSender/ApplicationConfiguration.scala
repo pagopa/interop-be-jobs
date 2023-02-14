@@ -6,7 +6,7 @@ object ApplicationConfiguration {
   val config: Config = ConfigFactory.load()
 
   val queueUrl: String         = config.getString("certified-mail-sender.queue.url")
-  val maxNumberOfMessages: Int = config.getInt("certified-mail-sender.queue.max-number-of-messages")
+  val maxConsumeBatchSize: Int = config.getInt("certified-mail-sender.queue.max-consume-batch-size")
   val visibilityTimeout: Int   = config.getInt("certified-mail-sender.queue.visibility-timeout-in-seconds")
 
   val serverAddress: String = config.getString("certified-mail-sender.smtp.address")

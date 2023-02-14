@@ -22,33 +22,49 @@ final case class JobExecution(sqsHandler: SQSHandler) {
     .ssl(true)()
 
   def run()(implicit blockingEC: ExecutionContextExecutor): Future[Unit] = sqsHandler.processAllRawMessages(
-    ApplicationConfiguration.maxNumberOfMessages,
+    ApplicationConfiguration.maxConsumeBatchSize,
     ApplicationConfiguration.visibilityTimeout
   ) { (messages, receipts) =>
-    logger.info(s"Sending ${messages.size} messages")
-    sendMessages(messages) >> deleteMessages(receipts)
+    logger.info(s"Processing ${messages.size} messages")
+    processMessage(messages) >>= deleteMessages(receipts)
   }
 
-  private def sendMessages(messages: List[String])(implicit ec: ExecutionContext): Future[Unit] =
-    Future.traverse(messages)(sendMail).void
+  private def processMessage(messages: List[String])(implicit ec: ExecutionContext): Future[List[InteropEnvelope]] =
+    Future.traverse(messages)(sendMail)
 
-  private def deleteMessages(receiptHandles: List[String])(implicit ec: ExecutionContext): Future[Unit] =
-    Future.traverse(receiptHandles)(sqsHandler.deleteMessage).void
+  private def deleteMessages(
+    receiptHandles: List[String]
+  )(implicit ec: ExecutionContext): List[InteropEnvelope] => Future[Unit] = envelopes => {
+    val deletions: List[(InteropEnvelope, String)] = envelopes.zip(receiptHandles)
+    Future
+      .traverse(deletions) { case (envelope, receipt) =>
+        logger.info(s"Deleting envelope ${envelope.id.toString} with receipt $receipt")
+        sqsHandler
+          .deleteMessage(receipt)
+          .recoverWith { ex =>
+            logger.error(
+              s"Error trying to delete envelope ${envelope.id.toString} with receipt $receipt - ${ex.getMessage}"
+            )
+            Future.failed(ex)
+          }
+      }
+      .void
+  }
 
-  private def sendMail(message: String)(implicit ec: ExecutionContext): Future[Unit] = for {
-    interopEnvelop <- parse(message).flatMap(_.as[InteropEnvelope]).toFuture
-    _ = logger.info(s"Sending envelope ${interopEnvelop.id.toString}")
-    result <- sendMail(interopEnvelop)
-    _ = logger.info(s"Envelope ${interopEnvelop.id.toString} sent")
-    _ = logger.info(s"Deleting envelope ${interopEnvelop.id.toString}")
-    _ = logger.info(s"Envelope ${interopEnvelop.id.toString} deleted")
-  } yield result
+  private def sendMail(message: String)(implicit mailer: Mailer, ec: ExecutionContext): Future[InteropEnvelope] = for {
+    interopEnvelope <- parse(message).flatMap(_.as[InteropEnvelope]).toFuture
+    _ = logger.info(s"Sending envelope ${interopEnvelope.id.toString}")
+    _ <- sendMail(interopEnvelope)
+    _ = logger.info(s"Envelope ${interopEnvelope.id.toString} sent")
+  } yield interopEnvelope
 
   private def sendMail(interopEnvelop: InteropEnvelope)(implicit mailer: Mailer, ec: ExecutionContext): Future[Unit] =
-    for {
-      envelope <- prepareEnvelope(interopEnvelop).toFuture
-      result   <- mailer(envelope)
-    } yield result
+    prepareEnvelope(interopEnvelop).toFuture
+      .flatMap(mailer(_))
+      .recoverWith { ex =>
+        logger.error(s"Error trying to send envelope ${interopEnvelop.id.toString} - ${ex.getMessage}")
+        Future.failed(ex)
+      }
 
   private def prepareEnvelope(envelop: InteropEnvelope): Either[Throwable, Envelope] = {
     val content: Content = envelop.attachments
