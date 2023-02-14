@@ -1,6 +1,6 @@
 package it.pagopa.interop.certifiedMailSender
 
-import cats.implicits.{catsSyntaxFlatMapOps, toFunctorOps, toTraverseOps}
+import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.Logger
 import courier._
 import io.circe.generic.auto._
@@ -26,7 +26,7 @@ final case class JobExecution(sqsHandler: SQSHandler) {
     ApplicationConfiguration.visibilityTimeout
   ) { (messages, receipts) =>
     logger.info(s"Processing ${messages.size} messages")
-    processMessage(messages) >>= deleteMessages(receipts)
+    processMessage(messages).flatMap(deleteMessages(receipts))
   }
 
   private def processMessage(messages: List[String])(implicit ec: ExecutionContext): Future[List[InteropEnvelope]] =
@@ -48,7 +48,7 @@ final case class JobExecution(sqsHandler: SQSHandler) {
             Future.failed(ex)
           }
       }
-      .void
+      .map(_ => logger.info(s"Message deleted from queue"))
   }
 
   private def sendMail(message: String)(implicit mailer: Mailer, ec: ExecutionContext): Future[InteropEnvelope] = for {
