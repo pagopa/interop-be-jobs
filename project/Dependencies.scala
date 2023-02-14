@@ -114,6 +114,7 @@ object Dependencies {
       "javax.annotation" % "javax.annotation-api" % "1.3.2" % "compile",
       //
       logback.classic    % Compile,
+      pagopa.commons     % Compile,
       pagopa.file        % Compile,
       pagopa.queue       % Compile
     )
@@ -127,6 +128,7 @@ object Dependencies {
       logback.classic           % Compile,
       mongodb.scalaDriver       % Compile,
       pagopa.attributeModels    % Compile,
+      pagopa.commons            % Compile,
       pagopa.partyRegistryProxy % Compile,
       pagopa.tenantModels       % Compile,
       pagopa.tenantProcess      % Compile,
