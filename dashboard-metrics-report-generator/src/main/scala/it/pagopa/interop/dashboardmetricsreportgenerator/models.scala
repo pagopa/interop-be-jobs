@@ -14,11 +14,11 @@ final case class DashboardData(
 )
 
 final case class GraphElement(time: OffsetDateTime, value: Int)
-final case class DescriptorsData(active: Int, producers: Int, graph: List[GraphElement])
-final case class TenantsData(total: Int, lastTwoWeeks: Int, graph: List[GraphElement])
-final case class AgreementsData(total: Int, consumers: Int, graph: List[GraphElement])
-final case class PurposesData(total: Int, consumersThatCreated: Int, graph: List[GraphElement])
-final case class TokensData(total: Int, lastThreeDays: Int, graph: List[GraphElement])
+final case class DescriptorsData(primary: Int, secondary: Int, graph: List[GraphElement])
+final case class TenantsData(primary: Int, secondary: Int, graph: List[GraphElement])
+final case class AgreementsData(primary: Int, secondary: Int, graph: List[GraphElement])
+final case class PurposesData(primary: Int, secondary: Int, graph: List[GraphElement])
+final case class TokensData(primary: Int, secondary: Int, graph: List[GraphElement])
 
 object DashboardData {
   private val timeFormat: DateTimeFormatter         = DateTimeFormatter.ISO_DATE_TIME

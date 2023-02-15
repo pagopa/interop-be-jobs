@@ -13,7 +13,7 @@
         <appender-ref ref="CONSOLE"/>
     </appender>
 
-    <logger name="it.pagopa.interop.metricsreportgenerator" level="INFO"/>
+    <logger name="it.pagopa.interop.dashboardmetricsreportgenerator" level="INFO"/>
     <logger name="org.mongodb" level="WARN"/>
 
     <root name="application" level="ERROR">

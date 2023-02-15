@@ -14,7 +14,7 @@ final case class Configuration(
   collections: CollectionsConfiguraion,
   partyManagement: PartyManagementConfiguration
 )
-final case class StorageBucketConfiguration(bucket: String, path: String)
+final case class StorageBucketConfiguration(bucket: String, filename: String)
 final case class TokensBucketConfiguration(bucket: String, basePath: String)
 final case class CollectionsConfiguraion(tenants: String, agreements: String, purposes: String, eservices: String)
 final case class PartyManagementConfiguration(

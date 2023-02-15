@@ -131,7 +131,7 @@ object Jobs {
   private def getAll[T](limit: Int)(get: (Int, Int) => Future[Seq[T]]): Future[Seq[T]] = {
     def go(offset: Int)(acc: Seq[T]): Future[Seq[T]] = {
       get(offset, limit).flatMap(xs =>
-        if (xs.size < limit) Future.successful(acc)
+        if (xs.size < limit) Future.successful(xs ++ acc)
         else go(offset + xs.size)(xs ++ acc)
       )
     }

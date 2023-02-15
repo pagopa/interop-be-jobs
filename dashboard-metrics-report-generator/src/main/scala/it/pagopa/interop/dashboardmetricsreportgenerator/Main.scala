@@ -11,6 +11,8 @@ import scala.concurrent.ExecutionContext.global
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
+import scala.annotation.nowarn
+import scala.util._
 
 object Main extends App {
 
@@ -40,12 +42,12 @@ object Main extends App {
 
   def saveIntoBucket(fm: FileManager, config: StorageBucketConfiguration, logger: Logger)(
     data: DashboardData
-  ): Future[Unit] = {
-    logger.info(s"Saving dashboard information at ${config.bucket}/${config.path}/dashboard/dashboard.json")
-    fm.storeBytes(config.bucket, config.path)("dashboard", "dashboard.json", data.toJson.compactPrint.getBytes())
-      .map(_ => ())(scala.concurrent.ExecutionContext.parasitic)
+  )(implicit global: ExecutionContext): Future[Unit] = {
+    logger.info(s"Saving dashboard information at ${config.bucket}/${config.filename}")
+    fm.storeBytes(config.bucket, "", config.filename)(data.toJson.compactPrint.getBytes()).map(_ => ())
   }
 
+  @nowarn
   def job(config: Configuration, fm: FileManager, rm: ReadModelService, pm: PartyManagementProxy)(implicit
     global: ExecutionContext
   ): Future[Unit] = {
@@ -58,24 +60,29 @@ object Main extends App {
 
     for {
       descriptors <- descriptorsF
-      tenants     <- tenantsF
-      agreements  <- agreementsF
-      purposes    <- purposesF
-      tokens      <- tokensF
+      // tenants     <- tenantsF
+      tenants = TenantsData(0, 0, Nil)
+      agreements <- agreementsF
+      purposes   <- purposesF
+      tokens     <- tokensF
       data = DashboardData(descriptors, tenants, agreements, purposes, tokens)
       _ <- saveIntoBucket(fm, config.storage, logger)(data)
     } yield ()
   }
 
-  def app()(implicit global: ExecutionContext): Future[Unit] = resources().flatMap { case (config, fm, rm, pm, ec) =>
-    job(config, fm, rm, pm)
-      .flatMap(_ => pm.close())
-      .andThen { _ =>
-        fm.close()
-        rm.close()
-        ec.shutdown()
-      }
-  }
+  def app()(implicit global: ExecutionContext): Future[Unit] = resources()
+    .flatMap { case (config, fm, rm, pm, ec) =>
+      job(config, fm, rm, pm)
+        .flatMap(_ => pm.close())
+        .andThen { _ =>
+          fm.close()
+          rm.close()
+          ec.shutdown()
+        }
+    }
+    .andThen { case Failure(e) =>
+      logger.error("Dashboard metrics report generator job got an error", e)
+    }
 
   Await.ready(app()(global), Duration.Inf)
   logger.info("Completed dashboard metrics report generator job")
