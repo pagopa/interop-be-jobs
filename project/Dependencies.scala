@@ -62,6 +62,15 @@ object Dependencies {
     lazy val tenantProcess =
       namespace %% "interop-be-tenant-process-client" % tenantProcessVersion
 
+    lazy val agreementsModels =
+      namespace %% "interop-be-agreement-management-models" % agreementManagementVersion
+
+    lazy val purposeModels =
+      namespace %% "interop-be-purpose-management-models" % purposeManagementVersion
+
+    lazy val partyManagement =
+      namespace %% "interop-selfcare-party-management-client" % partyManagementClientVersion
+
     lazy val commons = namespace %% "interop-commons-utils"         % commonsVersion
     lazy val jwt     = namespace %% "interop-commons-jwt"           % commonsVersion
     lazy val signer  = namespace %% "interop-commons-signer"        % commonsVersion
@@ -151,6 +160,9 @@ object Dependencies {
       mongodb.scalaDriver      % Compile,
       pagopa.catalogModels     % Compile,
       pagopa.tenantModels      % Compile,
+      pagopa.agreementsModels  % Compile,
+      pagopa.partyManagement   % Compile,
+      pagopa.purposeModels     % Compile,
       pagopa.commons           % Compile,
       pagopa.cqrs              % Compile,
       pagopa.file              % Compile

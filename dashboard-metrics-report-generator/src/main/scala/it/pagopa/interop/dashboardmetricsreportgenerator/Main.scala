@@ -23,17 +23,20 @@ object Main extends App {
     (FileManager.get(FileManager.S3)(ExecutionContext.fromExecutor(blockingThreadPool)), blockingThreadPool)
   }(global)
 
-  def getReadModel(readModelConfig: ReadModelConfig): Future[ReadModelService] = Future {
-    new MongoDbReadModelService(readModelConfig)
-  }(global)
+  def getReadModel(readModelConfig: ReadModelConfig): Future[ReadModelService] =
+    Future(new MongoDbReadModelService(readModelConfig))(global)
+
+  def getPartyManager(partyManagerConfig: PartyManagementConfiguration): Future[PartyManagementProxy] =
+    Future(new PartyManagementProxy(partyManagerConfig))(global)
 
   def resources()(implicit
     global: ExecutionContext
-  ): Future[(Configuration, FileManager, ReadModelService, ExecutorService)] = for {
+  ): Future[(Configuration, FileManager, ReadModelService, PartyManagementProxy, ExecutorService)] = for {
     config   <- Configuration.read()
     (fm, es) <- getFileManager()
     rm       <- getReadModel(config.readModel)
-  } yield (config, fm, rm, es)
+    pm       <- getPartyManager(config.partyManagement)
+  } yield (config, fm, rm, pm, es)
 
   def saveIntoBucket(fm: FileManager, config: StorageBucketConfiguration, logger: Logger)(
     data: DashboardData
@@ -43,12 +46,12 @@ object Main extends App {
       .map(_ => ())(scala.concurrent.ExecutionContext.parasitic)
   }
 
-  def job(config: Configuration, fm: FileManager, rm: ReadModelService)(implicit
+  def job(config: Configuration, fm: FileManager, rm: ReadModelService, pm: PartyManagementProxy)(implicit
     global: ExecutionContext
   ): Future[Unit] = {
     // * These are val on purpose, to let them start in parallel
     val descriptorsF: Future[DescriptorsData] = Jobs.getDescriptorData(rm, config.collections)
-    val tenantsF: Future[TenantsData]         = Jobs.getTenantsData(rm, config.collections)
+    val tenantsF: Future[TenantsData]         = Jobs.getTenantsData(rm, pm, config.collections)
     val agreementsF: Future[AgreementsData]   = Jobs.getAgreementsData(rm, config.collections)
     val purposesF: Future[PurposesData]       = Jobs.getPurposesData(rm, config.collections)
     val tokensF: Future[TokensData]           = Jobs.getTokensData(fm, config.tokensStorage)
@@ -64,15 +67,15 @@ object Main extends App {
     } yield ()
   }
 
-  def app()(implicit global: ExecutionContext): Future[Unit] = resources().flatMap { case (config, fm, rm, ec) =>
-    job(config, fm, rm).andThen { _ =>
-      fm.close()
-      rm.close()
-      ec.shutdown()
-    }
+  def app()(implicit global: ExecutionContext): Future[Unit] = resources().flatMap { case (config, fm, rm, pm, ec) =>
+    job(config, fm, rm, pm)
+      .flatMap(_ => pm.close())
+      .andThen { _ =>
+        fm.close()
+        rm.close()
+        ec.shutdown()
+      }
   }
-
-  // !Add logging!
 
   Await.ready(app()(global), Duration.Inf)
   logger.info("Completed dashboard metrics report generator job")

@@ -23,7 +23,7 @@ final case class TokensData(total: Int, lastThreeDays: Int, graph: List[GraphEle
 object DashboardData {
   private val timeFormat: DateTimeFormatter         = DateTimeFormatter.ISO_DATE_TIME
   implicit val odtf: RootJsonFormat[OffsetDateTime] = new RootJsonFormat[OffsetDateTime] {
-    // * This might throw but we'll never read a dashboard data json
+    // * This might throw but we'll never read a dashboard data json after all
     override def read(json: JsValue): OffsetDateTime = json match {
       case JsString(s) => OffsetDateTime.parse(s, timeFormat)
       case _           => throw new Exception()

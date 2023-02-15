@@ -11,9 +11,11 @@ object Versions {
 object PagopaVersions {
   lazy val attributeRegistryManagementVersion = "1.0.x-SNAPSHOT"
   lazy val catalogManagementVersion           = "1.0.x-SNAPSHOT"
-  lazy val commonsVersion                     = "1.0.x-SNAPSHOT"
+  lazy val commonsVersion                     = "new_s3_apis-SNAPSHOT"
   lazy val partyRegistryProxyVersion          = "1.0.x-SNAPSHOT"
   lazy val agreementManagementVersion         = "1.0.x-SNAPSHOT"
+  lazy val purposeManagementVersion           = "1.0.x-SNAPSHOT"
   lazy val tenantManagementVersion            = "1.0.x-SNAPSHOT"
   lazy val tenantProcessVersion               = "1.0.x-SNAPSHOT"
+  lazy val partyManagementClientVersion       = "1.0.x-SNAPSHOT"
 }

@@ -11,11 +11,17 @@ final case class Configuration(
   storage: StorageBucketConfiguration,
   tokensStorage: TokensBucketConfiguration,
   readModel: ReadModelConfig,
-  collections: CollectionsConfiguraion
+  collections: CollectionsConfiguraion,
+  partyManagement: PartyManagementConfiguration
 )
 final case class StorageBucketConfiguration(bucket: String, path: String)
 final case class TokensBucketConfiguration(bucket: String, basePath: String)
 final case class CollectionsConfiguraion(tenants: String, agreements: String, purposes: String, eservices: String)
+final case class PartyManagementConfiguration(
+  partyManagementUrl: String,
+  partyManagementApiKey: String,
+  interopProductName: String
+)
 
 object Configuration {
   def read(): Future[Configuration] =
