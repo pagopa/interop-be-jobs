@@ -86,14 +86,15 @@ object Dependencies {
   }
 
   object Jars {
-    lazy val overrides: Seq[ModuleID]        =
+    lazy val overrides: Seq[ModuleID] =
       Seq(
         jackson.annotations % Compile,
         jackson.core        % Compile,
         jackson.databind    % Compile,
         jackson.scalaModule % Compile,
         pagopa.commons      % Compile
-      )
+      ).map(_.withSources.withJavadoc)
+
     lazy val attributesLoader: Seq[ModuleID] = Seq(
       // For making Java 12 happy
       "javax.annotation"                 % "javax.annotation-api" % "1.3.2" % "compile",
@@ -108,7 +109,7 @@ object Dependencies {
       pagopa.commons                     % Compile,
       pagopa.jwt                         % Compile,
       pagopa.signer                      % Compile
-    )
+    ).map(_.withSources.withJavadoc)
 
     lazy val tokenDetailsPersister: Seq[ModuleID] = Seq(
       // For making Java 12 happy
@@ -117,7 +118,7 @@ object Dependencies {
       logback.classic    % Compile,
       pagopa.file        % Compile,
       pagopa.queue       % Compile
-    )
+    ).map(_.withSources.withJavadoc)
 
     lazy val tenantsCertifiedAttributesUpdater: Seq[ModuleID] = Seq(
       // For making Java 12 happy
@@ -134,7 +135,7 @@ object Dependencies {
       pagopa.jwt                % Compile,
       pagopa.signer             % Compile,
       scalameta.munit           % Test
-    )
+    ).map(_.withSources.withJavadoc)
 
     lazy val metricsReportGenerator: Seq[ModuleID] = Seq(
       // For making Java 12 happy
@@ -151,7 +152,7 @@ object Dependencies {
       pagopa.cqrs          % Compile,
       pagopa.file          % Compile,
       pagopa.parser        % Compile
-    )
+    ).map(_.withSources.withJavadoc)
 
     lazy val dashboardMetricsReportGenerator: Seq[ModuleID] = Seq(
       cats.core                % Compile,
@@ -166,7 +167,7 @@ object Dependencies {
       pagopa.commons           % Compile,
       pagopa.cqrs              % Compile,
       pagopa.file              % Compile
-    )
+    ).map(_.withSources.withJavadoc)
 
     val paDigitaleReportGenerator: Seq[ModuleID] = Seq(
       cats.core            % Compile,
@@ -180,7 +181,7 @@ object Dependencies {
       pagopa.cqrs          % Compile,
       pagopa.file          % Compile,
       pagopa.parser        % Compile
-    )
+    ).map(_.withSources.withJavadoc)
 
   }
 }

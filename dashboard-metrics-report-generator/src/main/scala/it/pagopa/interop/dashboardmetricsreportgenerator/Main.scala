@@ -11,7 +11,6 @@ import scala.concurrent.ExecutionContext.global
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
-import scala.annotation.nowarn
 import scala.util._
 
 object Main extends App {
@@ -47,7 +46,6 @@ object Main extends App {
     fm.storeBytes(config.bucket, "", config.filename)(data.toJson.compactPrint.getBytes()).map(_ => ())
   }
 
-  @nowarn
   def job(config: Configuration, fm: FileManager, rm: ReadModelService, pm: PartyManagementProxy)(implicit
     global: ExecutionContext
   ): Future[Unit] = {
@@ -60,11 +58,10 @@ object Main extends App {
 
     for {
       descriptors <- descriptorsF
-      // tenants     <- tenantsF
-      tenants = TenantsData(0, 0, Nil)
-      agreements <- agreementsF
-      purposes   <- purposesF
-      tokens     <- tokensF
+      tenants     <- tenantsF
+      agreements  <- agreementsF
+      purposes    <- purposesF
+      tokens      <- tokensF
       data = DashboardData(descriptors, tenants, agreements, purposes, tokens)
       _ <- saveIntoBucket(fm, config.storage, logger)(data)
     } yield ()

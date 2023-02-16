@@ -51,7 +51,7 @@ object Jobs {
       .flatMap { tenants =>
         for {
           selfcareIds     <- Future.traverse(tenants.flatMap(_.selfcareId.toList).toList)(_.toFutureUUID)
-          onBoardingDates <- Future.traverse(selfcareIds)(partyManagementProxy.getOnboardingDate)
+          onBoardingDates <- Future.parCollectWithLatch(10)(selfcareIds)(partyManagementProxy.getOnboardingDate)
         } yield onBoardingDates
       }
       .map { onBoardingDates =>
