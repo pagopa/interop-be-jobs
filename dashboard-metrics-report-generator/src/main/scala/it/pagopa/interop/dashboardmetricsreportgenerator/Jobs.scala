@@ -37,7 +37,7 @@ object Jobs {
         val producersWithAnActiveEservice: Int = descriptorAndProducerId.distinctBy(_._2).size
 
         val descriptorsOverTime: List[GraphElement] =
-          Graph.getGraphPoints(10)(descriptorAndProducerId.map({ case (d, _) => (d.createdAt, 1) }))
+          Graph.getGraphPoints(10)(descriptorAndProducerId.map({ case (d, _) => d.createdAt }))
 
         DescriptorsData(activeDescriptors, producersWithAnActiveEservice, descriptorsOverTime)
     }
@@ -59,7 +59,7 @@ object Jobs {
         TenantsData(
           onBoardingDates.size,
           onBoardingDates.count(_.isAfter(twoWeeksAgo)),
-          Graph.getGraphPoints(10)(onBoardingDates.map((_, 1)))
+          Graph.getGraphPoints(10)(onBoardingDates)
         )
       }
 
@@ -77,7 +77,7 @@ object Jobs {
         val differentConsumers: Int       = agreements.filter(hasEverBeenActive).map(_.producerId).distinct.size
 
         val activeAgreementsOverTime: List[GraphElement] = Graph.getGraphPoints(10)(
-          agreements.filter(hasEverBeenActive).map(a => (a.stamps.activation.map(_.when).getOrElse(a.createdAt), 1))
+          agreements.filter(hasEverBeenActive).map(a => a.stamps.activation.map(_.when).getOrElse(a.createdAt))
         )
 
         AgreementsData(actuallyActiveAgreements, differentConsumers, activeAgreementsOverTime)
@@ -97,7 +97,7 @@ object Jobs {
         val differentConsumers: Int = publishedPurposes.map(_.consumerId).distinct.size
 
         val publishedPurposesOverTime: List[GraphElement] =
-          Graph.getGraphPoints(10)(publishedPurposes.map(p => (p.createdAt, 1)))
+          Graph.getGraphPoints(10)(publishedPurposes.map(_.createdAt))
 
         PurposesData(publishedPurposes.size, differentConsumers, publishedPurposesOverTime)
     }
@@ -120,11 +120,7 @@ object Jobs {
       .flatMap(tokens => Future.traverse(tokens)(getIssueDate))
       .map { issueTimes =>
         val twoWeeksAgo: OffsetDateTime = OffsetDateTime.now().minusDays(14)
-        TokensData(
-          issueTimes.size,
-          issueTimes.count(_.isAfter(twoWeeksAgo)),
-          Graph.getGraphPoints(10)(issueTimes.map((_, 1)))
-        )
+        TokensData(issueTimes.size, issueTimes.count(_.isAfter(twoWeeksAgo)), Graph.getGraphPoints(10)(issueTimes))
       }
   }
 
