@@ -20,7 +20,7 @@ object Main extends App {
   logger.info("Starting dashboard metrics report generator job")
 
   def getFileManager(): Future[(FileManager, ExecutorService)] = Future {
-    val blockingThreadPool: ExecutorService = Executors.newFixedThreadPool(Runtime.getRuntime.availableProcessors() - 1)
+    val blockingThreadPool: ExecutorService = Executors.newFixedThreadPool(Runtime.getRuntime.availableProcessors())
     (FileManager.get(FileManager.S3)(ExecutionContext.fromExecutor(blockingThreadPool)), blockingThreadPool)
   }(global)
 
