@@ -8,7 +8,9 @@ object Graph {
   def getGraphPoints(n: Int)(xs: Seq[OffsetDateTime]): List[GraphElement] = {
     val groupedDateValues: Seq[(OffsetDateTime, Int)] = groupValuesByDay(xs.sorted)
     val cumulativeValues: List[(OffsetDateTime, Int)] = cumulative(groupedDateValues.toList)
-    takeEvenlyDistributedValues[Int](n)(cumulativeValues).map(Function.tupled(GraphElement.apply))
+    takeEvenlyDistributedValues[Int](n)(cumulativeValues)
+      .sortBy { case (time, _) => time }
+      .map(Function.tupled(GraphElement.apply))
   }
 
   def groupValuesByDay(xs: Seq[OffsetDateTime]): Seq[(OffsetDateTime, Int)] = xs
