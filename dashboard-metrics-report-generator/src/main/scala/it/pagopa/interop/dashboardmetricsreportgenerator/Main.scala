@@ -70,15 +70,15 @@ object Main extends App {
   def app()(implicit global: ExecutionContext): Future[Unit] = resources()
     .flatMap { case (config, fm, rm, pm, ec) =>
       job(config, fm, rm, pm)
-        .flatMap(_ => pm.close())
+        .andThen { case Failure(e) =>
+          logger.error("Dashboard metrics report generator job got an error", e)
+        }
+        .transformWith(_ => pm.close())
         .andThen { _ =>
           fm.close()
           rm.close()
           ec.shutdown()
         }
-    }
-    .andThen { case Failure(e) =>
-      logger.error("Dashboard metrics report generator job got an error", e)
     }
 
   Await.ready(app()(global), Duration.Inf)
