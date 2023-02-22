@@ -12,10 +12,17 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 import scala.util._
+import it.pagopa.interop.commons.logging._
+import com.typesafe.scalalogging.LoggerTakingImplicit
+import java.util.UUID
+import it.pagopa.interop.commons.utils.CORRELATION_ID_HEADER
 
 object Main extends App {
 
-  val logger: Logger = Logger(this.getClass)
+  val logger: LoggerTakingImplicit[ContextFieldsToLog] =
+    Logger.takingImplicit[ContextFieldsToLog](this.getClass.getCanonicalName())
+
+  implicit val context: List[(String, String)] = (CORRELATION_ID_HEADER -> UUID.randomUUID().toString()) :: Nil
 
   logger.info("Starting dashboard metrics report generator job")
 
@@ -39,7 +46,7 @@ object Main extends App {
     pm       <- getPartyManager(config.partyManagement)
   } yield (config, fm, rm, pm, es)
 
-  def saveIntoBucket(fm: FileManager, config: StorageBucketConfiguration, logger: Logger)(
+  def saveIntoBucket(fm: FileManager, config: StorageBucketConfiguration)(
     data: DashboardData
   )(implicit global: ExecutionContext): Future[Unit] = {
     logger.info(s"Saving dashboard information at ${config.bucket}/${config.filename}")
@@ -63,7 +70,7 @@ object Main extends App {
       purposes    <- purposesF
       tokens      <- tokensF
       data = DashboardData(descriptors, tenants, agreements, purposes, tokens)
-      _ <- saveIntoBucket(fm, config.storage, logger)(data)
+      _ <- saveIntoBucket(fm, config.storage)(data)
     } yield ()
   }
 

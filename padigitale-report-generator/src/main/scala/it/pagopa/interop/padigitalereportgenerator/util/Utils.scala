@@ -1,6 +1,7 @@
 package it.pagopa.interop.padigitalereportgenerator.util
 
-import com.typesafe.scalalogging.Logger
+import it.pagopa.interop.commons.logging._
+import com.typesafe.scalalogging.LoggerTakingImplicit
 import it.pagopa.interop.catalogmanagement.model.{CatalogDescriptor, CatalogItem, Draft}
 import it.pagopa.interop.commons.cqrs.service.ReadModelService
 import it.pagopa.interop.commons.files.service.FileManager
@@ -22,7 +23,11 @@ object Utils {
     eServicesRetriever: (Int, Int) => Future[Seq[CatalogItem]],
     offset: Int,
     acc: Seq[CatalogItem]
-  )(implicit logger: Logger, ex: ExecutionContext): Future[Seq[CatalogItem]] =
+  )(implicit
+    logger: LoggerTakingImplicit[ContextFieldsToLog],
+    context: List[(String, String)],
+    ex: ExecutionContext
+  ): Future[Seq[CatalogItem]] =
     eServicesRetriever(offset, maxLimit).flatMap(eServices =>
       if (eServices.isEmpty) {
         logger.info(s"EServices load completed size ${acc.size}")
