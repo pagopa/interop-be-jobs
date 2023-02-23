@@ -12,7 +12,8 @@ final case class Configuration(
   tokensStorage: TokensBucketConfiguration,
   readModel: ReadModelConfig,
   collections: CollectionsConfiguraion,
-  partyManagement: PartyManagementConfiguration
+  partyManagement: PartyManagementConfiguration,
+  overrides: Overrides
 )
 final case class StorageBucketConfiguration(bucket: String, filename: String)
 final case class TokensBucketConfiguration(bucket: String, basePath: String)
@@ -22,6 +23,7 @@ final case class PartyManagementConfiguration(
   partyManagementApiKey: String,
   interopProductName: String
 )
+final case class Overrides(totalTenants: Option[Int])
 
 object Configuration {
   def read(): Future[Configuration] =

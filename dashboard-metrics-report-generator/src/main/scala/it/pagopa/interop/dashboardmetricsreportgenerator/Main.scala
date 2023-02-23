@@ -58,7 +58,7 @@ object Main extends App {
   ): Future[Unit] = {
     // * These are val on purpose, to let them start in parallel
     val descriptorsF: Future[DescriptorsData] = Jobs.getDescriptorData(rm, config.collections)
-    val tenantsF: Future[TenantsData]         = Jobs.getTenantsData(rm, pm, config.collections)
+    val tenantsF: Future[TenantsData]         = Jobs.getTenantsData(rm, pm, config.collections, config.overrides)
     val agreementsF: Future[AgreementsData]   = Jobs.getAgreementsData(rm, config.collections)
     val purposesF: Future[PurposesData]       = Jobs.getPurposesData(rm, config.collections)
     val tokensF: Future[TokensData]           = Jobs.getTokensData(fm, config.tokensStorage)

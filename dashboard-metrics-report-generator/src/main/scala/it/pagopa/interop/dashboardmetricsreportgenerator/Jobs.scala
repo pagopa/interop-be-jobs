@@ -18,6 +18,7 @@ import it.pagopa.interop.commons.utils.TypeConversions._
 import java.time.OffsetDateTime
 import spray.json._
 import it.pagopa.interop.commons.utils.errors.GenericComponentErrors.GenericError
+import java.time.ZoneId
 
 object Jobs {
 
@@ -47,7 +48,8 @@ object Jobs {
   def getTenantsData(
     readModel: ReadModelService,
     partyManagementProxy: PartyManagementProxy,
-    config: CollectionsConfiguraion
+    config: CollectionsConfiguraion,
+    overrides: Overrides
   ): Future[TenantsData] =
     getAll(50)(readModel.find[TenantManagement.PersistentTenant](config.tenants, Filters.empty(), _, _))
       .flatMap { tenants =>
@@ -59,10 +61,9 @@ object Jobs {
         } yield onBoardingDates
       }
       .map { onBoardingDates =>
-        val twoWeeksAgo: OffsetDateTime = OffsetDateTime.now().minusDays(14)
         TenantsData(
+          overrides.totalTenants.getOrElse(onBoardingDates.size),
           onBoardingDates.size,
-          onBoardingDates.count(_.isAfter(twoWeeksAgo)),
           Graph.getGraphPoints(10)(onBoardingDates)
         )
       }
@@ -106,7 +107,7 @@ object Jobs {
         PurposesData(publishedPurposes.size, differentConsumers, publishedPurposesOverTime)
     }
 
-  def getTokensData(readModel: FileManager, config: TokensBucketConfiguration): Future[TokensData] = {
+  def getTokensData(fileManager: FileManager, config: TokensBucketConfiguration): Future[TokensData] = {
 
     def getIssueDate(token: String): Future[OffsetDateTime] =
       Future(token.parseJson.asJsObject)
@@ -116,13 +117,13 @@ object Jobs {
           case _               => Future.failed(GenericError("issuedAt should be a number"))
         }
 
-    def allTokensPaths(): Future[List[readModel.StorageFilePath]] =
-      readModel.listFiles(config.bucket)(config.basePath)
+    def allTokensPaths(): Future[List[fileManager.StorageFilePath]] =
+      fileManager.listFiles(config.bucket)(config.basePath)
 
     def getTokens(path: String): Future[List[String]] =
-      readModel.getFile(config.bucket)(path).map(bs => new String(bs).split('\n').toList)
+      fileManager.getFile(config.bucket)(path).map(bs => new String(bs).split('\n').toList)
 
-    val twoWeeksAgo: OffsetDateTime = OffsetDateTime.now().minusDays(14)
+    val twoWeeksAgo: OffsetDateTime = OffsetDateTime.now(ZoneId.of("UTC")).minusDays(14)
 
     allTokensPaths()
       .flatMap(paths =>
