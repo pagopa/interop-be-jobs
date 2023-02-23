@@ -14,10 +14,12 @@ import it.pagopa.interop.tenantscertifiedattributesupdater.service.{PartyRegistr
 import it.pagopa.interop.tenantscertifiedattributesupdater.system.ApplicationConfiguration
 
 import scala.concurrent.ExecutionContextExecutor
+import it.pagopa.interop.commons.utils.CORRELATION_ID_HEADER
+import java.util.UUID
 
 trait Dependencies {
 
-  implicit val contexts: Seq[(String, String)] = Seq.empty
+  implicit val contexts: Seq[(String, String)] = (CORRELATION_ID_HEADER -> UUID.randomUUID().toString()) :: Nil
 
   val jwtConfig: JWTInternalTokenConfig = JWTConfiguration.jwtInternalTokenConfig
 

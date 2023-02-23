@@ -18,8 +18,11 @@ import it.pagopa.interop.commons.utils.TypeConversions._
 import java.time.OffsetDateTime
 import spray.json._
 import it.pagopa.interop.commons.utils.errors.GenericComponentErrors.GenericError
+import java.time.ZoneId
 
 object Jobs {
+
+  private val maxParallelism: Int = 1.max(Runtime.getRuntime().availableProcessors() - 1)
 
   def getDescriptorData(readModel: ReadModelService, config: CollectionsConfiguraion): Future[DescriptorsData] =
     getAll(50)(readModel.find[CatalogManagement.CatalogItem](config.eservices, Filters.empty(), _, _)).map {
@@ -45,20 +48,22 @@ object Jobs {
   def getTenantsData(
     readModel: ReadModelService,
     partyManagementProxy: PartyManagementProxy,
-    config: CollectionsConfiguraion
+    config: CollectionsConfiguraion,
+    overrides: Overrides
   ): Future[TenantsData] =
     getAll(50)(readModel.find[TenantManagement.PersistentTenant](config.tenants, Filters.empty(), _, _))
       .flatMap { tenants =>
         for {
           selfcareIds     <- Future.traverse(tenants.flatMap(_.selfcareId.toList).toList)(_.toFutureUUID)
-          onBoardingDates <- Future.parCollectWithLatch(10)(selfcareIds)(partyManagementProxy.getOnboardingDate)
+          onBoardingDates <- Future.parCollectWithLatch(maxParallelism)(selfcareIds)(
+            partyManagementProxy.getOnboardingDate
+          )
         } yield onBoardingDates
       }
       .map { onBoardingDates =>
-        val twoWeeksAgo: OffsetDateTime = OffsetDateTime.now().minusDays(14)
         TenantsData(
+          overrides.totalTenants.getOrElse(onBoardingDates.size),
           onBoardingDates.size,
-          onBoardingDates.count(_.isAfter(twoWeeksAgo)),
           Graph.getGraphPoints(10)(onBoardingDates)
         )
       }
@@ -102,24 +107,33 @@ object Jobs {
         PurposesData(publishedPurposes.size, differentConsumers, publishedPurposesOverTime)
     }
 
-  def getTokensData(readModel: FileManager, config: TokensBucketConfiguration): Future[TokensData] = {
+  def getTokensData(fileManager: FileManager, config: TokensBucketConfiguration): Future[TokensData] = {
 
     def getIssueDate(token: String): Future[OffsetDateTime] =
-      Future(token.parseJson)
-        .flatMap(js => Future(js.asJsObject))
+      Future(token.parseJson.asJsObject)
         .flatMap(_.fields.get("issuedAt").toFuture(GenericError("Missing issuedAt field in token")))
         .flatMap {
-          case JsNumber(value) => Future.successful(value.toLong)
+          case JsNumber(value) => value.toLong.toOffsetDateTime.toFuture
           case _               => Future.failed(GenericError("issuedAt should be a number"))
         }
-        .flatMap(_.toOffsetDateTime.toFuture)
 
-    readModel
-      .getAllFiles(config.bucket)(config.basePath)
-      .map(_.values.flatMap(new String(_).split('\n')).toList)
-      .flatMap(tokens => Future.traverse(tokens)(getIssueDate))
-      .map { issueTimes =>
-        val twoWeeksAgo: OffsetDateTime = OffsetDateTime.now().minusDays(14)
+    def allTokensPaths(): Future[List[fileManager.StorageFilePath]] =
+      fileManager.listFiles(config.bucket)(config.basePath)
+
+    def getTokens(path: String): Future[List[String]] =
+      fileManager.getFile(config.bucket)(path).map(bs => new String(bs).split('\n').toList)
+
+    val twoWeeksAgo: OffsetDateTime = OffsetDateTime.now(ZoneId.of("UTC")).minusDays(14)
+
+    allTokensPaths()
+      .flatMap(paths =>
+        Future.traverseWithLatch(maxParallelism)(paths)(path =>
+          // * This is safe to do w/o max parallelism as it's not blocking
+          getTokens(path).flatMap(tokens => Future.traverse(tokens)(getIssueDate))
+        )
+      )
+      .map { xs =>
+        val issueTimes: List[OffsetDateTime] = xs.flatten
         TokensData(issueTimes.size, issueTimes.count(_.isAfter(twoWeeksAgo)), Graph.getGraphPoints(10)(issueTimes))
       }
   }
