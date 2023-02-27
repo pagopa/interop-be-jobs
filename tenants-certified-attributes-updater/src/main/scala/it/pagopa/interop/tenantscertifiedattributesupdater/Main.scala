@@ -62,13 +62,16 @@ object Main extends App with Dependencies {
   val result: Future[Unit] = for {
     bearer                <- generateBearer(jwtConfig, signerService(blockingEc))
     (attributes, tenants) <- getAttributesAndTenants
-    attributesIndex       = createAttributesIndex(attributes)
-    institutionsRetriever = partyRegistryProxyService.getInstitutions(bearer)(_, _)
-    tenantUpserter        = tenantProcessService.upsertTenant(bearer)(_)
+    attributesIndex           = createAttributesIndex(attributes)
+    institutionsRetriever     = partyRegistryProxyService.getInstitutions(bearer)(_, _)
+    tenantUpserter            = tenantProcessService.upsertTenant(bearer)(_)
+    revokerCertifiedAttribute = tenantProcessService.revokeCertifiedAttribute(bearer)(_, _)
     institutions <- retrieveAllInstitutions(institutionsRetriever, initPage, List.empty)
     action = createAction(institutions, tenants.toList, attributesIndex)
     _ <- processActivations(tenantUpserter, action.activations.grouped(groupDimension).toList)
     _ = logger.info(s"Activated tenants/attributes")
+    _ <- processRevocations(revokerCertifiedAttribute, action.revocations.toList)
+    _ = logger.info(s"Revoked tenants/attributes")
   } yield ()
 
   result.onComplete {
