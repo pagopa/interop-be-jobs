@@ -15,6 +15,7 @@ import java.util.UUID
 import it.pagopa.interop.commons.logging._
 import com.typesafe.scalalogging.LoggerTakingImplicit
 import it.pagopa.interop.commons.utils.CORRELATION_ID_HEADER
+import it.pagopa.interop.commons.cqrs.model.ReadModelConfig
 
 object Main extends App {
 
@@ -25,21 +26,23 @@ object Main extends App {
 
   logger.info("Starting metrics report generator job")
 
-  val blockingThreadPool: ExecutorService = Executors.newFixedThreadPool(Runtime.getRuntime.availableProcessors())
+  val blockingThreadPool: ExecutorService         =
+    Executors.newFixedThreadPool(1.max(Runtime.getRuntime.availableProcessors() - 1))
+  val blockingEC: ExecutionContextExecutor        = ExecutionContext.fromExecutor(blockingThreadPool)
+  val fileManager: FileManager                    = FileManager.get(FileManager.S3)(blockingEC)
+  implicit val readModelService: ReadModelService = new MongoDbReadModelService(ReadModelConfig("", ""))
 
-  implicit val blockingEC: ExecutionContextExecutor     = ExecutionContext.fromExecutor(blockingThreadPool)
-  implicit val fileManager: FileManager                 = FileManager.get(FileManager.S3)(blockingEC)
-  implicit val readModelService: ReadModelService       = new MongoDbReadModelService(
-    ApplicationConfiguration.readModelConfig
-  )
-  implicit val dateTimeSupplier: OffsetDateTimeSupplier = OffsetDateTimeSupplier
-
-  val fileUtils: FileUtils     = new FileUtils(fileManager, dateTimeSupplier)
-  val fileWriters: FileWriters = new FileWriters(fileUtils, dateTimeSupplier)
+  val fileUtils: FileUtils = new FileUtils(fileManager, OffsetDateTimeSupplier)
 
   def execution(): Future[Unit] = for {
-    activeAgreements <- Utils.retrieveAllActiveAgreements(ReadModelQueries.getActiveAgreements, 0, Seq.empty)
-    purposes         <- Utils.retrieveAllPurposes(ReadModelQueries.getPurposes, 0, Seq.empty)
+    config <- Configuration.read()
+    fileWriters = new FileWriters(fileUtils, config.agreements, OffsetDateTimeSupplier)
+    activeAgreements <- Utils.retrieveAllActiveAgreements(
+      ReadModelQueries.getActiveAgreements(_, _, config.collections),
+      0,
+      Seq.empty
+    )
+    purposes         <- Utils.retrieveAllPurposes(ReadModelQueries.getPurposes(_, _, config.collections), 0, Seq.empty)
     agreementRecords = AgreementRecord.join(activeAgreements, purposes)
     _ <- fileWriters.agreementsJsonWriter(agreementRecords)
     _ <- fileWriters.agreementsCsvWriter(agreementRecords)

@@ -17,14 +17,15 @@ import scala.concurrent.{ExecutionContext, Future}
 
 object ReadModelQueries {
 
-  def getTenant(
-    tenantId: UUID
-  )(implicit ec: ExecutionContext, readModelService: ReadModelService): Future[PersistentTenant] =
+  def getTenant()(tenantId: UUID, collections: CollectionsConfiguration)(implicit
+    ec: ExecutionContext,
+    readModelService: ReadModelService
+  ): Future[PersistentTenant] =
     readModelService
-      .findOne[PersistentTenant](ApplicationConfiguration.tenantCollection, Filters.eq("data.id", tenantId.toString))
+      .findOne[PersistentTenant](collections.tenants, Filters.eq("data.id", tenantId.toString))
       .flatMap(_.toFuture(TenantNotFound(tenantId)))
 
-  def getActiveAgreements(offset: Int, limit: Int)(implicit
+  def getActiveAgreements(offset: Int, limit: Int, collections: CollectionsConfiguration)(implicit
     ec: ExecutionContext,
     readModelService: ReadModelService
   ): Future[Seq[Agreement]] = {
@@ -72,11 +73,10 @@ object ReadModelQueries {
         secondProjection
       )
 
-    readModelService
-      .aggregate[Agreement](ApplicationConfiguration.agreementCollection, aggregation, offset, limit)
+    readModelService.aggregate[Agreement](collections.agreements, aggregation, offset, limit)
   }
 
-  def getPurposes(offset: Int, limit: Int)(implicit
+  def getPurposes(offset: Int, limit: Int, collections: CollectionsConfiguration)(implicit
     ec: ExecutionContext,
     readModelService: ReadModelService
   ): Future[Seq[Purpose]] = {
@@ -89,7 +89,7 @@ object ReadModelQueries {
         exclude("_id")
       )
     )
-    readModelService.aggregate[Purpose](ApplicationConfiguration.purposeCollection, Seq(projection), offset, limit)
+    readModelService.aggregate[Purpose](collections.purposes, Seq(projection), offset, limit)
   }
 
 }
