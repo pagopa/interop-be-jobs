@@ -163,22 +163,16 @@ object Utils {
     revoker: (PersistentExternalId, AttributeInfo) => Future[Unit],
     list: List[(PersistentExternalId, List[AttributeInfo])]
   )(implicit
-    actorSystem: ActorSystem[_],
     contexts: Seq[(String, String)],
     executionContext: ExecutionContext,
     logger: LoggerTakingImplicit[ContextFieldsToLog]
-  ): Future[Unit] = list match {
-    case Nil       => Future.unit
-    case xs :: Nil => {
-      logger.info(s"Processing tenant ${xs._1} with attributes ${xs._2}")
-      Future.traverse(xs._2)(revoker(xs._1, _)).void
-    }
-    case xs :: xss =>
-      logger.info(s"Processing tenant ${xs._1} with attributes ${xs._2}")
-      Future.traverse(xs._2)(revoker(xs._1, _)).flatMap { _ =>
-        processRevocations(revoker, xss)
+  ): Future[Unit] =
+    Future
+      .traverse(list) { case (externalId, attributeInfos) =>
+        logger.info(s"Processing tenant ${externalId} with attributes ${attributeInfos.mkString(",")}")
+        Future.traverse(attributeInfos)(revoker(externalId, _))
       }
-  }
+      .map(_ => ())
 
   def shutdown()(implicit client: MongoClient, actorSystem: ActorSystem[_]): Unit = {
     client.close()
