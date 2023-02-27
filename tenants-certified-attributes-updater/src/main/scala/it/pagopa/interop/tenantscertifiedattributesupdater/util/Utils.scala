@@ -14,6 +14,7 @@ import it.pagopa.interop.tenantmanagement.model.tenant.{PersistentExternalId, Pe
 import it.pagopa.interop.tenantprocess.client.model.{ExternalId, InternalAttributeSeed, InternalTenantSeed}
 import it.pagopa.interop.tenantscertifiedattributesupdater.system.ApplicationConfiguration
 import org.mongodb.scala.MongoClient
+import it.pagopa.interop.commons.utils.TypeConversions._
 
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
@@ -168,9 +169,9 @@ object Utils {
     logger: LoggerTakingImplicit[ContextFieldsToLog]
   ): Future[Unit] =
     Future
-      .traverse(list) { case (externalId, attributeInfos) =>
+      .traverseWithLatch(10)(list) { case (externalId, attributeInfos) =>
         logger.info(s"Processing tenant ${externalId} with attributes ${attributeInfos.mkString(",")}")
-        Future.traverse(attributeInfos)(revoker(externalId, _))
+        Future.traverseWithLatch(10)(attributeInfos)(revoker(externalId, _))
       }
       .map(_ => ())
 
