@@ -26,26 +26,21 @@ object Main extends App {
 
   logger.info("Starting metrics report generator job")
 
-  val blockingThreadPool: ExecutorService         =
+  val blockingThreadPool: ExecutorService  =
     Executors.newFixedThreadPool(1.max(Runtime.getRuntime.availableProcessors() - 1))
-  val blockingEC: ExecutionContextExecutor        = ExecutionContext.fromExecutor(blockingThreadPool)
-  val fileManager: FileManager                    = FileManager.get(FileManager.S3)(blockingEC)
+  val blockingEC: ExecutionContextExecutor = ExecutionContext.fromExecutor(blockingThreadPool)
+  val fileManager: FileManager             = FileManager.get(FileManager.S3)(blockingEC)
+
   implicit val readModelService: ReadModelService = new MongoDbReadModelService(ReadModelConfig("", ""))
 
   val fileUtils: FileUtils = new FileUtils(fileManager, OffsetDateTimeSupplier)
 
   def execution(): Future[Unit] = for {
-    config <- Configuration.read()
-    fileWriters = new FileWriters(fileUtils, config.agreements, OffsetDateTimeSupplier)
-    activeAgreements <- Utils.retrieveAllActiveAgreements(
-      ReadModelQueries.getActiveAgreements(_, _, config.collections),
-      0,
-      Seq.empty
-    )
-    purposes         <- Utils.retrieveAllPurposes(ReadModelQueries.getPurposes(_, _, config.collections), 0, Seq.empty)
+    config           <- Configuration.read()
+    activeAgreements <- ReadModelQueries.getAllActiveAgreements(100)(config.collections)
+    purposes         <- ReadModelQueries.getAllPurposes(100)(config.collections)
     agreementRecords = AgreementRecord.join(activeAgreements, purposes)
-    _ <- fileWriters.agreementsJsonWriter(agreementRecords)
-    _ <- fileWriters.agreementsCsvWriter(agreementRecords)
+    _ <- fileUtils.store(config.agreements)(AgreementRecord.csv(agreementRecords))
   } yield ()
 
   def run(): Future[Unit] = execution()

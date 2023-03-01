@@ -149,6 +149,8 @@ object Dependencies {
       mongodb.scalaDriver      % Compile,
       pagopa.catalogModels     % Compile,
       pagopa.tenantModels      % Compile,
+      pagopa.agreementsModels  % Compile,
+      pagopa.purposeModels     % Compile,
       pagopa.commons           % Compile,
       pagopa.cqrs              % Compile,
       pagopa.file              % Compile,

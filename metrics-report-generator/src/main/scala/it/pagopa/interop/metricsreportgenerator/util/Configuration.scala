@@ -7,13 +7,19 @@ import pureconfig._
 import pureconfig.generic.auto._
 import pureconfig.error.ConfigReaderException
 
+trait ContainerConfiguration {
+  val container: String
+  val path: String
+}
+
 final case class Configuration(
   agreements: AgreementsConfiguration,
   readModel: ReadModelConfig,
   collections: CollectionsConfiguration
 )
 
-final case class AgreementsConfiguration(container: String, csvStoragePath: String, jsonStoragePath: String)
+final case class AgreementsConfiguration(container: String, path: String) extends ContainerConfiguration
+
 final case class CollectionsConfiguration(tenants: String, agreements: String, purposes: String)
 
 object Configuration {
