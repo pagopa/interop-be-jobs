@@ -55,21 +55,3 @@ object AgreementRecord {
       .map(_.stringify)
 
 }
-
-
-db.eservices.aggregate(
-  { $project: {
-    "_id":0, 
-    "name":"$data.name", 
-    "createdAt":"$data.createdAt", 
-    "producerId": "$data.producerId", 
-    "descriptors": { $map: {
-      "input": "$data.descriptors",
-      "as": "descriptor",
-      "in" : {
-          "id": "$$descriptor.id",
-          "state" : "$$descriptor.state"
-        }
-    } }
-  }
-});

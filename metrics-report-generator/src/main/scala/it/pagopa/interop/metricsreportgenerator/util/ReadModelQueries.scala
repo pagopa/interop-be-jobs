@@ -101,8 +101,16 @@ object ReadModelQueries {
 //           "state" : "$$descriptor.state"
 //         }
 //     } }
+//   }},
+//   { $unwind : "$descriptors"},
+//   { $project: {
+//     "name":1,
+//     "createdAt":1,
+//     "producerId":1,
+//     "descriptorId": "$descriptors.id",
+//     "state": "$descriptors.state"}
 //   }
-// });
+//   );
 
   private def getAll[T](
     limit: Int
