@@ -22,3 +22,9 @@ final case class Purpose(purposeId: String, consumerId: String, eserviceId: Stri
 object Purpose {
   implicit val format: RootJsonFormat[Purpose] = jsonFormat4(Purpose.apply)
 }
+
+final case class Descriptor(name: String, createdAt: String, producerId: String, descriptorId: String, state: String)
+
+object Descriptor {
+  implicit val format: RootJsonFormat[Descriptor] = jsonFormat5(Descriptor.apply)
+}

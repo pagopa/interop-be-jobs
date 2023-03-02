@@ -20,7 +20,7 @@ final case class Configuration(
 
 final case class AgreementsConfiguration(container: String, path: String) extends ContainerConfiguration
 
-final case class CollectionsConfiguration(tenants: String, agreements: String, purposes: String)
+final case class CollectionsConfiguration(tenants: String, agreements: String, purposes: String, eservices: String)
 
 object Configuration {
   def read(): Future[Configuration] =

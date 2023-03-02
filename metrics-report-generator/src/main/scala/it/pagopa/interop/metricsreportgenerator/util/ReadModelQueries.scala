@@ -1,7 +1,7 @@
 package it.pagopa.interop.metricsreportgenerator.util
 
 import it.pagopa.interop.commons.cqrs.service.ReadModelService
-import it.pagopa.interop.metricsreportgenerator.util.models.{Agreement, Purpose}
+import it.pagopa.interop.metricsreportgenerator.util.models.{Agreement, Purpose, Descriptor}
 import org.mongodb.scala.Document
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.Aggregates._
@@ -87,6 +87,44 @@ object ReadModelQueries {
     readModelService.aggregate[Purpose](collections.purposes, Seq(projection), offset, limit)
   }
 
+  def getAllDescriptors(limit: Int)(
+    config: CollectionsConfiguration
+  )(implicit ec: ExecutionContext, readModelService: ReadModelService): Future[Seq[Descriptor]] =
+    getAll(limit)(getDescriptors(_, _, config))
+
+  private def getDescriptors(offset: Int, limit: Int, collections: CollectionsConfiguration)(implicit
+    ec: ExecutionContext,
+    readModelService: ReadModelService
+  ): Future[Seq[Descriptor]] = {
+    val projection1: Bson = project(
+      fields(
+        exclude("_id"),
+        computed("name", "$data.name"),
+        computed("createdAt", "$data.createdAt"),
+        computed("producerId", "$data.producerId"),
+        computed(
+          "descriptors",
+          Document(
+            """{$map:{"input":"$data.descriptors","as":"descriptor","in":{"id":"$$descriptor.id","state":"$$descriptor.state"}}}"""
+          )
+        )
+      )
+    )
+
+    val unwindStep: Document = Document("""{$unwind:"$descriptors"}""")
+
+    val projection2: Bson = project(
+      fields(
+        include("name", "createdAt", "producerId"),
+        computed("descriptorId", "$descriptors.id"),
+        computed("state", "$descriptors.state")
+      )
+    )
+
+    readModelService
+      .aggregate[Descriptor](collections.eservices, Seq(projection1, unwindStep, projection2), offset, limit)
+  }
+
 // db.eservices.aggregate(
 //   { $project: {
 //     "_id":0,
@@ -111,6 +149,14 @@ object ReadModelQueries {
 //     "state": "$descriptors.state"}
 //   }
 //   );
+
+// {
+//   name: '1 - Test 1.0.20',
+//   createdAt: '2022-10-21T12:00:00Z',
+//   producerId: '84871fd4-2fd7-46ab-9d22-f6b452f4b3c5',
+//   descriptorId: 'd2e9da04-2be1-477f-be10-bfed925173a8',
+//   state: 'Draft'
+// }
 
   private def getAll[T](
     limit: Int
