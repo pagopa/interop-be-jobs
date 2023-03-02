@@ -13,20 +13,7 @@ final case class AgreementRecord(
   consumer: String,
   consumerId: String,
   purposes: Seq[(String, String)]
-) {
-
-  def stringify: String = List(
-    eservice,
-    producer,
-    consumer,
-    activationDate,
-    purposes.map(_._2).mkString("|"),
-    agreementId,
-    eserviceId,
-    consumerId,
-    purposes.map(_._1).mkString("|")
-  ).mkString(",")
-}
+)
 
 object AgreementRecord {
 
@@ -50,8 +37,20 @@ object AgreementRecord {
     AgreementRecord.create(agreement, purposeIds)
   }
 
-  def csv(agreementRecords: Seq[AgreementRecord]): List[String] =
-    "eservice,producer,consumer,activationDate,purposes,agreementId,eserviceId,consumerId,purposeIds" :: agreementRecords.toList
-      .map(_.stringify)
+  private def stringify(a: AgreementRecord): String = List(
+    a.eservice,
+    a.producer,
+    a.consumer,
+    a.activationDate,
+    a.purposes.map(_._2).mkString("|"),
+    a.agreementId,
+    a.eserviceId,
+    a.consumerId,
+    a.purposes.map(_._1).mkString("|")
+  ).mkString(",")
+
+  def csv(agreementRecords: Seq[AgreementRecord]): List[String] = agreementRecords.toList
+    .map(stringify)
+    .prepended("eservice,producer,consumer,activationDate,purposes,agreementId,eserviceId,consumerId,purposeIds")
 
 }

@@ -1,10 +1,10 @@
 package it.pagopa.interop.metricsreportgenerator
 
 import com.typesafe.scalalogging.Logger
-import it.pagopa.interop.commons.cqrs.service.{MongoDbReadModelService, ReadModelService}
+// import it.pagopa.interop.commons.cqrs.service.{MongoDbReadModelService, ReadModelService}
 import it.pagopa.interop.commons.files.service.FileManager
-import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
-import it.pagopa.interop.metricsreportgenerator.report.AgreementRecord
+// import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
+// import it.pagopa.interop.metricsreportgenerator.report.AgreementRecord
 import it.pagopa.interop.metricsreportgenerator.util._
 
 import java.util.concurrent.{ExecutorService, Executors}
@@ -15,7 +15,7 @@ import java.util.UUID
 import it.pagopa.interop.commons.logging._
 import com.typesafe.scalalogging.LoggerTakingImplicit
 import it.pagopa.interop.commons.utils.CORRELATION_ID_HEADER
-import it.pagopa.interop.commons.cqrs.model.ReadModelConfig
+// import it.pagopa.interop.commons.cqrs.model.ReadModelConfig
 
 object Main extends App {
 
@@ -31,23 +31,25 @@ object Main extends App {
   val blockingEC: ExecutionContextExecutor = ExecutionContext.fromExecutor(blockingThreadPool)
   val fileManager: FileManager             = FileManager.get(FileManager.S3)(blockingEC)
 
-  implicit val readModelService: ReadModelService = new MongoDbReadModelService(ReadModelConfig("", ""))
+  // implicit val readModelService: ReadModelService = new MongoDbReadModelService(ReadModelConfig("", ""))
 
-  val fileUtils: FileUtils = new FileUtils(fileManager, OffsetDateTimeSupplier)
+  // val fileUtils: FileUtils = new FileUtils(fileManager, OffsetDateTimeSupplier)
 
   def execution(): Future[Unit] = for {
-    config           <- Configuration.read()
-    activeAgreements <- ReadModelQueries.getAllActiveAgreements(100)(config.collections)
-    purposes         <- ReadModelQueries.getAllPurposes(100)(config.collections)
-    agreementRecords = AgreementRecord.join(activeAgreements, purposes)
-    _ <- fileUtils.store(config.agreements)(AgreementRecord.csv(agreementRecords))
+    config  <- Configuration.read()
+    // activeAgreements <- ReadModelQueries.getAllActiveAgreements(100)(config.collections)
+    // purposes         <- ReadModelQueries.getAllPurposes(100)(config.collections)
+    // agreementRecords = AgreementRecord.join(activeAgreements, purposes)
+    // _ <- fileUtils.store(config.agreements)(AgreementRecord.csv(agreementRecords))
+    strings <- Jobs.getTokensData(fileManager, config.token)
+    _ = println(strings.mkString("\n"))
   } yield ()
 
   def run(): Future[Unit] = execution()
     .recover(ex => logger.error("There was an error while running the job", ex))(global)
     .andThen { _ =>
       fileManager.close()
-      readModelService.close()
+      // readModelService.close()
       blockingThreadPool.shutdown()
     }(global)
 
