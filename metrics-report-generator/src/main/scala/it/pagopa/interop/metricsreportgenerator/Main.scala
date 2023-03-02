@@ -29,7 +29,7 @@ object Main extends App {
   val blockingThreadPool: ExecutorService  =
     Executors.newFixedThreadPool(1.max(Runtime.getRuntime.availableProcessors() - 1))
   val blockingEC: ExecutionContextExecutor = ExecutionContext.fromExecutor(blockingThreadPool)
-  val fileManager: FileManager             = FileManager.get(FileManager.S3)(blockingEC)
+  implicit val fileManager: FileManager    = FileManager.get(FileManager.S3)(blockingEC)
 
   // implicit val readModelService: ReadModelService = new MongoDbReadModelService(ReadModelConfig("", ""))
 
@@ -41,7 +41,7 @@ object Main extends App {
     // purposes         <- ReadModelQueries.getAllPurposes(100)(config.collections)
     // agreementRecords = AgreementRecord.join(activeAgreements, purposes)
     // _ <- fileUtils.store(config.agreements)(AgreementRecord.csv(agreementRecords))
-    strings <- Jobs.getTokensData(fileManager, config.token)
+    strings <- Jobs.getTokensData(config.token)
     _ = println(strings.mkString("\n"))
   } yield ()
 

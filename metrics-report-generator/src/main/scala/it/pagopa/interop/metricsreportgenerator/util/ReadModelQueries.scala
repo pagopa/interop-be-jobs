@@ -16,7 +16,7 @@ object ReadModelQueries {
   )(implicit ec: ExecutionContext, readModelService: ReadModelService): Future[Seq[Agreement]] =
     getAll(limit)(getActiveAgreements(_, _, config))
 
-  def getActiveAgreements(offset: Int, limit: Int, config: CollectionsConfiguration)(implicit
+  private def getActiveAgreements(offset: Int, limit: Int, config: CollectionsConfiguration)(implicit
     ec: ExecutionContext,
     readModelService: ReadModelService
   ): Future[Seq[Agreement]] = {
