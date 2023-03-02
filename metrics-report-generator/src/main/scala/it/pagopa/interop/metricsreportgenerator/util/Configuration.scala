@@ -2,7 +2,7 @@ package it.pagopa.interop.metricsreportgenerator.util
 
 import cats.syntax.either._
 import scala.concurrent.Future
-// import it.pagopa.interop.commons.cqrs.model.ReadModelConfig
+import it.pagopa.interop.commons.cqrs.model.ReadModelConfig
 import pureconfig._
 import pureconfig.generic.auto._
 import pureconfig.error.ConfigReaderException
@@ -13,13 +13,10 @@ trait ContainerConfiguration {
 }
 
 final case class Configuration(
-  // agreements: AgreementsConfiguration,
-  // readModel: ReadModelConfig,
-  // collections: CollectionsConfiguration,
+  readModel: ReadModelConfig,
+  collections: CollectionsConfiguration,
   token: TokensBucketConfiguration
 )
-
-final case class AgreementsConfiguration(container: String, path: String) extends ContainerConfiguration
 
 final case class CollectionsConfiguration(tenants: String, agreements: String, purposes: String, eservices: String)
 

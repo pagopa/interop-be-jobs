@@ -10,6 +10,7 @@ import it.pagopa.interop.commons.utils.errors.GenericComponentErrors.GenericErro
 import it.pagopa.interop.commons.cqrs.service.ReadModelService
 import scala.concurrent.ExecutionContext
 import it.pagopa.interop.metricsreportgenerator.util.models.Descriptor
+import cats.Functor
 
 object Jobs {
 
@@ -64,7 +65,7 @@ object Jobs {
 
   def getAgreementRecord(
     config: CollectionsConfiguration
-  )(implicit readModelService: ReadModelService, ec: ExecutionContext) = for {
+  )(implicit readModelService: ReadModelService, ec: ExecutionContext): Future[List[String]] = for {
     agreements <- ReadModelQueries.getAllActiveAgreements(maxParallelism)(config)
     purposes   <- ReadModelQueries.getAllPurposes(maxParallelism)(config)
   } yield {
@@ -89,9 +90,14 @@ object Jobs {
 
   def getDescriptorsRecord(
     config: CollectionsConfiguration
-  )(implicit readModelService: ReadModelService, ec: ExecutionContext): Future[(List[Descriptor], List[Descriptor])] =
+  )(implicit readModelService: ReadModelService, ec: ExecutionContext): Future[(List[String], List[String])] = {
+    val asCsvRow = (d: Descriptor) => s"${d.name},${d.createdAt},${d.producerId},${d.descriptorId},${d.state}"
+    val asCsvRows: List[Descriptor] => List[String] = Functor[List].lift(asCsvRow)
+
     ReadModelQueries
       .getAllDescriptors(maxParallelism)(config)
       .map(descriptors => (descriptors.toList, descriptors.filter(_.isActive).toList))
+      .map(asCsvRows *** asCsvRows)
+  }
 
 }
