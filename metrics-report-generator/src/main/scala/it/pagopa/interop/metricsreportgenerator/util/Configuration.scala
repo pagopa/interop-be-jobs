@@ -7,25 +7,26 @@ import pureconfig._
 import pureconfig.generic.auto._
 import pureconfig.error.ConfigReaderException
 
-trait ContainerConfiguration {
-  val container: String
-  val path: String
-}
-
 final case class Configuration(
   readModel: ReadModelConfig,
   collections: CollectionsConfiguration,
-  token: TokensBucketConfiguration
+  tokens: TokensBucketConfiguration,
+  storage: StorageConfiguration
 )
 
-final case class CollectionsConfiguration(tenants: String, agreements: String, purposes: String, eservices: String)
-
+final case class CollectionsConfiguration(
+  maxParallelism: Int,
+  tenants: String,
+  agreements: String,
+  purposes: String,
+  eservices: String
+)
 final case class TokensBucketConfiguration(bucket: String, basePath: String)
+final case class StorageConfiguration(bucket: String, basePath: String)
 
 object Configuration {
-  def read(): Future[Configuration] =
-    ConfigSource.default
-      .load[Configuration]
-      .leftMap(new ConfigReaderException(_))
-      .fold(Future.failed, Future.successful)
+  def read(): Future[Configuration] = ConfigSource.default
+    .load[Configuration]
+    .leftMap(new ConfigReaderException(_))
+    .fold(Future.failed, Future.successful)
 }

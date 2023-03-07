@@ -36,13 +36,13 @@ object Main extends App {
   // val fileUtils: FileUtils = new FileUtils(fileManager, OffsetDateTimeSupplier)
 
   def execution(): Future[Unit] = for {
-    config  <- Configuration.read()
+    _ <- Configuration.read()
     // activeAgreements <- ReadModelQueries.getAllActiveAgreements(100)(config.collections)
     // purposes         <- ReadModelQueries.getAllPurposes(100)(config.collections)
     // agreementRecords = AgreementRecord.join(activeAgreements, purposes)
     // _ <- fileUtils.store(config.agreements)(AgreementRecord.csv(agreementRecords))
-    strings <- Jobs.getTokensData(config.token)
-    _ = println(strings.mkString("\n"))
+    // strings <- Jobs.getTokensData(config.tokens)
+    // _ = println(strings.mkString("\n"))
   } yield ()
 
   def run(): Future[Unit] = execution()

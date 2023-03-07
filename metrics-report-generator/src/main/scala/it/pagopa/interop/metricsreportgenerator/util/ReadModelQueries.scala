@@ -11,15 +11,27 @@ import scala.concurrent.{ExecutionContext, Future}
 
 object ReadModelQueries {
 
-  def getAllActiveAgreements(limit: Int)(
-    config: CollectionsConfiguration
-  )(implicit ec: ExecutionContext, readModelService: ReadModelService): Future[Seq[Agreement]] =
-    getAll(limit)(getActiveAgreements(_, _, config))
+  def getAllActiveAgreements(config: CollectionsConfiguration, rm: ReadModelService)(implicit
+    ec: ExecutionContext
+  ): Future[Seq[Agreement]] =
+    getAll(config.maxParallelism)(getActiveAgreements(_, _, config, rm))
 
-  private def getActiveAgreements(offset: Int, limit: Int, config: CollectionsConfiguration)(implicit
-    ec: ExecutionContext,
+  def getAllDescriptors(config: CollectionsConfiguration, rm: ReadModelService)(implicit
+    ec: ExecutionContext
+  ): Future[Seq[Descriptor]] =
+    getAll(config.maxParallelism)(getDescriptors(_, _, config, rm))
+
+  def getAllPurposes(config: CollectionsConfiguration, rm: ReadModelService)(implicit
+    ec: ExecutionContext
+  ): Future[Seq[Purpose]] =
+    getAll(config.maxParallelism)(getPurposes(_, _, config, rm))
+
+  private def getActiveAgreements(
+    offset: Int,
+    limit: Int,
+    config: CollectionsConfiguration,
     readModelService: ReadModelService
-  ): Future[Seq[Agreement]] = {
+  )(implicit ec: ExecutionContext): Future[Seq[Agreement]] = {
     val firstProjection: Bson = project(
       fields(
         fields(
@@ -66,15 +78,12 @@ object ReadModelQueries {
     readModelService.aggregate[Agreement](config.agreements, aggregation, offset, limit)
   }
 
-  def getAllPurposes(limit: Int)(
-    config: CollectionsConfiguration
-  )(implicit ec: ExecutionContext, readModelService: ReadModelService): Future[Seq[Purpose]] =
-    getAll(limit)(getPurposes(_, _, config))
-
-  private def getPurposes(offset: Int, limit: Int, collections: CollectionsConfiguration)(implicit
-    ec: ExecutionContext,
+  private def getPurposes(
+    offset: Int,
+    limit: Int,
+    collections: CollectionsConfiguration,
     readModelService: ReadModelService
-  ): Future[Seq[Purpose]] = {
+  )(implicit ec: ExecutionContext): Future[Seq[Purpose]] = {
     val projection: Bson = project(
       fields(
         computed("data.purposeId", "$data.id"),
@@ -87,15 +96,12 @@ object ReadModelQueries {
     readModelService.aggregate[Purpose](collections.purposes, Seq(projection), offset, limit)
   }
 
-  def getAllDescriptors(limit: Int)(
-    config: CollectionsConfiguration
-  )(implicit ec: ExecutionContext, readModelService: ReadModelService): Future[Seq[Descriptor]] =
-    getAll(limit)(getDescriptors(_, _, config))
-
-  private def getDescriptors(offset: Int, limit: Int, collections: CollectionsConfiguration)(implicit
-    ec: ExecutionContext,
+  private def getDescriptors(
+    offset: Int,
+    limit: Int,
+    collections: CollectionsConfiguration,
     readModelService: ReadModelService
-  ): Future[Seq[Descriptor]] = {
+  )(implicit ec: ExecutionContext): Future[Seq[Descriptor]] = {
     val projection1: Bson = project(
       fields(
         exclude("_id"),
@@ -124,39 +130,6 @@ object ReadModelQueries {
     readModelService
       .aggregate[Descriptor](collections.eservices, Seq(projection1, unwindStep, projection2), offset, limit)
   }
-
-// db.eservices.aggregate(
-//   { $project: {
-//     "_id":0,
-//     "name":"$data.name",
-//     "createdAt":"$data.createdAt",
-//     "producerId": "$data.producerId",
-//     "descriptors": { $map: {
-//       "input": "$data.descriptors",
-//       "as": "descriptor",
-//       "in" : {
-//           "id": "$$descriptor.id",
-//           "state" : "$$descriptor.state"
-//         }
-//     } }
-//   }},
-//   { $unwind : "$descriptors"},
-//   { $project: {
-//     "name":1,
-//     "createdAt":1,
-//     "producerId":1,
-//     "descriptorId": "$descriptors.id",
-//     "state": "$descriptors.state"}
-//   }
-//   );
-
-// {
-//   name: '1 - Test 1.0.20',
-//   createdAt: '2022-10-21T12:00:00Z',
-//   producerId: '84871fd4-2fd7-46ab-9d22-f6b452f4b3c5',
-//   descriptorId: 'd2e9da04-2be1-477f-be10-bfed925173a8',
-//   state: 'Draft'
-// }
 
   private def getAll[T](
     limit: Int

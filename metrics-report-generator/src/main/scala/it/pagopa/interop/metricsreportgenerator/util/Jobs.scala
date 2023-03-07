@@ -11,14 +11,17 @@ import it.pagopa.interop.commons.cqrs.service.ReadModelService
 import scala.concurrent.ExecutionContext
 import it.pagopa.interop.metricsreportgenerator.util.models.Descriptor
 import cats.Functor
+import com.typesafe.scalalogging.LoggerTakingImplicit
+import it.pagopa.interop.commons.logging._
 
-object Jobs {
+class Jobs(config: Configuration, fileManager: FileManager, readModel: ReadModelService)(implicit
+  logger: LoggerTakingImplicit[ContextFieldsToLog],
+  context: ContextFieldsToLog
+) {
 
-  val maxParallelism = 100
+  def getTokensData(implicit ec: ExecutionContext): Future[List[String]] = {
 
-  def getTokensData(
-    config: TokensBucketConfiguration
-  )(implicit fileManager: FileManager, ec: ExecutionContext): Future[List[String]] = {
+    logger.info("Gathering tokens information")
 
     def getTokenInfo(token: String): Future[(String, String, OffsetDateTime)] =
       Future(token.parseJson.asJsObject.fields).flatMap(fields =>
@@ -40,15 +43,15 @@ object Jobs {
       )
 
     def allTokensPaths(): Future[List[fileManager.StorageFilePath]] = fileManager
-      .listFiles(config.bucket)(config.basePath)
+      .listFiles(config.tokens.bucket)(config.tokens.basePath)
 
     def getTokens(path: String): Future[List[String]] = fileManager
-      .getFile(config.bucket)(path)
+      .getFile(config.tokens.bucket)(path)
       .map(bs => new String(bs).split('\n').toList)
 
     allTokensPaths()
       .flatMap(paths =>
-        Future.traverseWithLatch(maxParallelism)(paths)(path =>
+        Future.traverseWithLatch(config.collections.maxParallelism)(paths)(path =>
           getTokens(path).flatMap(tokens => Future.traverse(tokens)(getTokenInfo))
         )
       )
@@ -63,41 +66,44 @@ object Jobs {
       )
   }
 
-  def getAgreementRecord(
-    config: CollectionsConfiguration
-  )(implicit readModelService: ReadModelService, ec: ExecutionContext): Future[List[String]] = for {
-    agreements <- ReadModelQueries.getAllActiveAgreements(maxParallelism)(config)
-    purposes   <- ReadModelQueries.getAllPurposes(maxParallelism)(config)
-  } yield {
-    val header = "eservice,producer,consumer,activationDate,purposes,agreementId,eserviceId,consumerId,purposeIds"
-    header :: agreements.toList.map { a =>
-      val purposeIds: Seq[(String, String)] = purposes
-        .filter(p => p.consumerId == a.consumerId && p.eserviceId == a.eserviceId)
-        .map(p => (p.purposeId, p.name))
-      List(
-        a.eservice,
-        a.producer,
-        a.consumer,
-        a.activationDate,
-        purposeIds.map(_._2).mkString("|"),
-        a.agreementId,
-        a.eserviceId,
-        a.consumerId,
-        purposeIds.map(_._1).mkString("|")
-      ).mkString(",")
+  def getAgreementRecord(implicit ec: ExecutionContext): Future[List[String]] = ReadModelQueries
+    .getAllActiveAgreements(config.collections, readModel)
+    .zip(ReadModelQueries.getAllPurposes(config.collections, readModel))
+    .map { case (agreements, purposes) =>
+      val header = "eservice,producer,consumer,activationDate,purposes,agreementId,eserviceId,consumerId,purposeIds"
+      header :: agreements.toList.map { a =>
+        val purposeIds: Seq[(String, String)] = purposes
+          .filter(p => p.consumerId == a.consumerId && p.eserviceId == a.eserviceId)
+          .map(p => (p.purposeId, p.name))
+        List(
+          a.eservice,
+          a.producer,
+          a.consumer,
+          a.activationDate,
+          purposeIds.map(_._2).mkString("|"),
+          a.agreementId,
+          a.eserviceId,
+          a.consumerId,
+          purposeIds.map(_._1).mkString("|")
+        ).mkString(",")
+      }
     }
-  }
 
-  def getDescriptorsRecord(
-    config: CollectionsConfiguration
-  )(implicit readModelService: ReadModelService, ec: ExecutionContext): Future[(List[String], List[String])] = {
+  def getDescriptorsRecord(implicit ec: ExecutionContext): Future[(List[String], List[String])] = {
     val asCsvRow = (d: Descriptor) => s"${d.name},${d.createdAt},${d.producerId},${d.descriptorId},${d.state}"
     val asCsvRows: List[Descriptor] => List[String] = Functor[List].lift(asCsvRow)
 
     ReadModelQueries
-      .getAllDescriptors(maxParallelism)(config)
+      .getAllDescriptors(config.collections, readModel)
       .map(descriptors => (descriptors.toList, descriptors.filter(_.isActive).toList))
       .map(asCsvRows *** asCsvRows)
+  }
+
+  def store(fileName: String, lines: Seq[String])(implicit ec: ExecutionContext): Future[Unit] = {
+    logger.info(s"Storing ${lines.size} lines at ${config.storage.bucket}/${config.storage.basePath}/$fileName")
+    fileManager
+      .storeBytes(config.storage.bucket, config.storage.basePath, fileName)(lines.mkString("\n").getBytes())
+      .map(_ => ())
   }
 
 }
