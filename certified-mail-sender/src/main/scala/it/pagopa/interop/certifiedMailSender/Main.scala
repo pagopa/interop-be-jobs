@@ -5,8 +5,7 @@ import it.pagopa.interop.commons.queue.impl.SQSHandler
 
 import java.util.concurrent.{ExecutorService, Executors}
 import scala.concurrent.ExecutionContext.global
-import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
 object Main extends App {
 
@@ -20,12 +19,12 @@ object Main extends App {
   val sqsHandler: SQSHandler = SQSHandler(ApplicationConfiguration.queueUrl)(blockingEC)
   val job: JobExecution      = JobExecution(sqsHandler)
 
-  def execution: Future[Unit] = job
+  def execute(): Future[Unit] = job
     .run()
+    .flatMap(_ => execute())
     .recover(ex => logger.error("There was an error while running the job", ex))
     .andThen(_ => blockingThreadPool.shutdown())(global)
 
-  Await.result(execution, Duration.Inf)
-  logger.info("Completed certified mails sender job")
+  execute()
 
 }

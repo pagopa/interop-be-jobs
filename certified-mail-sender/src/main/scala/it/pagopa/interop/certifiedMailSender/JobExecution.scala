@@ -8,6 +8,7 @@ import io.circe.jawn.parse
 import it.pagopa.interop.certifiedMailSender.model.InteropEnvelope
 import it.pagopa.interop.commons.queue.impl.SQSHandler
 import it.pagopa.interop.commons.utils.TypeConversions.EitherOps
+import software.amazon.awssdk.services.sqs.model.Message
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 import scala.util.Try
@@ -21,35 +22,28 @@ final case class JobExecution(sqsHandler: SQSHandler) {
     .as(ApplicationConfiguration.smtpUser, ApplicationConfiguration.smtpPassword)
     .ssl(true)()
 
-  def run()(implicit blockingEC: ExecutionContextExecutor): Future[Unit] = sqsHandler.processAllRawMessages(
-    ApplicationConfiguration.maxConsumeBatchSize,
-    ApplicationConfiguration.visibilityTimeout
-  ) { (messages, receipts) =>
-    logger.info(s"Processing ${messages.size} messages")
-    processMessage(messages).flatMap(deleteMessages(receipts))
-  }
+  def run()(implicit blockingEC: ExecutionContextExecutor): Future[Unit] =
+    sqsHandler.rawReceive(ApplicationConfiguration.visibilityTimeout).flatMap {
+      case None          => Future.unit
+      case Some(message) => processMessage(message)
+    }
 
-  private def processMessage(messages: List[String])(implicit ec: ExecutionContext): Future[List[InteropEnvelope]] =
-    Future.traverse(messages)(sendMail)
+  private def processMessage(message: Message)(implicit ec: ExecutionContext): Future[Unit] =
+    sendMail(message.body()).flatMap(deleteMessage(message.receiptHandle()))
 
-  private def deleteMessages(
-    receiptHandles: List[String]
-  )(implicit ec: ExecutionContext): List[InteropEnvelope] => Future[Unit] = envelopes => {
-    val deletions: List[(InteropEnvelope, String)] = envelopes.zip(receiptHandles)
-    Future
-      .traverse(deletions) { case (envelope, receipt) =>
-        logger.info(s"Deleting envelope ${envelope.id.toString} with receipt $receipt")
-        sqsHandler
-          .deleteMessage(receipt)
-          .recoverWith { ex =>
-            logger.error(
-              s"Error trying to delete envelope ${envelope.id.toString} with receipt $receipt - ${ex.getMessage}"
-            )
-            Future.failed(ex)
-          }
-      }
-      .map(_ => logger.info(s"Message deleted from queue"))
-  }
+  private def deleteMessage(receipt: String)(implicit ec: ExecutionContext): InteropEnvelope => Future[Unit] =
+    envelope => {
+      logger.info(s"Deleting envelope ${envelope.id.toString} with receipt $receipt")
+      sqsHandler
+        .deleteMessage(receipt)
+        .map(_ => logger.info(s"Message deleted from queue"))
+        .recoverWith { ex =>
+          logger.error(
+            s"Error trying to delete envelope ${envelope.id.toString} with receipt $receipt - ${ex.getMessage}"
+          )
+          Future.failed(ex)
+        }
+    }
 
   private def sendMail(message: String)(implicit mailer: Mailer, ec: ExecutionContext): Future[InteropEnvelope] = for {
     interopEnvelope <- parse(message).flatMap(_.as[InteropEnvelope]).toFuture
