@@ -72,6 +72,7 @@ object Dependencies {
       namespace %% "interop-selfcare-party-management-client" % partyManagementClientVersion
 
     lazy val commons = namespace %% "interop-commons-utils"         % commonsVersion
+    lazy val mail    = namespace %% "interop-commons-mail-manager"  % commonsVersion
     lazy val jwt     = namespace %% "interop-commons-jwt"           % commonsVersion
     lazy val signer  = namespace %% "interop-commons-signer"        % commonsVersion
     lazy val queue   = namespace %% "interop-commons-queue-manager" % commonsVersion
@@ -86,14 +87,13 @@ object Dependencies {
   }
 
   object Jars {
-    lazy val overrides: Seq[ModuleID] =
-      Seq(
-        jackson.annotations % Compile,
-        jackson.core        % Compile,
-        jackson.databind    % Compile,
-        jackson.scalaModule % Compile,
-        pagopa.commons      % Compile
-      ).map(_.withSources.withJavadoc)
+    lazy val overrides: Seq[ModuleID] = Seq(
+      jackson.annotations % Compile,
+      jackson.core        % Compile,
+      jackson.databind    % Compile,
+      jackson.scalaModule % Compile,
+      pagopa.commons      % Compile
+    ).map(_.withSources.withJavadoc)
 
     lazy val attributesLoader: Seq[ModuleID] = Seq(
       // For making Java 12 happy
@@ -114,7 +114,6 @@ object Dependencies {
     lazy val tokenDetailsPersister: Seq[ModuleID] = Seq(
       // For making Java 12 happy
       "javax.annotation" % "javax.annotation-api" % "1.3.2" % "compile",
-      //
       logback.classic    % Compile,
       pagopa.file        % Compile,
       pagopa.queue       % Compile
@@ -123,7 +122,6 @@ object Dependencies {
     lazy val tenantsCertifiedAttributesUpdater: Seq[ModuleID] = Seq(
       // For making Java 12 happy
       "javax.annotation"        % "javax.annotation-api" % "1.3.2" % "compile",
-      //
       akka.actorTyped           % Compile,
       cats.core                 % Compile,
       logback.classic           % Compile,
@@ -140,7 +138,6 @@ object Dependencies {
     lazy val metricsReportGenerator: Seq[ModuleID] = Seq(
       // For making Java 12 happy
       "javax.annotation"       % "javax.annotation-api" % "1.3.2" % "compile",
-      //
       cats.core                % Compile,
       "com.github.pureconfig" %% "pureconfig"           % "0.17.2",
       circe.core               % Compile,
@@ -152,6 +149,7 @@ object Dependencies {
       pagopa.agreementsModels  % Compile,
       pagopa.purposeModels     % Compile,
       pagopa.commons           % Compile,
+      pagopa.mail              % Compile,
       pagopa.cqrs              % Compile,
       pagopa.file              % Compile,
       pagopa.parser            % Compile

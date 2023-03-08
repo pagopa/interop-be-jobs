@@ -61,7 +61,7 @@ class Jobs(config: Configuration, fileManager: FileManager, readModel: ReadModel
           .groupMapReduce(identity)(_ => 1)(_ + _) // count occurrences
           .toList
           .sortBy { case ((aId, pId, y, m, d), _) => (aId, pId, y, m, d) }
-          .map { case ((aId, pId, y, m, d), c) => s"$aId,$pId,$y,$m,$d,$c" }
+          .map { case ((aId, pId, y, m, d), c) => s""""$aId","$pId","$y","$m","$d","$c"""" }
           .prepended("agreementId,purposeId,year,month,day,tokencount")
       )
   }
@@ -90,7 +90,8 @@ class Jobs(config: Configuration, fileManager: FileManager, readModel: ReadModel
     }
 
   def getDescriptorsRecord(implicit ec: ExecutionContext): Future[(List[String], List[String])] = {
-    val asCsvRow = (d: Descriptor) => s"${d.name},${d.createdAt},${d.producerId},${d.descriptorId},${d.state}"
+    val asCsvRow                                    = (d: Descriptor) =>
+      s""""${d.name}","${d.createdAt}","${d.producerId}","${d.descriptorId}","${d.state}""""
     val asCsvRows: List[Descriptor] => List[String] = Functor[List].lift(asCsvRow)
 
     ReadModelQueries

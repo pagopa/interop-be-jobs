@@ -75,7 +75,7 @@ object ReadModelQueries {
       secondProjection
     )
 
-    readModelService.aggregate[Agreement](config.agreements, aggregation, offset, limit)
+    readModelService.aggregateRaw[Agreement](config.agreements, aggregation, offset, limit)
   }
 
   private def getPurposes(
@@ -128,7 +128,7 @@ object ReadModelQueries {
     )
 
     readModelService
-      .aggregate[Descriptor](collections.eservices, Seq(projection1, unwindStep, projection2), offset, limit)
+      .aggregateRaw[Descriptor](collections.eservices, Seq(projection1, unwindStep, projection2), offset, limit)
   }
 
   private def getAll[T](
