@@ -1,23 +1,19 @@
 package it.pagopa.interop.metricsreportgenerator
 
-import com.typesafe.scalalogging.Logger
-// import it.pagopa.interop.commons.cqrs.service.{MongoDbReadModelService, ReadModelService}
+import com.typesafe.scalalogging.{Logger, LoggerTakingImplicit}
 import it.pagopa.interop.commons.files.service.FileManager
-// import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
-// import it.pagopa.interop.metricsreportgenerator.report.AgreementRecord
 import it.pagopa.interop.metricsreportgenerator.util._
-
-import java.util.concurrent.{ExecutorService, Executors}
+import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
 import scala.concurrent.ExecutionContext.global
 import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
+import java.util.concurrent.{ExecutorService, Executors}
 import java.util.UUID
 import it.pagopa.interop.commons.logging._
-import com.typesafe.scalalogging.LoggerTakingImplicit
 import it.pagopa.interop.commons.utils.CORRELATION_ID_HEADER
-// import it.pagopa.interop.commons.cqrs.model.ReadModelConfig
 import it.pagopa.interop.commons.cqrs.service.{ReadModelService, MongoDbReadModelService}
 import scala.util.Failure
+import it.pagopa.interop.commons.mail.{InteropMailer, TextMail}
+import it.pagopa.interop.commons.mail.MailAttachment
 
 object Main extends App {
 
@@ -28,52 +24,50 @@ object Main extends App {
 
   logger.info("Starting metrics report generator job")
 
-  def ecs(): Future[(ExecutorService, ExecutionContextExecutor)] = Future {
-    val blockingThreadPool: ExecutorService =
-      Executors.newFixedThreadPool(1.max(Runtime.getRuntime.availableProcessors() - 1))
-    (blockingThreadPool, ExecutionContext.fromExecutor(blockingThreadPool))
-  }(global)
-
-  def createFileManager(blockingEC: ExecutionContextExecutor): Future[FileManager] =
-    Future(FileManager.get(FileManager.S3)(blockingEC))(global)
-
-  def createReadModel(configuration: Configuration): Future[ReadModelService] =
-    Future(new MongoDbReadModelService(configuration.readModel))(global)
-
-  def createJobsContainer(config: Configuration, fm: FileManager, rm: ReadModelService): Future[Jobs] =
-    Future(new Jobs(config, fm, rm))(global)
-
-  def resources(): Future[(ExecutorService, ExecutionContextExecutor, FileManager, ReadModelService, Jobs)] = {
-    implicit val ec: ExecutionContext = global
+  def resources(implicit
+    ec: ExecutionContext
+  ): Future[(ExecutorService, ExecutionContextExecutor, FileManager, ReadModelService, Jobs, Configuration)] =
     for {
-      config           <- Configuration.read()
-      (es, blockingEC) <- ecs()
-      fm               <- createFileManager(blockingEC)
-      rm               <- createReadModel(config)
-      jobs             <- createJobsContainer(config, fm, rm)
-    } yield (es, blockingEC, fm, rm, jobs)
+      config <- Configuration.read()
+      es     <- Future(Executors.newFixedThreadPool(1.max(Runtime.getRuntime.availableProcessors() - 1)))
+      blockingEC = ExecutionContext.fromExecutor(es)
+      fm   <- Future(FileManager.get(FileManager.S3)(blockingEC))
+      rm   <- Future(new MongoDbReadModelService(config.readModel))
+      jobs <- Future(new Jobs(config, fm, rm))
+    } yield (es, blockingEC, fm, rm, jobs, config)
+
+  def sendMail(config: Configuration): List[MailAttachment] => Future[Unit] = ats => {
+    val mail: TextMail =
+      TextMail(config.recipients, s"Report ${config.environment}", s"Data report of ${config.environment}", ats)
+    InteropMailer.from(config.mailer).send(mail)
   }
 
-  def execution(jobs: Jobs)(implicit blockingEC: ExecutionContextExecutor): Future[Unit] = {
-    val job1 = jobs.getAgreementRecord.map(xs => println(xs.mkString("\n")))
-    val job2 = jobs.getDescriptorsRecord.map { case (xs, ys) =>
-      println(xs.mkString("\n"))
-      println(ys.mkString("\n"))
-    }
-    val job3 = jobs.getTokensData.map(xs => println(xs.mkString("\n")))
-    job1.zip(job2).zip(job3).map(_ => ())
+  def asAttachment(fileName: String, lines: List[String]): MailAttachment =
+    MailAttachment(fileName, lines.mkString("\n").getBytes(), "text/csv")
+
+  def execution(jobs: Jobs, config: Configuration)(implicit blockingEC: ExecutionContextExecutor): Future[Unit] = {
+    val env: String                  = config.environment
+    val job1: Future[MailAttachment] = jobs.getAgreementRecord.map(asAttachment(s"agreements-${env}.csv", _))
+    val job2: Future[MailAttachment] = jobs.getTokensData.map(asAttachment(s"tokens-${env}.csv", _))
+    val jobD: Future[(List[String], List[String])] = jobs.getDescriptorsRecord
+    val job3: Future[MailAttachment] = jobD.map { case (ds, _) => asAttachment(s"descriptors-${env}.csv", ds) }
+    val job4: Future[MailAttachment] = jobD.map { case (_, ads) => asAttachment(s"active-descriptors-${env}.csv", ads) }
+    val attachments: Future[List[MailAttachment]] =
+      Future.foldLeft(List(job1, job2, job3, job4))(List.empty[MailAttachment])(_.prepended(_))
+    attachments.flatMap(sendMail(config))
   }
 
-  def job(): Future[Unit] = resources().flatMap { case (es, blockingEC, fm, rm, jobs) =>
-    execution(jobs)(blockingEC)
-      .andThen { case Failure(ex) => logger.error("Metrics job got an error", ex) }(global)
-      .andThen { _ =>
-        es.shutdown()
-        fm.close()
-        rm.close()
-      }(global)
-  }(global)
+  def job(implicit ec: ExecutionContext): Future[Unit] = resources.flatMap {
+    case (es, blockingEC, fm, rm, jobs, config) =>
+      execution(jobs, config)(blockingEC)
+        .andThen { case Failure(ex) => logger.error("Metrics job got an error", ex) }
+        .andThen { _ =>
+          es.shutdown()
+          fm.close()
+          rm.close()
+        }
+  }
 
-  Await.result(job(), Duration.Inf)
+  Await.result(job(global), Duration.Inf)
   logger.info("Completed metrics report generator job")
 }

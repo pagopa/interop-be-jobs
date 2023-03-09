@@ -4,7 +4,7 @@ import spray.json.DefaultJsonProtocol._
 import spray.json.RootJsonFormat
 
 final case class Agreement(
-  activationDate: String,
+  activationDate: Option[String],
   agreementId: String,
   eserviceId: String,
   eservice: String,

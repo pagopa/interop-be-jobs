@@ -75,7 +75,7 @@ object ReadModelQueries {
       secondProjection
     )
 
-    readModelService.aggregateRaw[Agreement](config.agreements, aggregation, offset, limit)
+    readModelService.aggregate[Agreement](config.agreements, aggregation, offset, limit)
   }
 
   private def getPurposes(

@@ -1,11 +1,14 @@
 import com.typesafe.sbt.packager.docker.Cmd
 
-ThisBuild / scalaVersion      := "2.13.10"
-ThisBuild / organization      := "it.pagopa"
-ThisBuild / organizationName  := "Pagopa S.p.A."
+ThisBuild / scalaVersion               := "2.13.10"
+ThisBuild / scalafixScalaBinaryVersion := "2.13"
+ThisBuild / semanticdbEnabled          := true
+ThisBuild / semanticdbVersion          := scalafixSemanticdb.revision
+ThisBuild / organization               := "it.pagopa"
+ThisBuild / organizationName           := "Pagopa S.p.A."
 ThisBuild / dependencyOverrides ++= Dependencies.Jars.overrides
-ThisBuild / version           := ComputeVersion.version
-Global / onChangedBuildSource := ReloadOnSourceChanges
+ThisBuild / version                    := ComputeVersion.version
+Global / onChangedBuildSource          := ReloadOnSourceChanges
 
 ThisBuild / githubSuppressPublicationWarning := true
 ThisBuild / resolvers += Resolver.githubPackages("pagopa")
