@@ -67,7 +67,10 @@ object Utils {
         .map(institution =>
           TenantSeed(
             TenantId(institution.origin, institution.originId, institution.description),
-            AttributeInfo(institution.origin, institution.category, None)
+            List(
+              AttributeInfo(institution.origin, institution.category, None),
+              AttributeInfo(institution.origin, institution.originId, None)
+            )
           )
         )
 
@@ -86,9 +89,9 @@ object Utils {
         .filterNot(tenantSeed =>
           fromTenant
             .get(tenantSeed.id.toPersistentExternalId)
-            .exists(AttributeInfo.stillExistsInTenant(tenantSeed.attributeInfo))
+            .exists(AttributeInfo.stillExistInTenant(tenantSeed.attributesInfo))
         )
-        .groupMapReduce[TenantId, List[AttributeInfo]](_.id)(tenantSeed => List(tenantSeed.attributeInfo))(_ ++ _)
+        .groupMapReduce[TenantId, List[AttributeInfo]](_.id)(tenantSeed => tenantSeed.attributesInfo)(_ ++ _)
         .toList
         .map { case (tenantId, attrs) =>
           InternalTenantSeed(
@@ -104,8 +107,9 @@ object Utils {
         .filterNot { case (tenantId, attributeFromTenant) =>
           fromRegistry.exists { tenantSeed =>
             tenantSeed.id.toPersistentExternalId == tenantId &&
-            attributeFromTenant.code == tenantSeed.attributeInfo.code &&
-            attributeFromTenant.origin == tenantSeed.attributeInfo.origin
+            tenantSeed.attributesInfo.forall(attributeInfo =>
+              attributeFromTenant.code == attributeInfo.code && attributeFromTenant.origin == attributeInfo.origin
+            )
           }
         }
         .groupMap[PersistentExternalId, AttributeInfo](_._1)(_._2)

@@ -26,4 +26,10 @@ object AttributeInfo {
           attributeFromTenant.revocationTimestamp.isEmpty
       )
 
+  def stillExistInTenant(attributesFromRegistry: List[AttributeInfo]): List[AttributeInfo] => Boolean =
+    attributesFromTenant =>
+      attributesFromRegistry.forall(attributeInfo =>
+        AttributeInfo.stillExistsInTenant(attributeInfo)(attributesFromTenant)
+      )
+
 }
