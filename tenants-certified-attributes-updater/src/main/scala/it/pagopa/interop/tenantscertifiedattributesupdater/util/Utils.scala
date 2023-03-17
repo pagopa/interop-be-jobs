@@ -77,44 +77,34 @@ object Utils {
     val fromTenant: Map[PersistentExternalId, List[AttributeInfo]] =
       tenants
         .map(tenant =>
-          tenant.externalId -> tenant.attributes.flatMap(attr =>
-            AttributeInfo.addRevocationTimeStamp(attr, attributesIndex)
-          )
+          tenant.externalId -> tenant.attributes.flatMap(AttributeInfo.addRevocationTimeStamp(attributesIndex))
         )
         .toMap
 
     val tenantsMap: Map[PersistentExternalId, String] = tenants.map(t => (t.externalId, t.name)).toMap
-    val activations: List[InternalTenantSeed]         =
+
+    val activations: List[InternalTenantSeed] =
       fromRegistry
-        .filterNot(tenantSeed =>
-          fromTenant
-            .get(tenantSeed.id.toPersistentExternalId)
-            .exists(AttributeInfo.stillExistInTenant(tenantSeed.attributesInfo))
-        )
-        .groupMapReduce[TenantId, List[AttributeInfo]](_.id)(tenantSeed => tenantSeed.attributesInfo)(_ ++ _)
+        .filter(AttributeInfo.canBeActivated(fromTenant))
+        .groupMapReduce[TenantId, Set[AttributeInfo]](_.id)(tenantSeed => tenantSeed.attributesInfo.toSet)(_ ++ _)
         .toList
         .map { case (tenantId, attrs) =>
           InternalTenantSeed(
             tenantId.toExternalId,
-            attrs.map(_.toInternalAttributeSeed),
+            attrs.map(_.toInternalAttributeSeed).toList,
             tenantsMap.getOrElse(tenantId.toPersistentExternalId, tenantId.name)
           )
         }
 
-    val revocations: Map[PersistentExternalId, List[AttributeInfo]] =
+    val revocations: Map[PersistentExternalId, List[AttributeInfo]] = {
       fromTenant.toList
         .flatMap { case (externalId, attrs) => List(externalId).zip(attrs) }
-        .filterNot { case (tenantId, attributeFromTenant) =>
-          fromRegistry.exists { tenantSeed =>
-            tenantSeed.id.toPersistentExternalId == tenantId &&
-            tenantSeed.attributesInfo.forall(attributeInfo =>
-              attributeFromTenant.code == attributeInfo.code && attributeFromTenant.origin == attributeInfo.origin
-            )
-          }
-        }
+        .filter(AttributeInfo.isRevocable(fromRegistry).tupled)
         .groupMap[PersistentExternalId, AttributeInfo](_._1)(_._2)
+    }
 
     TenantActions(activations, revocations)
+
   }
 
   def createAttributesIndex(attributes: Seq[PersistentAttribute]): Map[UUID, AttributeInfo] =
