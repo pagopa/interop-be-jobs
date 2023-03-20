@@ -53,6 +53,6 @@ object Main extends App {
       blockingThreadPool.shutdown()
     }(global)
 
-  Await.result(run(), Duration.Inf)
+  Await.result(run(), Duration.Inf): Unit
   logger.info("Completed metrics report generator job")
 }
