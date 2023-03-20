@@ -30,11 +30,13 @@ object AttributeInfo {
   ): Boolean =
     fromTenant
       .get(tenantSeed.id.toPersistentExternalId)
-      .exists(attributesFromTenant =>
-        AttributeInfo.existInTenant(
-          attributesFromRegistry = tenantSeed.attributesInfo,
-          attributesFromTenant = attributesFromTenant,
-          skipRevocationTimestamp = false
+      .exists(attributesFromTenant => // check if exist in tenant
+        tenantSeed.attributesInfo.isEmpty || tenantSeed.attributesInfo.exists(attributeFromRegistry =>
+          attributesFromTenant.exists { attributeFromTenant =>
+            attributeFromTenant.code == attributeFromRegistry.code &&
+            attributeFromTenant.origin == attributeFromRegistry.origin &&
+            attributeFromTenant.revocationTimestamp.isEmpty
+          }
         )
       )
 
@@ -46,31 +48,12 @@ object AttributeInfo {
     tenantId: PersistentExternalId,
     attributeFromTenant: AttributeInfo
   ): Boolean =
-    fromRegistry.exists { tenantSeed =>
-      tenantSeed.id.toPersistentExternalId == tenantId &&
-      AttributeInfo.existInTenant(
-        attributesFromTenant = List(attributeFromTenant),
-        attributesFromRegistry = tenantSeed.attributesInfo,
-        skipRevocationTimestamp = true
-      )
+    fromRegistry.exists { tenantSeed => // check if exists in tenant
+      tenantSeed.id.toPersistentExternalId == tenantId && tenantSeed.attributesInfo.isEmpty || tenantSeed.attributesInfo
+        .exists(attributeFromRegistry =>
+          attributeFromTenant.code == attributeFromRegistry.code &&
+            attributeFromTenant.origin == attributeFromRegistry.origin
+        )
     }
-
-  private def existInTenant(
-    attributesFromRegistry: List[AttributeInfo],
-    attributesFromTenant: List[AttributeInfo],
-    skipRevocationTimestamp: Boolean
-  ): Boolean = attributesFromRegistry.isEmpty || attributesFromRegistry.exists(attributeFromRegistry =>
-    AttributeInfo.existsInTenant(attributesFromTenant, attributeFromRegistry, skipRevocationTimestamp)
-  )
-
-  private def existsInTenant(
-    attributesFromTenant: List[AttributeInfo],
-    attributeFromRegistry: AttributeInfo,
-    skipRevocationTimestamp: Boolean
-  ): Boolean = attributesFromTenant.exists { attributeFromTenant =>
-    attributeFromTenant.code == attributeFromRegistry.code &&
-    attributeFromTenant.origin == attributeFromRegistry.origin &&
-    (attributeFromTenant.revocationTimestamp.isEmpty || skipRevocationTimestamp)
-  }
 
 }
