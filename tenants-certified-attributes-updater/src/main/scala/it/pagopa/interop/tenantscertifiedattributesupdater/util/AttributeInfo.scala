@@ -48,12 +48,13 @@ object AttributeInfo {
     tenantId: PersistentExternalId,
     attributeFromTenant: AttributeInfo
   ): Boolean =
-    fromRegistry.exists { tenantSeed => // check if exists in tenant
-      tenantSeed.id.toPersistentExternalId == tenantId && tenantSeed.attributesInfo.isEmpty || tenantSeed.attributesInfo
+    fromRegistry.exists { tenantSeed => // check if exists in registry
+      tenantSeed.id.toPersistentExternalId == tenantId && (tenantSeed.attributesInfo.isEmpty || tenantSeed.attributesInfo
         .exists(attributeFromRegistry =>
           attributeFromTenant.code == attributeFromRegistry.code &&
             attributeFromTenant.origin == attributeFromRegistry.origin
         )
+      )
     }
 
 }
