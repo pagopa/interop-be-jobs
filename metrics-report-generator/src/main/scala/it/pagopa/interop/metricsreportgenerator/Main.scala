@@ -26,15 +26,14 @@ object Main extends App {
 
   def resources(implicit
     ec: ExecutionContext
-  ): Future[(ExecutorService, ExecutionContextExecutor, FileManager, ReadModelService, Jobs, Configuration)] =
-    for {
-      config <- Configuration.read()
-      es     <- Future(Executors.newFixedThreadPool(1.max(Runtime.getRuntime.availableProcessors() - 1)))
-      blockingEC = ExecutionContext.fromExecutor(es)
-      fm   <- Future(FileManager.get(FileManager.S3)(blockingEC))
-      rm   <- Future(new MongoDbReadModelService(config.readModel))
-      jobs <- Future(new Jobs(config, fm, rm))
-    } yield (es, blockingEC, fm, rm, jobs, config)
+  ): Future[(ExecutorService, ExecutionContextExecutor, FileManager, ReadModelService, Jobs, Configuration)] = for {
+    config <- Configuration.read()
+    es     <- Future(Executors.newFixedThreadPool(1.max(Runtime.getRuntime.availableProcessors() - 1)))
+    blockingEC = ExecutionContext.fromExecutor(es)
+    fm   <- Future(FileManager.get(FileManager.S3)(blockingEC))
+    rm   <- Future(new MongoDbReadModelService(config.readModel))
+    jobs <- Future(new Jobs(config, fm, rm))
+  } yield (es, blockingEC, fm, rm, jobs, config)
 
   def sendMail(config: Configuration): List[MailAttachment] => Future[Unit] = ats => {
     val mail: TextMail =
@@ -46,14 +45,29 @@ object Main extends App {
     MailAttachment(fileName, lines.mkString("\n").getBytes(), "text/csv")
 
   def execution(jobs: Jobs, config: Configuration)(implicit blockingEC: ExecutionContextExecutor): Future[Unit] = {
-    val env: String                  = config.environment
-    val job1: Future[MailAttachment] = jobs.getAgreementRecord.map(asAttachment(s"agreements-${env}.csv", _))
-    val job2: Future[MailAttachment] = jobs.getTokensData.map(asAttachment(s"tokens-${env}.csv", _))
+    val env: String = config.environment
+
+    val job1: Future[MailAttachment] = jobs.getAgreementRecord
+      .flatMap(jobs.store(s"agreements-${env}.csv", _))
+      .map(asAttachment(s"agreements-${env}.csv", _))
+
+    val job2: Future[MailAttachment] = jobs.getTokensData
+      .flatMap(jobs.store(s"tokens-${env}.csv", _))
+      .map(asAttachment(s"tokens-${env}.csv", _))
+
     val jobD: Future[(List[String], List[String])] = jobs.getDescriptorsRecord
-    val job3: Future[MailAttachment] = jobD.map { case (ds, _) => asAttachment(s"descriptors-${env}.csv", ds) }
-    val job4: Future[MailAttachment] = jobD.map { case (_, ads) => asAttachment(s"active-descriptors-${env}.csv", ads) }
+
+    val job3: Future[MailAttachment] = jobD.flatMap { case (ds, _) =>
+      jobs.store(s"descriptors-${env}.csv", ds).map(_ => asAttachment(s"descriptors-${env}.csv", ds))
+    }
+
+    val job4: Future[MailAttachment] = jobD.flatMap { case (_, ads) =>
+      jobs.store(s"active-descriptors-${env}.csv", ads).map(_ => asAttachment(s"active-descriptors-${env}.csv", ads))
+    }
+
     val attachments: Future[List[MailAttachment]] =
       Future.foldLeft(List(job1, job2, job3, job4))(List.empty[MailAttachment])(_.prepended(_))
+
     attachments.flatMap(sendMail(config))
   }
 

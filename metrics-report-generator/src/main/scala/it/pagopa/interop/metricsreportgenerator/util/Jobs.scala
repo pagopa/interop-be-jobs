@@ -23,8 +23,7 @@ class Jobs(config: Configuration, fileManager: FileManager, readModel: ReadModel
 
     logger.info("Gathering tokens information")
 
-    def allTokensPaths(): Future[List[String]] = fileManager
-      .listFiles(config.tokens.bucket)(config.tokens.basePath)
+    def allTokensPaths(): Future[List[String]] = fileManager.listFiles(config.tokens.bucket)(config.tokens.basePath)
 
     def getTokens(path: String): Future[List[String]] = fileManager
       .getFile(config.tokens.bucket)(path)
@@ -60,6 +59,7 @@ class Jobs(config: Configuration, fileManager: FileManager, readModel: ReadModel
         .groupMapReduce(identity)(_ => 1)(_ + _) // count occurrences
         .toList
         .sortBy { case ((aId, pId, y, m, d), _) => (aId, pId, y, m, d) }
+        // to make it prettier you should let me use Shapeless or Scala 3
         .map { case ((aId, pId, y, m, d), c) => s""""$aId","$pId","$y","$m","$d","$c"""" }
         .prepended("agreementId,purposeId,year,month,day,tokencount")
     )
@@ -109,11 +109,11 @@ class Jobs(config: Configuration, fileManager: FileManager, readModel: ReadModel
       .map(asCsv *** asCsv)
   }
 
-  def store(fileName: String, lines: List[String])(implicit ec: ExecutionContext): Future[Unit] = {
+  def store(fileName: String, lines: List[String])(implicit ec: ExecutionContext): Future[List[String]] = {
     logger.info(s"Storing ${lines.size} lines at ${config.storage.bucket}/${config.storage.basePath}/$fileName")
     fileManager
       .storeBytes(config.storage.bucket, config.storage.basePath, fileName)(lines.mkString("\n").getBytes())
-      .map(_ => ())
+      .map(_ => lines)
   }
 
 }
