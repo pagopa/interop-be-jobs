@@ -53,8 +53,7 @@ object AttributeInfo {
         .exists(attributeFromRegistry =>
           attributeFromTenant.code == attributeFromRegistry.code &&
             attributeFromTenant.origin == attributeFromRegistry.origin
-        )
-      )
+        ))
     }
 
 }

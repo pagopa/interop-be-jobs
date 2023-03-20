@@ -96,12 +96,11 @@ object Utils {
           )
         }
 
-    val revocations: Map[PersistentExternalId, List[AttributeInfo]] = {
+    val revocations: Map[PersistentExternalId, List[AttributeInfo]] =
       fromTenant.toList
         .flatMap { case (externalId, attrs) => List(externalId).zip(attrs) }
         .filter(AttributeInfo.isRevocable(fromRegistry).tupled)
         .groupMap[PersistentExternalId, AttributeInfo](_._1)(_._2)
-    }
 
     TenantActions(activations, revocations)
 
