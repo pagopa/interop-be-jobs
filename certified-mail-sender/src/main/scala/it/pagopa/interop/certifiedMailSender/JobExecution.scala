@@ -1,26 +1,20 @@
 package it.pagopa.interop.certifiedMailSender
 
-import cats.implicits.toTraverseOps
+import cats.syntax.all._
 import com.typesafe.scalalogging.Logger
-import courier._
 import io.circe.generic.auto._
 import io.circe.jawn.parse
 import it.pagopa.interop.certifiedMailSender.model.InteropEnvelope
+import it.pagopa.interop.commons.mail.{InteropMailer, Mail, TextMail}
 import it.pagopa.interop.commons.queue.impl.SQSHandler
 import it.pagopa.interop.commons.utils.TypeConversions.EitherOps
 import software.amazon.awssdk.services.sqs.model.Message
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
-import scala.util.Try
 
-final case class JobExecution(sqsHandler: SQSHandler) {
+final case class JobExecution(sqsHandler: SQSHandler, mailer: InteropMailer) {
 
   private val logger: Logger = Logger(this.getClass)
-
-  implicit val mailer: Mailer = Mailer(ApplicationConfiguration.serverAddress, ApplicationConfiguration.serverPort)
-    .auth(true)
-    .as(ApplicationConfiguration.smtpUser, ApplicationConfiguration.smtpPassword)
-    .ssl(true)()
 
   def run()(implicit blockingEC: ExecutionContextExecutor): Future[Unit] =
     sqsHandler.rawReceive(ApplicationConfiguration.visibilityTimeout).flatMap {
@@ -45,37 +39,27 @@ final case class JobExecution(sqsHandler: SQSHandler) {
         }
     }
 
-  private def sendMail(message: String)(implicit mailer: Mailer, ec: ExecutionContext): Future[InteropEnvelope] = for {
-    interopEnvelope <- parse(message).flatMap(_.as[InteropEnvelope]).toFuture
-    _ = logger.info(s"Sending envelope ${interopEnvelope.id.toString}")
-    _ <- sendMail(interopEnvelope)
-    _ = logger.info(s"Envelope ${interopEnvelope.id.toString} sent")
-  } yield interopEnvelope
+  private def sendMail(message: String)(implicit ec: ExecutionContext): Future[InteropEnvelope] =
+    for {
+      interopEnvelope <- parse(message).flatMap(_.as[InteropEnvelope]).toFuture
+      _ = logger.info(s"Sending envelope ${interopEnvelope.id.toString}")
+      _ <- sendMail(interopEnvelope)
+      _ = logger.info(s"Envelope ${interopEnvelope.id.toString} sent")
+    } yield interopEnvelope
 
-  private def sendMail(interopEnvelop: InteropEnvelope)(implicit mailer: Mailer, ec: ExecutionContext): Future[Unit] =
-    prepareEnvelope(interopEnvelop).toFuture
-      .flatMap(mailer(_))
+  private def sendMail(interopEnvelope: InteropEnvelope)(implicit ec: ExecutionContext): Future[Unit] =
+    prepareMail(interopEnvelope).toFuture
+      .flatMap(mailer.send)
       .recoverWith { ex =>
-        logger.error(s"Error trying to send envelope ${interopEnvelop.id.toString} - ${ex.getMessage}")
+        logger.error(s"Error trying to send envelope ${interopEnvelope.id.toString} - ${ex.getMessage}")
         Future.failed(ex)
       }
 
-  private def prepareEnvelope(envelop: InteropEnvelope): Either[Throwable, Envelope] = {
-    val content: Content = envelop.attachments
-      .foldLeft(Multipart().html(envelop.body))((mailContent, attachment) =>
-        mailContent.attachBytes(attachment.bytes, attachment.name, attachment.mimetype)
+  private def prepareMail(envelop: InteropEnvelope): Either[Throwable, Mail] =
+    envelop.recipients
+      .flatTraverse(Mail.from)
+      .map(recipients =>
+        TextMail(recipients = recipients, subject = envelop.subject, body = envelop.body, attachments = Nil)
       )
-    for {
-      to  <- envelop.to.traverse(t => Try(t.addr))
-      cc  <- envelop.cc.traverse(c => Try(c.addr))
-      bcc <- envelop.bcc.traverse(b => Try(b.addr))
-    } yield Envelope
-      .from(ApplicationConfiguration.senderAddress.addr)
-      .to(to: _*)
-      .cc(cc: _*)
-      .bcc(bcc: _*)
-      .subject(envelop.subject)
-      .content(content)
 
-  }.toEither
 }

@@ -27,11 +27,6 @@ object Dependencies {
 
   }
 
-  private[this] object courier {
-    lazy val namespace = "com.github.daddykotex"
-    lazy val mail      = namespace %% "courier" % courierVersion
-  }
-
   private[this] object jackson {
     lazy val namespace   = "com.fasterxml.jackson.core"
     lazy val core        = namespace % "jackson-core"         % jacksonVersion
@@ -70,13 +65,14 @@ object Dependencies {
     lazy val tenantProcess =
       namespace %% "interop-be-tenant-process-client" % tenantProcessVersion
 
-    lazy val commons = namespace %% "interop-commons-utils"         % commonsVersion
-    lazy val jwt     = namespace %% "interop-commons-jwt"           % commonsVersion
-    lazy val signer  = namespace %% "interop-commons-signer"        % commonsVersion
-    lazy val queue   = namespace %% "interop-commons-queue-manager" % commonsVersion
-    lazy val cqrs    = namespace %% "interop-commons-cqrs"          % commonsVersion
-    lazy val file    = namespace %% "interop-commons-file-manager"  % commonsVersion
-    lazy val parser  = namespace %% "interop-commons-parser"        % commonsVersion
+    lazy val commons     = namespace %% "interop-commons-utils"         % commonsVersion
+    lazy val jwt         = namespace %% "interop-commons-jwt"           % commonsVersion
+    lazy val signer      = namespace %% "interop-commons-signer"        % commonsVersion
+    lazy val queue       = namespace %% "interop-commons-queue-manager" % commonsVersion
+    lazy val cqrs        = namespace %% "interop-commons-cqrs"          % commonsVersion
+    lazy val file        = namespace %% "interop-commons-file-manager"  % commonsVersion
+    lazy val parser      = namespace %% "interop-commons-parser"        % commonsVersion
+    lazy val mailManager = namespace %% "interop-commons-mail-manager"  % commonsVersion
   }
 
   private[this] object scalameta {
@@ -170,13 +166,13 @@ object Dependencies {
 
     val certifiedMailSenderDependencies: Seq[ModuleID] =
       Seq(
-        circe.core      % Compile,
-        circe.generic   % Compile,
-        circe.parser,
-        courier.mail    % Compile,
-        logback.classic % Compile,
-        pagopa.commons  % Compile,
-        pagopa.queue    % Compile
+        circe.core         % Compile,
+        circe.generic      % Compile,
+        circe.parser       % Compile,
+        logback.classic    % Compile,
+        pagopa.commons     % Compile,
+        pagopa.mailManager % Compile,
+        pagopa.queue       % Compile
       )
 
   }
