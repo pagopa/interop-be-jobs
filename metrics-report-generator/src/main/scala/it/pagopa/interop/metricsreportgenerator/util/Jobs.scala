@@ -110,9 +110,16 @@ class Jobs(config: Configuration, fileManager: FileManager, readModel: ReadModel
   }
 
   def store(fileName: String, lines: List[String])(implicit ec: ExecutionContext): Future[List[String]] = {
-    logger.info(s"Storing ${lines.size} lines at ${config.storage.bucket}/${config.storage.basePath}/$fileName")
+    val path: String = List(config.storage.bucket, config.storage.basePath, fileName)
+      .map(_.stripMargin('/'))
+      .mkString("/")
+      .replaceAll("/+", "/")
+
+    logger.info(s"Storing ${lines.size} lines at $path")
     fileManager
-      .storeBytes(config.storage.bucket, config.storage.basePath, fileName)(lines.mkString("\n").getBytes())
+      .storeBytes(config.storage.bucket, config.storage.basePath.stripPrefix("/"), fileName)(
+        lines.mkString("\n").getBytes()
+      )
       .map(_ => lines)
   }
 
