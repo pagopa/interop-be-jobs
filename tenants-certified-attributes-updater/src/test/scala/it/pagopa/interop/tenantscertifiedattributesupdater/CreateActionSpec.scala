@@ -26,6 +26,7 @@ class CreateActionSpec extends FunSuite {
     val institutions: List[Institution]           =
       List(
         institution(origin1, originId1, attributeCode1),
+        institution(origin1, originId1, attributeCode2),
         institution(origin2, originId1, attributeCode2),
         institution(origin1, originId2, attributeCode2)
       )
@@ -49,8 +50,11 @@ class CreateActionSpec extends FunSuite {
       ),
       InternalTenantSeed(
         externalId = ExternalId(origin1, originId1),
-        certifiedAttributes =
-          List(InternalAttributeSeed(origin1, attributeCode1), InternalAttributeSeed(origin1, originId1)),
+        certifiedAttributes = List(
+          InternalAttributeSeed(origin1, attributeCode1),
+          InternalAttributeSeed(origin1, originId1),
+          InternalAttributeSeed(origin1, attributeCode2)
+        ),
         name = defaultName
       )
     )
