@@ -14,6 +14,7 @@ import it.pagopa.interop.tenantmanagement.model.tenant.{PersistentExternalId, Pe
 import it.pagopa.interop.tenantprocess.client.model.{ExternalId, InternalAttributeSeed, InternalTenantSeed}
 import it.pagopa.interop.tenantscertifiedattributesupdater.system.ApplicationConfiguration
 import org.mongodb.scala.MongoClient
+import it.pagopa.interop.commons.utils.TypeConversions._
 
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
@@ -158,6 +159,21 @@ object Utils {
         processActivations(tenantUpserter, xss)
       }
   }
+
+  def processRevocations(
+    revoker: (PersistentExternalId, AttributeInfo) => Future[Unit],
+    list: List[(PersistentExternalId, List[AttributeInfo])]
+  )(implicit
+    contexts: Seq[(String, String)],
+    executionContext: ExecutionContext,
+    logger: LoggerTakingImplicit[ContextFieldsToLog]
+  ): Future[Unit] =
+    Future
+      .traverseWithLatch(10)(list) { case (externalId, attributeInfos) =>
+        logger.info(s"Processing tenant ${externalId} with attributes ${attributeInfos.mkString(",")}")
+        Future.traverseWithLatch(10)(attributeInfos)(revoker(externalId, _))
+      }
+      .map(_ => ())
 
   def shutdown()(implicit client: MongoClient, actorSystem: ActorSystem[_]): Unit = {
     client.close()

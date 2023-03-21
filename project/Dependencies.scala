@@ -65,6 +65,15 @@ object Dependencies {
     lazy val tenantProcess =
       namespace %% "interop-be-tenant-process-client" % tenantProcessVersion
 
+    lazy val agreementsModels =
+      namespace %% "interop-be-agreement-management-models" % agreementManagementVersion
+
+    lazy val purposeModels =
+      namespace %% "interop-be-purpose-management-models" % purposeManagementVersion
+
+    lazy val partyManagement =
+      namespace %% "interop-selfcare-party-management-client" % partyManagementClientVersion
+
     lazy val commons     = namespace %% "interop-commons-utils"         % commonsVersion
     lazy val jwt         = namespace %% "interop-commons-jwt"           % commonsVersion
     lazy val signer      = namespace %% "interop-commons-signer"        % commonsVersion
@@ -81,14 +90,15 @@ object Dependencies {
   }
 
   object Jars {
-    lazy val overrides: Seq[ModuleID]        =
+    lazy val overrides: Seq[ModuleID] =
       Seq(
         jackson.annotations % Compile,
         jackson.core        % Compile,
         jackson.databind    % Compile,
         jackson.scalaModule % Compile,
         pagopa.commons      % Compile
-      )
+      ).map(_.withSources.withJavadoc)
+
     lazy val attributesLoader: Seq[ModuleID] = Seq(
       // For making Java 12 happy
       "javax.annotation"                 % "javax.annotation-api" % "1.3.2" % "compile",
@@ -103,17 +113,16 @@ object Dependencies {
       pagopa.commons                     % Compile,
       pagopa.jwt                         % Compile,
       pagopa.signer                      % Compile
-    )
+    ).map(_.withSources.withJavadoc)
 
     lazy val tokenDetailsPersister: Seq[ModuleID] = Seq(
       // For making Java 12 happy
       "javax.annotation" % "javax.annotation-api" % "1.3.2" % "compile",
       //
       logback.classic    % Compile,
-      pagopa.commons     % Compile,
       pagopa.file        % Compile,
       pagopa.queue       % Compile
-    )
+    ).map(_.withSources.withJavadoc)
 
     lazy val tenantsCertifiedAttributesUpdater: Seq[ModuleID] = Seq(
       // For making Java 12 happy
@@ -124,14 +133,13 @@ object Dependencies {
       logback.classic           % Compile,
       mongodb.scalaDriver       % Compile,
       pagopa.attributeModels    % Compile,
-      pagopa.commons            % Compile,
       pagopa.partyRegistryProxy % Compile,
       pagopa.tenantModels       % Compile,
       pagopa.tenantProcess      % Compile,
       pagopa.jwt                % Compile,
       pagopa.signer             % Compile,
       scalameta.munit           % Test
-    )
+    ).map(_.withSources.withJavadoc)
 
     lazy val metricsReportGenerator: Seq[ModuleID] = Seq(
       // For making Java 12 happy
@@ -148,7 +156,22 @@ object Dependencies {
       pagopa.cqrs          % Compile,
       pagopa.file          % Compile,
       pagopa.parser        % Compile
-    )
+    ).map(_.withSources.withJavadoc)
+
+    lazy val dashboardMetricsReportGenerator: Seq[ModuleID] = Seq(
+      cats.core                % Compile,
+      "com.github.pureconfig" %% "pureconfig" % "0.17.2",
+      logback.classic          % Compile,
+      mongodb.scalaDriver      % Compile,
+      pagopa.catalogModels     % Compile,
+      pagopa.tenantModels      % Compile,
+      pagopa.agreementsModels  % Compile,
+      pagopa.partyManagement   % Compile,
+      pagopa.purposeModels     % Compile,
+      pagopa.commons           % Compile,
+      pagopa.cqrs              % Compile,
+      pagopa.file              % Compile
+    ).map(_.withSources.withJavadoc)
 
     val paDigitaleReportGenerator: Seq[ModuleID] = Seq(
       cats.core            % Compile,
@@ -162,7 +185,7 @@ object Dependencies {
       pagopa.cqrs          % Compile,
       pagopa.file          % Compile,
       pagopa.parser        % Compile
-    )
+    ).map(_.withSources.withJavadoc)
 
     val certifiedMailSenderDependencies: Seq[ModuleID] =
       Seq(

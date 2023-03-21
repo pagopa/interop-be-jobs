@@ -12,10 +12,17 @@ import java.util.concurrent.{ExecutorService, Executors}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
+import java.util.UUID
+import it.pagopa.interop.commons.logging._
+import com.typesafe.scalalogging.LoggerTakingImplicit
+import it.pagopa.interop.commons.utils.CORRELATION_ID_HEADER
 
 object Main extends App {
 
-  implicit val logger: Logger = Logger(this.getClass)
+  implicit val logger: LoggerTakingImplicit[ContextFieldsToLog] =
+    Logger.takingImplicit[ContextFieldsToLog](this.getClass.getCanonicalName())
+
+  implicit val context: List[(String, String)] = (CORRELATION_ID_HEADER -> UUID.randomUUID().toString()) :: Nil
 
   logger.info("Starting padigitale report generator job")
 
