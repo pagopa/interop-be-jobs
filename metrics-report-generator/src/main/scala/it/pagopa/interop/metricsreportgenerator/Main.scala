@@ -82,6 +82,6 @@ object Main extends App {
         }
   }
 
-  Await.result(job(global), Duration.Inf)
+  Await.result(job(global), Duration.Inf): Unit
   logger.info("Completed metrics report generator job")
 }
