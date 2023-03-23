@@ -44,8 +44,8 @@ object Dependencies {
   private[this] object pagopa {
     lazy val namespace = "it.pagopa"
 
-    lazy val attributeRegistryManagement =
-      namespace %% "interop-be-attribute-registry-management-client" % attributeRegistryManagementVersion
+    lazy val attributeRegistryProcess =
+      namespace %% "interop-be-attribute-registry-process-client" % attributeRegistryProcessVersion
 
     lazy val attributeModels =
       namespace %% "interop-be-attribute-registry-management-models" % attributeRegistryManagementVersion
@@ -105,7 +105,7 @@ object Dependencies {
       akka.slf4j                         % Compile,
       akka.stream                        % Compile,
       logback.classic                    % Compile,
-      pagopa.attributeRegistryManagement % Compile,
+      pagopa.attributeRegistryProcess    % Compile,
       pagopa.commons                     % Compile,
       pagopa.jwt                         % Compile,
       pagopa.signer                      % Compile
