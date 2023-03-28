@@ -2,7 +2,6 @@ package it.pagopa.interop.metricsreportgenerator.util
 
 import cats.syntax.all._
 import scala.concurrent.Future
-import scala.util.Try
 import it.pagopa.interop.commons.cqrs.model.ReadModelConfig
 import it.pagopa.interop.commons.mail.MailConfiguration
 import it.pagopa.interop.commons.mail.MailConfiguration._
@@ -10,6 +9,8 @@ import pureconfig._
 import pureconfig.generic.auto._
 import pureconfig.error.ConfigReaderException
 import javax.mail.internet.InternetAddress
+import it.pagopa.interop.commons.mail.Mail
+import pureconfig.error.ExceptionThrown
 
 final case class Configuration(
   environment: String,
@@ -33,9 +34,7 @@ final case class StorageConfiguration(bucket: String, basePath: String)
 
 object Configuration {
   implicit val overrideRecipientReader: ConfigReader[List[InternetAddress]] =
-    ConfigReader.fromStringTry[List[InternetAddress]](
-      _.split(',').map(_.trim).toList.traverse(s => Try(new InternetAddress(s)))
-    )
+    ConfigReader.fromString[List[InternetAddress]](Mail.addresses(_).leftMap(ExceptionThrown))
 
   def read(): Future[Configuration] = ConfigSource.default
     .load[Configuration]

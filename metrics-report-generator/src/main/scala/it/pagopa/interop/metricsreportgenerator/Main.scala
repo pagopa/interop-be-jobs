@@ -47,26 +47,28 @@ object Main extends App {
   def execution(jobs: Jobs, config: Configuration)(implicit blockingEC: ExecutionContextExecutor): Future[Unit] = {
     val env: String = config.environment
 
-    val job1: Future[MailAttachment] = jobs.getAgreementRecord
+    val agreementsJob: Future[MailAttachment] = jobs.getAgreementRecord
       .flatMap(jobs.store(s"agreements-${env}.csv", _))
       .map(asAttachment(s"agreements-${env}.csv", _))
 
-    val job2: Future[MailAttachment] = jobs.getTokensData
+    val tokensJob: Future[MailAttachment] = jobs.getTokensData
       .flatMap(jobs.store(s"tokens-${env}.csv", _))
       .map(asAttachment(s"tokens-${env}.csv", _))
 
     val jobD: Future[(List[String], List[String])] = jobs.getDescriptorsRecord
 
-    val job3: Future[MailAttachment] = jobD.flatMap { case (ds, _) =>
+    val descriptorsJob: Future[MailAttachment] = jobD.flatMap { case (ds, _) =>
       jobs.store(s"descriptors-${env}.csv", ds).map(_ => asAttachment(s"descriptors-${env}.csv", ds))
     }
 
-    val job4: Future[MailAttachment] = jobD.flatMap { case (_, ads) =>
+    val activeDescriptorsJob: Future[MailAttachment] = jobD.flatMap { case (_, ads) =>
       jobs.store(s"active-descriptors-${env}.csv", ads).map(_ => asAttachment(s"active-descriptors-${env}.csv", ads))
     }
 
     val attachments: Future[List[MailAttachment]] =
-      Future.foldLeft(List(job1, job2, job3, job4))(List.empty[MailAttachment])(_.prepended(_))
+      Future.foldLeft(List(agreementsJob, tokensJob, descriptorsJob, activeDescriptorsJob))(List.empty[MailAttachment])(
+        _.prepended(_)
+      )
 
     attachments.flatMap(sendMail(config))
   }

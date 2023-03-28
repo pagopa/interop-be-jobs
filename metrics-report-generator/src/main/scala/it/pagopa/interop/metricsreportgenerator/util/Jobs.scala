@@ -95,7 +95,7 @@ class Jobs(config: Configuration, fileManager: FileManager, readModel: ReadModel
   def getDescriptorsRecord(implicit ec: ExecutionContext): Future[(List[String], List[String])] = {
     logger.info("Gathering Descriptors Information")
 
-    val header: String                              = "name,createdAt,producerId,descriptorId"
+    val header: String                              = "name,createdAt,producerId,descriptorId,state"
     val asCsvRow: Descriptor => String              = (d: Descriptor) =>
       s""""${d.name}","${d.createdAt}","${d.producerId}","${d.descriptorId}","${d.state}""""
     val asCsvRows: List[Descriptor] => List[String] = Functor[List].lift(asCsvRow)
@@ -106,7 +106,7 @@ class Jobs(config: Configuration, fileManager: FileManager, readModel: ReadModel
     ReadModelQueries
       .getAllDescriptors(config.collections, readModel)
       .map(descriptors => (descriptors.toList, descriptors.filter(_.isActive).toList))
-      .map(asCsv *** asCsv)
+      .map(asCsv.split(asCsv))
   }
 
   def store(fileName: String, lines: List[String])(implicit ec: ExecutionContext): Future[List[String]] = {
