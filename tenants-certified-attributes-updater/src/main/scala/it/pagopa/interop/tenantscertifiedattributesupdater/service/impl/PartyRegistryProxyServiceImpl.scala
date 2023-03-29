@@ -22,7 +22,6 @@ final case class PartyRegistryProxyServiceImpl(invoker: PartyRegistryProxyInvoke
   def getInstitutions(
     bearerToken: String
   )(page: Int, limit: Int)(implicit contexts: Seq[(String, String)]): Future[Institutions] = {
-    Option(2)
     val request =
       api.searchInstitutions(page = Some(page), limit = Some(limit), xCorrelationId = UUID.randomUUID().toString)(
         BearerToken(bearerToken)
