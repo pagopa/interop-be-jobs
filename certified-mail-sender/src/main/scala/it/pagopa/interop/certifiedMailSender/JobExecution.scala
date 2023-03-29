@@ -10,22 +10,26 @@ import it.pagopa.interop.commons.queue.impl.SQSHandler
 import it.pagopa.interop.commons.utils.TypeConversions.EitherOps
 import software.amazon.awssdk.services.sqs.model.Message
 
-import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
+import scala.concurrent.{ExecutionContextExecutor, Future}
 
-final case class JobExecution(sqsHandler: SQSHandler, mailer: InteropMailer) {
+final class JobExecution private (config: Configuration)(implicit blockingEC: ExecutionContextExecutor) {
 
   private val logger: Logger = Logger(this.getClass)
 
-  def run()(implicit blockingEC: ExecutionContextExecutor): Future[Unit] =
-    sqsHandler.rawReceive(ApplicationConfiguration.visibilityTimeout).flatMap {
+  private val sqsHandler: SQSHandler = SQSHandler(config.queue.url)(blockingEC)
+  private val mailer: InteropMailer  = InteropMailer.from(config.mail)
+
+  def run(): Future[Unit] = sqsHandler
+    .rawReceive(config.queue.visibilityTimeoutInSeconds)
+    .flatMap {
       case None          => Future.unit
       case Some(message) => processMessage(message)
     }
 
-  private def processMessage(message: Message)(implicit ec: ExecutionContext): Future[Unit] =
+  private def processMessage(message: Message): Future[Unit] =
     sendMail(message.body()).flatMap(deleteMessage(message.receiptHandle()))
 
-  private def deleteMessage(receipt: String)(implicit ec: ExecutionContext): InteropEnvelope => Future[Unit] =
+  private def deleteMessage(receipt: String): InteropEnvelope => Future[Unit] =
     envelope => {
       logger.info(s"Deleting envelope ${envelope.id.toString} with receipt $receipt")
       sqsHandler
@@ -39,7 +43,7 @@ final case class JobExecution(sqsHandler: SQSHandler, mailer: InteropMailer) {
         }
     }
 
-  private def sendMail(message: String)(implicit ec: ExecutionContext): Future[InteropEnvelope] =
+  private def sendMail(message: String): Future[InteropEnvelope] =
     for {
       interopEnvelope <- parse(message).flatMap(_.as[InteropEnvelope]).toFuture
       _ = logger.info(s"Sending envelope ${interopEnvelope.id.toString}")
@@ -47,7 +51,7 @@ final case class JobExecution(sqsHandler: SQSHandler, mailer: InteropMailer) {
       _ = logger.info(s"Envelope ${interopEnvelope.id.toString} sent")
     } yield interopEnvelope
 
-  private def sendMail(interopEnvelope: InteropEnvelope)(implicit ec: ExecutionContext): Future[Unit] =
+  private def sendMail(interopEnvelope: InteropEnvelope): Future[Unit] =
     prepareMail(interopEnvelope).toFuture
       .flatMap(mailer.send)
       .recoverWith { ex =>
@@ -62,4 +66,8 @@ final case class JobExecution(sqsHandler: SQSHandler, mailer: InteropMailer) {
         TextMail(recipients = recipients, subject = envelop.subject, body = envelop.body, attachments = Nil)
       )
 
+}
+
+object JobExecution {
+  def create(config: Configuration)(implicit blockingEC: ExecutionContextExecutor) = new JobExecution(config)
 }

@@ -84,6 +84,11 @@ object Dependencies {
     lazy val mailManager = namespace %% "interop-commons-mail-manager"  % commonsVersion
   }
 
+  private[this] object pureconfig {
+    lazy val namespace  = "com.github.pureconfig"
+    lazy val pureconfig = namespace %% "pureconfig" % pureConfigVersion
+  }
+
   private[this] object scalameta {
     lazy val namespace = "org.scalameta"
     lazy val munit     = namespace %% "munit" % munitVersion
@@ -159,18 +164,18 @@ object Dependencies {
     ).map(_.withSources.withJavadoc)
 
     lazy val dashboardMetricsReportGenerator: Seq[ModuleID] = Seq(
-      cats.core                % Compile,
-      "com.github.pureconfig" %% "pureconfig" % "0.17.2",
-      logback.classic          % Compile,
-      mongodb.scalaDriver      % Compile,
-      pagopa.catalogModels     % Compile,
-      pagopa.tenantModels      % Compile,
-      pagopa.agreementsModels  % Compile,
-      pagopa.partyManagement   % Compile,
-      pagopa.purposeModels     % Compile,
-      pagopa.commons           % Compile,
-      pagopa.cqrs              % Compile,
-      pagopa.file              % Compile
+      cats.core               % Compile,
+      logback.classic         % Compile,
+      mongodb.scalaDriver     % Compile,
+      pagopa.catalogModels    % Compile,
+      pagopa.tenantModels     % Compile,
+      pagopa.agreementsModels % Compile,
+      pagopa.partyManagement  % Compile,
+      pagopa.purposeModels    % Compile,
+      pagopa.commons          % Compile,
+      pagopa.cqrs             % Compile,
+      pagopa.file             % Compile,
+      pureconfig.pureconfig   % Compile
     ).map(_.withSources.withJavadoc)
 
     val paDigitaleReportGenerator: Seq[ModuleID] = Seq(
@@ -189,13 +194,14 @@ object Dependencies {
 
     val certifiedMailSenderDependencies: Seq[ModuleID] =
       Seq(
-        circe.core         % Compile,
-        circe.generic      % Compile,
-        circe.parser       % Compile,
-        logback.classic    % Compile,
-        pagopa.commons     % Compile,
-        pagopa.mailManager % Compile,
-        pagopa.queue       % Compile
+        circe.core            % Compile,
+        circe.generic         % Compile,
+        circe.parser          % Compile,
+        logback.classic       % Compile,
+        pagopa.commons        % Compile,
+        pagopa.mailManager    % Compile,
+        pagopa.queue          % Compile,
+        pureconfig.pureconfig % Compile
       )
 
   }

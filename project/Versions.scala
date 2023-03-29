@@ -6,6 +6,7 @@ object Versions {
   lazy val logbackVersion = "1.4.4"
   lazy val mongodbScalaDriverVersion = "4.7.2"
   lazy val munitVersion              = "0.7.29"
+  lazy val pureConfigVersion         = "0.17.2"
 }
 
 object PagopaVersions {
