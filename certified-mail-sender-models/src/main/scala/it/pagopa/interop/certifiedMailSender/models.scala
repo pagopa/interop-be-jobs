@@ -1,4 +1,4 @@
-package it.pagopa.interop.certifiedMailSender.model
+package it.pagopa.interop.certifiedMailSender
 
 import java.util.UUID
 

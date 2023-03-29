@@ -4,7 +4,6 @@ import cats.syntax.all._
 import com.typesafe.scalalogging.Logger
 import io.circe.generic.auto._
 import io.circe.jawn.parse
-import it.pagopa.interop.certifiedMailSender.model.InteropEnvelope
 import it.pagopa.interop.commons.mail.{InteropMailer, Mail, TextMail}
 import it.pagopa.interop.commons.queue.impl.SQSHandler
 import it.pagopa.interop.commons.utils.TypeConversions.EitherOps
@@ -61,7 +60,7 @@ final class JobExecution private (config: Configuration)(implicit blockingEC: Ex
 
   private def prepareMail(envelop: InteropEnvelope): Either[Throwable, Mail] =
     envelop.recipients
-      .flatTraverse(Mail.from)
+      .flatTraverse(Mail.addresses)
       .map(recipients =>
         TextMail(recipients = recipients, subject = envelop.subject, body = envelop.body, attachments = Nil)
       )
