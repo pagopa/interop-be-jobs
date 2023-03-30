@@ -72,21 +72,20 @@ class Jobs(config: Configuration, fileManager: FileManager, readModel: ReadModel
       .getAllActiveAgreements(config.collections, readModel)
       .zip(ReadModelQueries.getAllPurposes(config.collections, readModel))
       .map { case (agreements, purposes) =>
-        val header = "eservice,producer,consumer,activationDate,purposes,agreementId,eserviceId,consumerId,purposeIds"
+        val header = "eserviceId,eservice,producer,consumer,agreementId,purposes,purposeIds"
         header :: agreements.toList.map { a =>
-          val purposeIds: Seq[(String, String)] = purposes
+          val (purposeIds, purposeNames): (Seq[String], Seq[String]) = purposes
             .filter(p => p.consumerId == a.consumerId && p.eserviceId == a.eserviceId)
             .map(p => (p.purposeId, p.name))
+            .separate
           List(
+            a.eserviceId,
             a.eservice,
             a.producer,
             a.consumer,
-            a.activationDate.getOrElse(""),
-            purposeIds.map(_._2).mkString("|"),
             a.agreementId,
-            a.eserviceId,
-            a.consumerId,
-            purposeIds.map(_._1).mkString("|")
+            purposeNames.mkString("|"),
+            purposeIds.mkString("|")
           ).map(s => s"\"$s\"").mkString(",")
         }
       }
