@@ -84,8 +84,8 @@ class Jobs(config: Configuration, fileManager: FileManager, readModel: ReadModel
             a.producer,
             a.consumer,
             a.agreementId,
-            purposeNames.mkString("|"),
-            purposeIds.mkString("|")
+            purposeNames.mkString("§"),
+            purposeIds.mkString("§")
           ).map(s => s"\"$s\"").mkString(",")
         }
       }
