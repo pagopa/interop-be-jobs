@@ -6,8 +6,8 @@ object ApplicationConfiguration {
 
   lazy val config: Config = ConfigFactory.load()
 
-  lazy val attributeRegistryManagementURL: String =
-    config.getString("interop-be-attributes-loader.services.attribute-registry-management")
+  lazy val attributeRegistryProcessURL: String =
+    config.getString("interop-be-attributes-loader.services.attribute-registry-process")
 
   val rsaKeysIdentifiers: Set[String] =
     config.getString("interop-be-attributes-loader.rsa-keys-identifiers").split(",").toSet.filter(_.nonEmpty)

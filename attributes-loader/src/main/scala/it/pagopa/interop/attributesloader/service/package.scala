@@ -5,14 +5,14 @@ import it.pagopa.interop._
 import scala.concurrent.ExecutionContextExecutor
 
 package object service {
-  type AttributeRegistryManagementInvoker = attributeregistrymanagement.client.invoker.ApiInvoker
+  type AttributeRegistryProcessInvoker = attributeregistryprocess.client.invoker.ApiInvoker
 
-  object AttributeRegistryManagementInvoker {
+  object AttributeRegistryProcessInvoker {
     def apply(
       blockingEc: ExecutionContextExecutor
-    )(implicit actorSystem: ActorSystem): AttributeRegistryManagementInvoker =
-      attributeregistrymanagement.client.invoker
-        .ApiInvoker(attributeregistrymanagement.client.api.EnumsSerializers.all, blockingEc)
+    )(implicit actorSystem: ActorSystem): AttributeRegistryProcessInvoker =
+      attributeregistryprocess.client.invoker
+        .ApiInvoker(attributeregistryprocess.client.api.EnumsSerializers.all, blockingEc)
   }
 
 }
