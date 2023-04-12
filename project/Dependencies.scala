@@ -44,8 +44,8 @@ object Dependencies {
   private[this] object pagopa {
     lazy val namespace = "it.pagopa"
 
-    lazy val attributeRegistryManagement =
-      namespace %% "interop-be-attribute-registry-management-client" % attributeRegistryManagementVersion
+    lazy val attributeRegistryProcess =
+      namespace %% "interop-be-attribute-registry-process-client" % attributeRegistryProcessVersion
 
     lazy val attributeModels =
       namespace %% "interop-be-attribute-registry-management-models" % attributeRegistryManagementVersion
@@ -72,6 +72,7 @@ object Dependencies {
       namespace %% "interop-selfcare-party-management-client" % partyManagementClientVersion
 
     lazy val commons = namespace %% "interop-commons-utils"         % commonsVersion
+    lazy val mail    = namespace %% "interop-commons-mail-manager"  % commonsVersion
     lazy val jwt     = namespace %% "interop-commons-jwt"           % commonsVersion
     lazy val signer  = namespace %% "interop-commons-signer"        % commonsVersion
     lazy val queue   = namespace %% "interop-commons-queue-manager" % commonsVersion
@@ -86,14 +87,13 @@ object Dependencies {
   }
 
   object Jars {
-    lazy val overrides: Seq[ModuleID] =
-      Seq(
-        jackson.annotations % Compile,
-        jackson.core        % Compile,
-        jackson.databind    % Compile,
-        jackson.scalaModule % Compile,
-        pagopa.commons      % Compile
-      ).map(_.withSources.withJavadoc)
+    lazy val overrides: Seq[ModuleID] = Seq(
+      jackson.annotations % Compile,
+      jackson.core        % Compile,
+      jackson.databind    % Compile,
+      jackson.scalaModule % Compile,
+      pagopa.commons      % Compile
+    ).map(_.withSources.withJavadoc)
 
     lazy val attributesLoader: Seq[ModuleID] = Seq(
       // For making Java 12 happy
@@ -105,7 +105,7 @@ object Dependencies {
       akka.slf4j                         % Compile,
       akka.stream                        % Compile,
       logback.classic                    % Compile,
-      pagopa.attributeRegistryManagement % Compile,
+      pagopa.attributeRegistryProcess    % Compile,
       pagopa.commons                     % Compile,
       pagopa.jwt                         % Compile,
       pagopa.signer                      % Compile
@@ -114,7 +114,6 @@ object Dependencies {
     lazy val tokenDetailsPersister: Seq[ModuleID] = Seq(
       // For making Java 12 happy
       "javax.annotation" % "javax.annotation-api" % "1.3.2" % "compile",
-      //
       logback.classic    % Compile,
       pagopa.file        % Compile,
       pagopa.queue       % Compile
@@ -123,7 +122,6 @@ object Dependencies {
     lazy val tenantsCertifiedAttributesUpdater: Seq[ModuleID] = Seq(
       // For making Java 12 happy
       "javax.annotation"        % "javax.annotation-api" % "1.3.2" % "compile",
-      //
       akka.actorTyped           % Compile,
       cats.core                 % Compile,
       logback.classic           % Compile,
@@ -139,19 +137,22 @@ object Dependencies {
 
     lazy val metricsReportGenerator: Seq[ModuleID] = Seq(
       // For making Java 12 happy
-      "javax.annotation"   % "javax.annotation-api" % "1.3.2" % "compile",
-      //
-      cats.core            % Compile,
-      circe.core           % Compile,
-      circe.generic        % Compile,
-      logback.classic      % Compile,
-      mongodb.scalaDriver  % Compile,
-      pagopa.catalogModels % Compile,
-      pagopa.tenantModels  % Compile,
-      pagopa.commons       % Compile,
-      pagopa.cqrs          % Compile,
-      pagopa.file          % Compile,
-      pagopa.parser        % Compile
+      "javax.annotation"       % "javax.annotation-api" % "1.3.2" % "compile",
+      cats.core                % Compile,
+      "com.github.pureconfig" %% "pureconfig"           % "0.17.2",
+      circe.core               % Compile,
+      circe.generic            % Compile,
+      logback.classic          % Compile,
+      mongodb.scalaDriver      % Compile,
+      pagopa.catalogModels     % Compile,
+      pagopa.tenantModels      % Compile,
+      pagopa.agreementsModels  % Compile,
+      pagopa.purposeModels     % Compile,
+      pagopa.commons           % Compile,
+      pagopa.mail              % Compile,
+      pagopa.cqrs              % Compile,
+      pagopa.file              % Compile,
+      pagopa.parser            % Compile
     ).map(_.withSources.withJavadoc)
 
     lazy val dashboardMetricsReportGenerator: Seq[ModuleID] = Seq(
