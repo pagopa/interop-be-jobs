@@ -88,6 +88,6 @@ object Main extends App {
         }
     }
 
-  Await.ready(app()(global), Duration.Inf)
+  Await.ready(app()(global), Duration.Inf): Unit
   logger.info("Completed dashboard metrics report generator job")
 }
