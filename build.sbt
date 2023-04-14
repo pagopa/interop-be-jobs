@@ -149,7 +149,7 @@ lazy val certifiedMailSender = project
 
 lazy val certifiedMailSenderModels = project
   .in(file(certifiedMailSenderModelsModuleName))
-  .settings(name := "interop-be-certified-mail-sender-models")
+  .settings(name := "interop-be-certified-mail-sender-models", scalafmtOnCompile := true, Docker / publish := {})
 
 lazy val jobs = project
   .in(file("."))

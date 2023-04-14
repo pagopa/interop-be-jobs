@@ -134,6 +134,9 @@ jobs:
       - name: Compile project
         run: sbt ++${{ matrix.scala }} compile
 
+      - name: Publish project
+        run: sbt ++${{ matrix.scala }} publish
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
