@@ -16,9 +16,17 @@ lazy val tenantsCertifiedAttributesUpdaterModuleName = "tenants-certified-attrib
 lazy val metricsReportGeneratorModuleName            = "metrics-report-generator"
 lazy val paDigitaleReportGeneratorModuleName         = "padigitale-report-generator"
 lazy val dashboardMetricsGeneratorModuleName         = "dashboard-metrics-report-generator"
+lazy val certifiedMailSenderModuleName               = "certified-mail-sender"
+lazy val certifiedMailSenderModelsModuleName         = "certified-mail-sender-models"
+
+cleanFiles += baseDirectory.value / certifiedMailSenderModuleName / "target"
+cleanFiles += baseDirectory.value / certifiedMailSenderModelsModuleName / "target"
 
 cleanFiles += baseDirectory.value / attributesLoaderModuleName / "target"
 cleanFiles += baseDirectory.value / tokenDetailsPersisterModuleName / "target"
+
+cleanFiles += baseDirectory.value / certifiedMailSenderModuleName / "target"
+cleanFiles += baseDirectory.value / certifiedMailSenderModelsModuleName / "target"
 
 lazy val sharedSettings: SettingsDefinition = Seq(
   scalafmtOnCompile        := true,
@@ -123,6 +131,26 @@ lazy val dashboardMetricsGenerator = project
   .enablePlugins(JavaAppPackaging)
   .enablePlugins(DockerPlugin)
 
+lazy val certifiedMailSender = project
+  .in(file(certifiedMailSenderModuleName))
+  .settings(
+    name                 := "interop-be-certified-mail-sender",
+    Docker / packageName := s"${name.value}",
+    sharedSettings,
+    libraryDependencies ++= Dependencies.Jars.certifiedMailSenderDependencies,
+    publish / skip       := true,
+    publish              := (()),
+    publishLocal         := (()),
+    publishTo            := None
+  )
+  .dependsOn(certifiedMailSenderModels)
+  .enablePlugins(JavaAppPackaging)
+  .enablePlugins(DockerPlugin)
+
+lazy val certifiedMailSenderModels = project
+  .in(file(certifiedMailSenderModelsModuleName))
+  .settings(name := "interop-be-certified-mail-sender-models")
+
 lazy val jobs = project
   .in(file("."))
   .aggregate(
@@ -131,6 +159,8 @@ lazy val jobs = project
     tenantsCertifiedAttributesUpdater,
     tokenDetailsPersister,
     attributesLoader,
-    metricsReportGenerator
+    metricsReportGenerator,
+    certifiedMailSender,
+    certifiedMailSenderModels
   )
   .settings(Docker / publish := {})

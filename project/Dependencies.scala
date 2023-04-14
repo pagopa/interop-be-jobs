@@ -19,11 +19,14 @@ object Dependencies {
     lazy val core      = namespace %% "cats-core" % catsVersion
   }
 
-  private[this] object circe   {
+  private[this] object circe {
     lazy val namespace = "io.circe"
     lazy val core      = namespace %% "circe-core"    % circeVersion
     lazy val generic   = namespace %% "circe-generic" % circeVersion
+    lazy val parser    = namespace %% "circe-parser"  % circeVersion
+
   }
+
   private[this] object jackson {
     lazy val namespace   = "com.fasterxml.jackson.core"
     lazy val core        = namespace % "jackson-core"         % jacksonVersion
@@ -97,18 +100,18 @@ object Dependencies {
 
     lazy val attributesLoader: Seq[ModuleID] = Seq(
       // For making Java 12 happy
-      "javax.annotation"                 % "javax.annotation-api" % "1.3.2" % "compile",
+      "javax.annotation"              % "javax.annotation-api" % "1.3.2" % "compile",
       //
-      akka.actor                         % Compile,
-      akka.actorTyped                    % Compile,
-      akka.serialization                 % Compile,
-      akka.slf4j                         % Compile,
-      akka.stream                        % Compile,
-      logback.classic                    % Compile,
-      pagopa.attributeRegistryProcess    % Compile,
-      pagopa.commons                     % Compile,
-      pagopa.jwt                         % Compile,
-      pagopa.signer                      % Compile
+      akka.actor                      % Compile,
+      akka.actorTyped                 % Compile,
+      akka.serialization              % Compile,
+      akka.slf4j                      % Compile,
+      akka.stream                     % Compile,
+      logback.classic                 % Compile,
+      pagopa.attributeRegistryProcess % Compile,
+      pagopa.commons                  % Compile,
+      pagopa.jwt                      % Compile,
+      pagopa.signer                   % Compile
     ).map(_.withSources.withJavadoc)
 
     lazy val tokenDetailsPersister: Seq[ModuleID] = Seq(
@@ -183,6 +186,17 @@ object Dependencies {
       pagopa.file          % Compile,
       pagopa.parser        % Compile
     ).map(_.withSources.withJavadoc)
+
+    val certifiedMailSenderDependencies: Seq[ModuleID] =
+      Seq(
+        circe.core      % Compile,
+        circe.generic   % Compile,
+        circe.parser    % Compile,
+        logback.classic % Compile,
+        pagopa.commons  % Compile,
+        pagopa.mail     % Compile,
+        pagopa.queue    % Compile
+      )
 
   }
 }
