@@ -47,8 +47,8 @@ object Dependencies {
   private[this] object pagopa {
     lazy val namespace = "it.pagopa"
 
-    lazy val attributeRegistryManagement =
-      namespace %% "interop-be-attribute-registry-management-client" % attributeRegistryManagementVersion
+    lazy val attributeRegistryProcess =
+      namespace %% "interop-be-attribute-registry-process-client" % attributeRegistryProcessVersion
 
     lazy val attributeModels =
       namespace %% "interop-be-attribute-registry-management-models" % attributeRegistryManagementVersion
@@ -74,19 +74,14 @@ object Dependencies {
     lazy val partyManagement =
       namespace %% "interop-selfcare-party-management-client" % partyManagementClientVersion
 
-    lazy val commons     = namespace %% "interop-commons-utils"         % commonsVersion
-    lazy val jwt         = namespace %% "interop-commons-jwt"           % commonsVersion
-    lazy val signer      = namespace %% "interop-commons-signer"        % commonsVersion
-    lazy val queue       = namespace %% "interop-commons-queue-manager" % commonsVersion
-    lazy val cqrs        = namespace %% "interop-commons-cqrs"          % commonsVersion
-    lazy val file        = namespace %% "interop-commons-file-manager"  % commonsVersion
-    lazy val parser      = namespace %% "interop-commons-parser"        % commonsVersion
-    lazy val mailManager = namespace %% "interop-commons-mail-manager"  % commonsVersion
-  }
-
-  private[this] object pureconfig {
-    lazy val namespace  = "com.github.pureconfig"
-    lazy val pureconfig = namespace %% "pureconfig" % pureConfigVersion
+    lazy val commons = namespace %% "interop-commons-utils"         % commonsVersion
+    lazy val mail    = namespace %% "interop-commons-mail-manager"  % commonsVersion
+    lazy val jwt     = namespace %% "interop-commons-jwt"           % commonsVersion
+    lazy val signer  = namespace %% "interop-commons-signer"        % commonsVersion
+    lazy val queue   = namespace %% "interop-commons-queue-manager" % commonsVersion
+    lazy val cqrs    = namespace %% "interop-commons-cqrs"          % commonsVersion
+    lazy val file    = namespace %% "interop-commons-file-manager"  % commonsVersion
+    lazy val parser  = namespace %% "interop-commons-parser"        % commonsVersion
   }
 
   private[this] object scalameta {
@@ -95,35 +90,33 @@ object Dependencies {
   }
 
   object Jars {
-    lazy val overrides: Seq[ModuleID] =
-      Seq(
-        jackson.annotations % Compile,
-        jackson.core        % Compile,
-        jackson.databind    % Compile,
-        jackson.scalaModule % Compile,
-        pagopa.commons      % Compile
-      ).map(_.withSources.withJavadoc)
+    lazy val overrides: Seq[ModuleID] = Seq(
+      jackson.annotations % Compile,
+      jackson.core        % Compile,
+      jackson.databind    % Compile,
+      jackson.scalaModule % Compile,
+      pagopa.commons      % Compile
+    ).map(_.withSources.withJavadoc)
 
     lazy val attributesLoader: Seq[ModuleID] = Seq(
       // For making Java 12 happy
-      "javax.annotation"                 % "javax.annotation-api" % "1.3.2" % "compile",
+      "javax.annotation"              % "javax.annotation-api" % "1.3.2" % "compile",
       //
-      akka.actor                         % Compile,
-      akka.actorTyped                    % Compile,
-      akka.serialization                 % Compile,
-      akka.slf4j                         % Compile,
-      akka.stream                        % Compile,
-      logback.classic                    % Compile,
-      pagopa.attributeRegistryManagement % Compile,
-      pagopa.commons                     % Compile,
-      pagopa.jwt                         % Compile,
-      pagopa.signer                      % Compile
+      akka.actor                      % Compile,
+      akka.actorTyped                 % Compile,
+      akka.serialization              % Compile,
+      akka.slf4j                      % Compile,
+      akka.stream                     % Compile,
+      logback.classic                 % Compile,
+      pagopa.attributeRegistryProcess % Compile,
+      pagopa.commons                  % Compile,
+      pagopa.jwt                      % Compile,
+      pagopa.signer                   % Compile
     ).map(_.withSources.withJavadoc)
 
     lazy val tokenDetailsPersister: Seq[ModuleID] = Seq(
       // For making Java 12 happy
       "javax.annotation" % "javax.annotation-api" % "1.3.2" % "compile",
-      //
       logback.classic    % Compile,
       pagopa.file        % Compile,
       pagopa.queue       % Compile
@@ -132,7 +125,6 @@ object Dependencies {
     lazy val tenantsCertifiedAttributesUpdater: Seq[ModuleID] = Seq(
       // For making Java 12 happy
       "javax.annotation"        % "javax.annotation-api" % "1.3.2" % "compile",
-      //
       akka.actorTyped           % Compile,
       cats.core                 % Compile,
       logback.classic           % Compile,
@@ -148,34 +140,37 @@ object Dependencies {
 
     lazy val metricsReportGenerator: Seq[ModuleID] = Seq(
       // For making Java 12 happy
-      "javax.annotation"   % "javax.annotation-api" % "1.3.2" % "compile",
-      //
-      cats.core            % Compile,
-      circe.core           % Compile,
-      circe.generic        % Compile,
-      logback.classic      % Compile,
-      mongodb.scalaDriver  % Compile,
-      pagopa.catalogModels % Compile,
-      pagopa.tenantModels  % Compile,
-      pagopa.commons       % Compile,
-      pagopa.cqrs          % Compile,
-      pagopa.file          % Compile,
-      pagopa.parser        % Compile
+      "javax.annotation"       % "javax.annotation-api" % "1.3.2" % "compile",
+      cats.core                % Compile,
+      "com.github.pureconfig" %% "pureconfig"           % "0.17.2",
+      circe.core               % Compile,
+      circe.generic            % Compile,
+      logback.classic          % Compile,
+      mongodb.scalaDriver      % Compile,
+      pagopa.catalogModels     % Compile,
+      pagopa.tenantModels      % Compile,
+      pagopa.agreementsModels  % Compile,
+      pagopa.purposeModels     % Compile,
+      pagopa.commons           % Compile,
+      pagopa.mail              % Compile,
+      pagopa.cqrs              % Compile,
+      pagopa.file              % Compile,
+      pagopa.parser            % Compile
     ).map(_.withSources.withJavadoc)
 
     lazy val dashboardMetricsReportGenerator: Seq[ModuleID] = Seq(
-      cats.core               % Compile,
-      logback.classic         % Compile,
-      mongodb.scalaDriver     % Compile,
-      pagopa.catalogModels    % Compile,
-      pagopa.tenantModels     % Compile,
-      pagopa.agreementsModels % Compile,
-      pagopa.partyManagement  % Compile,
-      pagopa.purposeModels    % Compile,
-      pagopa.commons          % Compile,
-      pagopa.cqrs             % Compile,
-      pagopa.file             % Compile,
-      pureconfig.pureconfig   % Compile
+      cats.core                % Compile,
+      "com.github.pureconfig" %% "pureconfig" % "0.17.2",
+      logback.classic          % Compile,
+      mongodb.scalaDriver      % Compile,
+      pagopa.catalogModels     % Compile,
+      pagopa.tenantModels      % Compile,
+      pagopa.agreementsModels  % Compile,
+      pagopa.partyManagement   % Compile,
+      pagopa.purposeModels     % Compile,
+      pagopa.commons           % Compile,
+      pagopa.cqrs              % Compile,
+      pagopa.file              % Compile
     ).map(_.withSources.withJavadoc)
 
     val paDigitaleReportGenerator: Seq[ModuleID] = Seq(
@@ -194,14 +189,13 @@ object Dependencies {
 
     val certifiedMailSenderDependencies: Seq[ModuleID] =
       Seq(
-        circe.core            % Compile,
-        circe.generic         % Compile,
-        circe.parser          % Compile,
-        logback.classic       % Compile,
-        pagopa.commons        % Compile,
-        pagopa.mailManager    % Compile,
-        pagopa.queue          % Compile,
-        pureconfig.pureconfig % Compile
+        circe.core      % Compile,
+        circe.generic   % Compile,
+        circe.parser    % Compile,
+        logback.classic % Compile,
+        pagopa.commons  % Compile,
+        pagopa.mail     % Compile,
+        pagopa.queue    % Compile
       )
 
   }

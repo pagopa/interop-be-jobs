@@ -1,33 +1,37 @@
 package it.pagopa.interop.metricsreportgenerator.util
 
 import it.pagopa.interop.commons.cqrs.service.ReadModelService
-import it.pagopa.interop.commons.utils.TypeConversions.OptionOps
-import it.pagopa.interop.metricsreportgenerator.models.{Agreement, Purpose}
-import it.pagopa.interop.metricsreportgenerator.util.Error.TenantNotFound
-import it.pagopa.interop.tenantmanagement.model.persistence.JsonFormats._
-import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenant
+import it.pagopa.interop.metricsreportgenerator.util.models.{Agreement, Purpose, Descriptor}
 import org.mongodb.scala.Document
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.Aggregates._
 import org.mongodb.scala.model.Filters
 import org.mongodb.scala.model.Projections._
-
-import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
 object ReadModelQueries {
 
-  def getTenant(
-    tenantId: UUID
-  )(implicit ec: ExecutionContext, readModelService: ReadModelService): Future[PersistentTenant] =
-    readModelService
-      .findOne[PersistentTenant](ApplicationConfiguration.tenantCollection, Filters.eq("data.id", tenantId.toString))
-      .flatMap(_.toFuture(TenantNotFound(tenantId)))
+  def getAllActiveAgreements(config: CollectionsConfiguration, rm: ReadModelService)(implicit
+    ec: ExecutionContext
+  ): Future[Seq[Agreement]] =
+    getAll(config.maxParallelism)(getActiveAgreements(_, _, config, rm))
 
-  def getActiveAgreements(offset: Int, limit: Int)(implicit
-    ec: ExecutionContext,
+  def getAllDescriptors(config: CollectionsConfiguration, rm: ReadModelService)(implicit
+    ec: ExecutionContext
+  ): Future[Seq[Descriptor]] =
+    getAll(config.maxParallelism)(getDescriptors(_, _, config, rm))
+
+  def getAllPurposes(config: CollectionsConfiguration, rm: ReadModelService)(implicit
+    ec: ExecutionContext
+  ): Future[Seq[Purpose]] =
+    getAll(config.maxParallelism)(getPurposes(_, _, config, rm))
+
+  private def getActiveAgreements(
+    offset: Int,
+    limit: Int,
+    config: CollectionsConfiguration,
     readModelService: ReadModelService
-  ): Future[Seq[Agreement]] = {
+  )(implicit ec: ExecutionContext): Future[Seq[Agreement]] = {
     val firstProjection: Bson = project(
       fields(
         fields(
@@ -62,24 +66,24 @@ object ReadModelQueries {
       )
     )
 
-    val aggregation: Seq[Bson] =
-      Seq(
-        `match`(Filters.eq("data.state", "Active")),
-        lookup("eservices", localField = "data.eserviceId", foreignField = "data.id", as = "data.eservice"),
-        lookup("tenants", localField = "data.consumerId", foreignField = "data.id", as = "data.consumer"),
-        lookup("tenants", localField = "data.producerId", foreignField = "data.id", as = "data.producer"),
-        firstProjection,
-        secondProjection
-      )
+    val aggregation: List[Bson] = List(
+      `match`(Filters.eq("data.state", "Active")),
+      lookup("eservices", localField = "data.eserviceId", foreignField = "data.id", as = "data.eservice"),
+      lookup("tenants", localField = "data.consumerId", foreignField = "data.id", as = "data.consumer"),
+      lookup("tenants", localField = "data.producerId", foreignField = "data.id", as = "data.producer"),
+      firstProjection,
+      secondProjection
+    )
 
-    readModelService
-      .aggregate[Agreement](ApplicationConfiguration.agreementCollection, aggregation, offset, limit)
+    readModelService.aggregate[Agreement](config.agreements, aggregation, offset, limit)
   }
 
-  def getPurposes(offset: Int, limit: Int)(implicit
-    ec: ExecutionContext,
+  private def getPurposes(
+    offset: Int,
+    limit: Int,
+    collections: CollectionsConfiguration,
     readModelService: ReadModelService
-  ): Future[Seq[Purpose]] = {
+  )(implicit ec: ExecutionContext): Future[Seq[Purpose]] = {
     val projection: Bson = project(
       fields(
         computed("data.purposeId", "$data.id"),
@@ -89,7 +93,52 @@ object ReadModelQueries {
         exclude("_id")
       )
     )
-    readModelService.aggregate[Purpose](ApplicationConfiguration.purposeCollection, Seq(projection), offset, limit)
+    readModelService.aggregate[Purpose](collections.purposes, Seq(projection), offset, limit)
+  }
+
+  private def getDescriptors(
+    offset: Int,
+    limit: Int,
+    collections: CollectionsConfiguration,
+    readModelService: ReadModelService
+  )(implicit ec: ExecutionContext): Future[Seq[Descriptor]] = {
+    val projection1: Bson = project(
+      fields(
+        exclude("_id"),
+        computed("name", "$data.name"),
+        computed("createdAt", "$data.createdAt"),
+        computed("producerId", "$data.producerId"),
+        computed(
+          "descriptors",
+          Document(
+            """{$map:{"input":"$data.descriptors","as":"descriptor","in":{"id":"$$descriptor.id","state":"$$descriptor.state"}}}"""
+          )
+        )
+      )
+    )
+
+    val unwindStep: Document = Document("""{$unwind:"$descriptors"}""")
+
+    val projection2: Bson = project(
+      fields(
+        include("name", "createdAt", "producerId"),
+        computed("descriptorId", "$descriptors.id"),
+        computed("state", "$descriptors.state")
+      )
+    )
+
+    readModelService
+      .aggregateRaw[Descriptor](collections.eservices, Seq(projection1, unwindStep, projection2), offset, limit)
+  }
+
+  private def getAll[T](
+    limit: Int
+  )(get: (Int, Int) => Future[Seq[T]])(implicit ex: ExecutionContext): Future[Seq[T]] = {
+    def go(offset: Int)(acc: Seq[T]): Future[Seq[T]] = get(offset, limit).flatMap(xs =>
+      if (xs.size < limit) Future.successful(xs ++ acc)
+      else go(offset + xs.size)(xs ++ acc)
+    )
+    go(0)(Nil)
   }
 
 }

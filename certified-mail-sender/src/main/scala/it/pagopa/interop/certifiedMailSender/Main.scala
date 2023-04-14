@@ -23,6 +23,5 @@ object Main extends App {
 
   execute()
     .recover(ex => logger.error("There was an error while running the job", ex))
-    .andThen(_ => blockingThreadPool.shutdown())(global)
-
+    .andThen(_ => blockingThreadPool.shutdown())(global): Unit
 }
