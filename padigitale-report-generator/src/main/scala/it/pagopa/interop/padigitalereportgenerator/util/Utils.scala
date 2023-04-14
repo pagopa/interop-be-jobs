@@ -61,13 +61,13 @@ object Utils {
     for {
       stream <- fileManager.get(ApplicationConfiguration.interfacesContainer)(descriptor.interface.get.path)
       fileExtractedMetrics <- getFileExtractedMetrics(stream.toByteArray).toFuture
-      activatedAt          <- descriptor.activatedAt.toFuture(Error.MissingActivationTimestamp(descriptor.id))
+      publishedAt          <- descriptor.publishedAt.toFuture(Error.MissingActivationTimestamp(descriptor.id))
     } yield metricGenerator(
       MetricGeneratorSeed(
         descriptor.version,
         descriptor.state.toString,
         descriptor.createdAt,
-        activatedAt,
+        publishedAt,
         fileExtractedMetrics
       )
     )
