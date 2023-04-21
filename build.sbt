@@ -20,6 +20,7 @@ lazy val paDigitaleReportGeneratorModuleName         = "padigitale-report-genera
 lazy val dashboardMetricsGeneratorModuleName         = "dashboard-metrics-report-generator"
 lazy val certifiedMailSenderModuleName               = "certified-mail-sender"
 lazy val certifiedMailSenderModelsModuleName         = "certified-mail-sender-models"
+lazy val eservicesFileGeneratorModuleName            = "eservices-file-generator"
 
 cleanFiles += baseDirectory.value / certifiedMailSenderModuleName / "target"
 cleanFiles += baseDirectory.value / certifiedMailSenderModelsModuleName / "target"
@@ -149,6 +150,21 @@ lazy val certifiedMailSender = project
   .enablePlugins(JavaAppPackaging)
   .enablePlugins(DockerPlugin)
 
+lazy val eservicesFileGenerator = project
+  .in(file(eservicesFileGeneratorModuleName))
+  .settings(
+    name                 := "interop-be-eservices-file-generator",
+    Docker / packageName := s"${name.value}",
+    sharedSettings,
+    libraryDependencies ++= Dependencies.Jars.eservicesFileGenerator,
+    publish / skip       := true,
+    publish              := (()),
+    publishLocal         := (()),
+    publishTo            := None
+  )
+  .enablePlugins(JavaAppPackaging)
+  .enablePlugins(DockerPlugin)
+
 lazy val certifiedMailSenderModels = project
   .in(file(certifiedMailSenderModelsModuleName))
   .settings(name := "interop-be-certified-mail-sender-models", scalafmtOnCompile := true, Docker / publish := {})
@@ -163,6 +179,7 @@ lazy val jobs = project
     attributesLoader,
     metricsReportGenerator,
     certifiedMailSender,
-    certifiedMailSenderModels
+    certifiedMailSenderModels,
+    eservicesFileGenerator
   )
   .settings(Docker / publish := {})
