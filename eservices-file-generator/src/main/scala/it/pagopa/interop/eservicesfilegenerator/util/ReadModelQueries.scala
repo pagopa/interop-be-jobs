@@ -28,6 +28,7 @@ object ReadModelQueries {
             Projections.include("data.name"),
             Projections.include("data.technology"),
             Projections.include("tenants.data.name"),
+            Projections.include("data.descriptors.id"),
             Projections.include("data.descriptors.serverUrls"),
             Projections.include("data.descriptors.state"),
             Projections.include("data.descriptors.createdAt"),
