@@ -1,7 +1,7 @@
 package it.pagopa.interop.eservicesfilegenerator.util
 
 import it.pagopa.interop.catalogmanagement.{model => DependencyCatalog}
-import it.pagopa.interop.eservicesfilegenerator.model.{EService, EServiceDB, State, Technology}
+import it.pagopa.interop.eservicesfilegenerator.model.{EService, EServiceDB, DescriptorDB, State, Technology}
 import it.pagopa.interop.eservicesfilegenerator.model.State.{ACTIVE, INACTIVE}
 import it.pagopa.interop.eservicesfilegenerator.model.Technology.{REST, SOAP}
 
@@ -22,14 +22,19 @@ object Utils {
   }
 
   implicit class EServiceDBWrapper(private val e: EServiceDB) extends AnyVal {
-    def toApi: EService = EService(
-      name = e.name,
-      eserviceId = e.id,
-      versionId = e.descriptors.maxBy(_.createdAt).id,
-      technology = e.technology.toApi,
-      state = e.descriptors.maxBy(_.createdAt).state.toApi,
-      basePath = e.descriptors.maxBy(_.createdAt).serverUrls,
-      producerName = e.producerName
-    )
+    def toApi: EService = {
+      val descriptor: DescriptorDB = e.descriptors.maxBy(_.createdAt)
+
+      EService(
+        name = e.name,
+        eserviceId = e.id,
+        versionId = descriptor.id,
+        technology = e.technology.toApi,
+        state = descriptor.state.toApi,
+        basePath = descriptor.serverUrls,
+        producerName = e.producerName,
+        version = descriptor.version
+      )
+    }
   }
 }

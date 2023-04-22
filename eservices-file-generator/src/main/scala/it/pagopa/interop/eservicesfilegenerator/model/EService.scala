@@ -14,7 +14,8 @@ final case class EService(
   technology: Technology,
   state: State,
   basePath: Seq[String],
-  producerName: String
+  producerName: String,
+  version: String
 )
 
 object EService {
@@ -22,5 +23,5 @@ object EService {
   implicit val technologyEncoder: Encoder.AsObject[Technology] = deriveEncoder[Technology]
   implicit val eServiceEncoder: Encoder.AsObject[EService]     = deriveEncoder[EService]
 
-  implicit val eServiceFormat: RootJsonFormat[EService] = jsonFormat7(EService.apply)
+  implicit val eServiceFormat: RootJsonFormat[EService] = jsonFormat8(EService.apply)
 }
