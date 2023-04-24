@@ -31,19 +31,27 @@ object Jobs {
   }
 
   def saveIntoBucket(fileManager: FileManager)(eServices: Seq[EService])(implicit
-    ec: ExecutionContext,
     configuration: Configuration,
     logger: LoggerTakingImplicit[ContextFieldsToLog],
     context: ContextFieldsToLog
-  ): Future[String] =
-    for {
-      fileName <- Future.successful(s"${configuration.storage.filename}.ndjson")
-      lines   = eServices.map(_.asJson.noSpaces)
-      _       = logger.info(s"Storing ${lines.size} lines at ${configuration.storage.bucket}/$fileName")
-      content = lines.mkString("\n").getBytes()
-      result <- fileManager.storeBytes(configuration.storage.bucket, "", fileName)(content)
-      _ = logger.info(s"Stored ${lines.size} lines at ${configuration.storage.bucket}/$fileName")
+  ): Future[String] = {
 
-    } yield result
+    def saveAsNdjson: (String, Array[Byte]) = {
+      logger.info(s"Using ndjson")
+      val fileName = s"${configuration.storage.filename}.ndjson"
+      val lines    = eServices.map(_.asJson.noSpaces)
+      val content  = lines.mkString("\n").getBytes()
+      (fileName, content)
+    }
 
+    def saveAsJson: (String, Array[Byte]) = {
+      logger.info(s"Using json")
+      val fileName = s"${configuration.storage.filename}.json"
+      val content  = eServices.asJson.noSpaces.getBytes()
+      (fileName, content)
+    }
+
+    val (fileName, content): (String, Array[Byte]) = if (configuration.storage.asndjson) saveAsNdjson else saveAsJson
+    fileManager.storeBytes(configuration.storage.bucket, "", fileName)(content)
+  }
 }

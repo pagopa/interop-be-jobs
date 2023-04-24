@@ -52,11 +52,12 @@ object Main extends App {
       rm       <- getReadModel(config.readModel)
     } yield (config, fm, rm, es)
 
-  def execution(config: Configuration, fm: FileManager, rm: ReadModelService): Future[Unit] = {
+  def execution(configuration: Configuration, fm: FileManager, rm: ReadModelService): Future[Unit] = {
     for {
       eServicesDB <- Jobs.getEservices()(global, rm)
       eServices = eServicesDB.map(_.toApi)
-      _ <- Jobs.saveIntoBucket(fm)(eServices)(global, config, logger, context)
+      path <- Jobs.saveIntoBucket(fm)(eServices)(configuration, logger, context)
+      _ = logger.info(s"Stored eservices json file at $path")
     } yield ()
   }
 

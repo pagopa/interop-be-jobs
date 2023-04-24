@@ -212,9 +212,7 @@ object Dependencies {
       pagopa.cqrs               % Compile,
       pagopa.file               % Compile,
       circe.core                % Compile,
-      circe.generic             % Compile,
-      pagopa.parser             % Compile
-      
+      circe.generic             % Compile
     ).map(_.withSources.withJavadoc)
   }
 }
