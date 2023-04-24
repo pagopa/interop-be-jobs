@@ -16,7 +16,5 @@ final case class EService(
 )
 
 object EService {
-  implicit val stateEncoder: Encoder.AsObject[State]           = deriveEncoder[State]
-  implicit val technologyEncoder: Encoder.AsObject[Technology] = deriveEncoder[Technology]
-  implicit val eServiceEncoder: Encoder.AsObject[EService]     = deriveEncoder[EService]
+  implicit val eServiceEncoder: Encoder.AsObject[EService] = deriveEncoder[EService]
 }
