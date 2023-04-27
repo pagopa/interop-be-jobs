@@ -201,7 +201,7 @@ object Dependencies {
         pagopa.queue    % Compile
       )
 
-  lazy val eservicesFileGenerator: Seq[ModuleID] = Seq(
+  lazy val eservicesMonitoringExporter: Seq[ModuleID] = Seq(
       cats.core                 % Compile,
       "com.github.pureconfig"   %% "pureconfig" % "0.17.2",
       logback.classic           % Compile,

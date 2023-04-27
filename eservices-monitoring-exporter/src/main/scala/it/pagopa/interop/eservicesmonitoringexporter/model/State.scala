@@ -1,4 +1,4 @@
-package it.pagopa.interop.eservicesfilegenerator.model
+package it.pagopa.interop.eservicesmonitoringexporter.model
 
 import io.circe._
 import io.circe.generic.semiauto._

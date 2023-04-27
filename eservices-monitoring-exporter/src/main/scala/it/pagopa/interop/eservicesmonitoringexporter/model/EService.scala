@@ -1,4 +1,4 @@
-package it.pagopa.interop.eservicesfilegenerator.model
+package it.pagopa.interop.eservicesmonitoringexporter.model
 
 import io.circe._
 import io.circe.generic.semiauto._
@@ -12,7 +12,7 @@ final case class EService(
   state: State,
   basePath: Seq[String],
   producerName: String,
-  version: String
+  versionNumber: Int
 )
 
 object EService {

@@ -1,4 +1,4 @@
-package it.pagopa.interop.eservicesfilegenerator.util
+package it.pagopa.interop.eservicesmonitoringexporter.util
 
 import cats.syntax.either._
 import it.pagopa.interop.commons.cqrs.model.ReadModelConfig

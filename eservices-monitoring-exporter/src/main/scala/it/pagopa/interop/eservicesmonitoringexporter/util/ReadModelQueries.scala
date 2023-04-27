@@ -1,8 +1,8 @@
-package it.pagopa.interop.eservicesfilegenerator.util
+package it.pagopa.interop.eservicesmonitoringexporter.util
 
 import it.pagopa.interop.commons.cqrs.service.ReadModelService
-import it.pagopa.interop.eservicesfilegenerator.model.EServiceDB
-import it.pagopa.interop.eservicesfilegenerator.model.EServiceDB._
+import it.pagopa.interop.eservicesmonitoringexporter.model.EServiceDB
+import it.pagopa.interop.eservicesmonitoringexporter.model.EServiceDB._
 import org.mongodb.scala.model.Aggregates.{project, lookup, unwind}
 import org.mongodb.scala.Document
 import org.mongodb.scala.model.Projections._
@@ -30,7 +30,7 @@ object ReadModelQueries {
             computed(
               "descriptors",
               Document(
-                """{$map:{"input":"$data.descriptors","as":"descriptor","in":{"id":"$$descriptor.id","state":"$$descriptor.state","serverUrls":"$$descriptor.serverUrls","createdAt":"$$descriptor.createdAt","version":"$$descriptor.version"}}}"""
+                """{$map:{"input":"$data.descriptors","as":"descriptor","in":{"id":"$$descriptor.id","state":"$$descriptor.state","serverUrls":"$$descriptor.serverUrls","version":"$$descriptor.version"}}}"""
               )
             )
           )

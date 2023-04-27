@@ -1,4 +1,4 @@
-package it.pagopa.interop.eservicesfilegenerator
+package it.pagopa.interop.eservicesmonitoringexporter
 
 import com.typesafe.scalalogging.Logger
 import it.pagopa.interop.commons.logging._
@@ -7,9 +7,9 @@ import it.pagopa.interop.commons.files.service.FileManager
 import it.pagopa.interop.commons.cqrs.model.ReadModelConfig
 import it.pagopa.interop.commons.cqrs.service.{MongoDbReadModelService, ReadModelService}
 import it.pagopa.interop.commons.utils.CORRELATION_ID_HEADER
-import it.pagopa.interop.eservicesfilegenerator.Jobs
-import it.pagopa.interop.eservicesfilegenerator.util.Utils._
-import it.pagopa.interop.eservicesfilegenerator.util.Configuration
+import it.pagopa.interop.eservicesmonitoringexporter.util.Jobs
+import it.pagopa.interop.eservicesmonitoringexporter.util.Utils._
+import it.pagopa.interop.eservicesmonitoringexporter.util.Configuration
 
 import java.util.concurrent.{ExecutorService, Executors}
 import scala.concurrent.duration.Duration
@@ -26,9 +26,7 @@ object Main extends App {
 
   implicit val context: List[(String, String)] = (CORRELATION_ID_HEADER -> UUID.randomUUID().toString()) :: Nil
 
-  val blockingThreadPool: ExecutorService = Executors.newFixedThreadPool(Runtime.getRuntime.availableProcessors())
-
-  logger.info("Starting eservices file generator job")
+  logger.info("Starting eservices monitoring exporter job")
 
   def getFileManager(configuration: Configuration): Future[(FileManager, ExecutorService)] = Future {
     val blockingThreadPool: ExecutorService = Executors.newFixedThreadPool(Runtime.getRuntime.availableProcessors())
@@ -55,7 +53,7 @@ object Main extends App {
   def execution(configuration: Configuration, fm: FileManager, rm: ReadModelService): Future[Unit] = {
     for {
       eServicesDB <- Jobs.getEservices()(global, rm)
-      eServices = eServicesDB.map(_.toApi)
+      eServices = eServicesDB.flatMap(_.toPersistent)
       path <- Jobs.saveIntoBucket(fm)(eServices)(configuration, logger, context)
       _ = logger.info(s"Stored eservices json file at $path")
     } yield ()
@@ -65,7 +63,7 @@ object Main extends App {
     .flatMap { case (config, fm, rm, es) =>
       execution(config, fm, rm)
         .andThen { case Failure(e) =>
-          logger.error("Error during eservices file generator job", e)
+          logger.error("Error during eservices monitoring exporter job", e)
         }
         .andThen { _ =>
           fm.close()
@@ -75,5 +73,5 @@ object Main extends App {
     }
 
   Await.ready(app(), Duration.Inf): Unit
-  logger.info("Completed eservices file generator job")
+  logger.info("Completed eservices monitoring exporter job")
 }
