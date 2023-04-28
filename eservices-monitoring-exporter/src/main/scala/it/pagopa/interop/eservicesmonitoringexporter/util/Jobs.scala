@@ -15,7 +15,11 @@ import scala.concurrent.{Future, ExecutionContext}
 
 object Jobs {
 
-  def getEservices()(implicit ec: ExecutionContext, readModelService: ReadModelService): Future[Seq[EServiceDB]] =
+  def getEservices()(implicit
+    ec: ExecutionContext,
+    readModelService: ReadModelService,
+    configuration: CollectionsConfiguration
+  ): Future[Seq[EServiceDB]] =
     getAll(50)(ReadModelQueries.getEServices(_, _))(ec)
 
   private def getAll[T](

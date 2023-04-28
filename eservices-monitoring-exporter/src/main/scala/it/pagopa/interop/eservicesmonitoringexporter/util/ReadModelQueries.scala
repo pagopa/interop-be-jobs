@@ -13,12 +13,13 @@ object ReadModelQueries {
 
   def getEServices(offset: Int, limit: Int)(implicit
     ec: ExecutionContext,
-    readModelService: ReadModelService
+    readModelService: ReadModelService,
+    collectionsConfiguration: CollectionsConfiguration
   ): Future[Seq[EServiceDB]] = for {
     eservices <- readModelService.aggregateRaw[EServiceDB](
-      "eservices",
+      collectionsConfiguration.eservices,
       Seq(
-        lookup("tenants", "data.producerId", "data.id", "tenants"),
+        lookup(collectionsConfiguration.tenants, "data.producerId", "data.id", "tenants"),
         unwind("$tenants"),
         project(
           fields(

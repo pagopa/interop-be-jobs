@@ -52,7 +52,7 @@ object Main extends App {
 
   def execution(configuration: Configuration, fm: FileManager, rm: ReadModelService): Future[Unit] = {
     for {
-      eServicesDB <- Jobs.getEservices()(global, rm)
+      eServicesDB <- Jobs.getEservices()(global, rm, configuration.collections)
       eServices = eServicesDB.flatMap(_.toPersistent)
       path <- Jobs.saveIntoBucket(fm)(eServices)(configuration, logger, context)
       _ = logger.info(s"Stored eservices json file at $path")

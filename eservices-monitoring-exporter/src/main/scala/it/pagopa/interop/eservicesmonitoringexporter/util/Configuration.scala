@@ -7,8 +7,13 @@ import pureconfig.generic.auto._
 import pureconfig.error.ConfigReaderException
 import scala.concurrent.Future
 
-final case class Configuration(storage: StorageBucketConfiguration, readModel: ReadModelConfig)
+final case class Configuration(
+  storage: StorageBucketConfiguration,
+  readModel: ReadModelConfig,
+  collections: CollectionsConfiguration
+)
 final case class StorageBucketConfiguration(kind: String, bucket: String, filename: String, asndjson: Boolean)
+final case class CollectionsConfiguration(eservices: String, tenants: String)
 
 object Configuration {
   def read(): Future[Configuration] =
