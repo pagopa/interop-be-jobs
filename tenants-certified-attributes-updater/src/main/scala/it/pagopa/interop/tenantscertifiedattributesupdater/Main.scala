@@ -9,6 +9,7 @@ import it.pagopa.interop.attributeregistrymanagement.model.persistence.attribute
 import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
 import it.pagopa.interop.commons.utils.TypeConversions._
 import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenant
+import it.pagopa.interop.tenantprocess.client.model.{ExternalId, InternalTenantSeed}
 import it.pagopa.interop.tenantscertifiedattributesupdater.repository.impl.{
   AttributesRepositoryImpl,
   TenantRepositoryImpl
@@ -58,20 +59,34 @@ object Main extends App with Dependencies {
     attributesRepository.getAttributes
       .flatMap(_.sequence.toFuture)
       .zip(tenantRepository.getTenants.flatMap(_.sequence.toFuture))
+//
+//  val result: Future[Unit] = for {
+//    bearer                <- generateBearer(jwtConfig, signerService(blockingEc))
+//    (attributes, tenants) <- getAttributesAndTenants
+//    attributesIndex           = createAttributesIndex(attributes)
+//    institutionsRetriever     = partyRegistryProxyService.getInstitutions(bearer)(_, _)
+//    tenantUpserter            = tenantProcessService.upsertTenant(bearer)(_)
+//    revokerCertifiedAttribute = tenantProcessService.revokeCertifiedAttribute(bearer)(_, _)
+//    institutions <- retrieveAllInstitutions(institutionsRetriever, initPage, List.empty)
+//    action = createAction(institutions, tenants.toList, attributesIndex)
+//    _ <- processActivations(tenantUpserter, action.activations.grouped(groupDimension).toList)
+//    _ = logger.info(s"Activated tenants/attributes")
+//    _ <- processRevocations(revokerCertifiedAttribute, action.revocations.toList)
+//    _ = logger.info(s"Revoked tenants/attributes")
+//  } yield ()
 
   val result: Future[Unit] = for {
-    bearer                <- generateBearer(jwtConfig, signerService(blockingEc))
-    (attributes, tenants) <- getAttributesAndTenants
-    attributesIndex           = createAttributesIndex(attributes)
-    institutionsRetriever     = partyRegistryProxyService.getInstitutions(bearer)(_, _)
-    tenantUpserter            = tenantProcessService.upsertTenant(bearer)(_)
-    revokerCertifiedAttribute = tenantProcessService.revokeCertifiedAttribute(bearer)(_, _)
-    institutions <- retrieveAllInstitutions(institutionsRetriever, initPage, List.empty)
-    action = createAction(institutions, tenants.toList, attributesIndex)
-    _ <- processActivations(tenantUpserter, action.activations.grouped(groupDimension).toList)
-    _ = logger.info(s"Activated tenants/attributes")
-    _ <- processRevocations(revokerCertifiedAttribute, action.revocations.toList)
-    _ = logger.info(s"Revoked tenants/attributes")
+    bearer  <- generateBearer(jwtConfig, signerService(blockingEc))
+    tenants <- tenantRepository.getTenants.flatMap(_.sequence.toFuture)
+    _       <- tenants
+      .map(t =>
+        InternalTenantSeed(
+          externalId = ExternalId(origin = t.externalId.origin, value = t.externalId.value),
+          certifiedAttributes = Nil,
+          name = t.name
+        )
+      )
+      .traverse(tenantProcessService.upsertTenant(bearer))
   } yield ()
 
   result.onComplete {
