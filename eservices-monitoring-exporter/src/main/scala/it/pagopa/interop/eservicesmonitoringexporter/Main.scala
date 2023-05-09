@@ -29,15 +29,15 @@ object Main extends App {
   logger.info("Starting eservices monitoring exporter job")
 
   def getFileManager(configuration: Configuration): Future[(FileManager, ExecutorService)] = Future {
-    val blockingThreadPool: ExecutorService = Executors.newFixedThreadPool(Runtime.getRuntime.availableProcessors())
-    (
-      FileManager.get(configuration.storage.kind match {
-        case "S3"   => FileManager.S3
-        case "file" => FileManager.File
-        case _      => throw new Exception("Incorrect File Manager")
-      })(ExecutionContext.fromExecutor(blockingThreadPool)),
-      blockingThreadPool
-    )
+    implicit val blockingThreadPool: ExecutorService =
+      Executors.newFixedThreadPool(Runtime.getRuntime.availableProcessors())
+    implicit val ec                                  = ExecutionContext.fromExecutor(blockingThreadPool)
+    val fileManager                                  = FileManager.get(configuration.storage.kind match {
+      case "S3"   => FileManager.S3
+      case "file" => FileManager.File
+      case _      => throw new Exception("Incorrect File Manager")
+    })(ec)
+    (fileManager, blockingThreadPool)
   }
 
   def getReadModel(readModelConfig: ReadModelConfig): Future[ReadModelService] =
