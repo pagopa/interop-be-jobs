@@ -3,6 +3,7 @@ package it.pagopa.interop.privacynoticesupdater.service
 import cats.syntax.all._
 import com.typesafe.scalalogging.{Logger, LoggerTakingImplicit}
 import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
+import it.pagopa.interop.commons.utils.TypeConversions._
 import it.pagopa.interop.privacynoticesupdater.util.DynamoConfiguration
 import it.pagopa.interop.privacynoticesupdater.model.db.PrivacyNotice
 import it.pagopa.interop.privacynoticesupdater.error.PrivacyNoticeError._
@@ -48,11 +49,7 @@ final class DynamoServiceImpl(config: DynamoConfiguration)(implicit
     scanamo
       .exec { table.get("id" === id) }
       .flatMap {
-        case Some(value) =>
-          value match {
-            case Right(x)  => Future.successful(x.some)
-            case Left(err) => Future.failed(DynamoReadingError(describe(err)))
-          }
+        case Some(value) => value.leftMap(err => DynamoReadingError(describe(err))).toFuture.some.sequence
         case None        => Future.successful(None)
       }
   }
