@@ -75,6 +75,7 @@ final class OneTrustServiceImpl(config: OneTrustConfiguration)(implicit
   }
 
   override def getBearerToken(): Future[Authorization] = {
+    logger.debug(s"Get bearer token from One Trust")
 
     val sttpRequest = basicRequest
       .header(Header.contentType(MediaType.MultipartFormData))

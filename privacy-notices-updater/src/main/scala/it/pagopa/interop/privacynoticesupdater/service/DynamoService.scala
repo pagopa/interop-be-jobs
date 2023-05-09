@@ -33,7 +33,6 @@ final class DynamoServiceImpl(config: DynamoConfiguration)(implicit
   val table: Table[PrivacyNotice] =
     Table[PrivacyNotice](config.tableName)
 
-  logger.info(s"Table is ${table}")
   override def put(privacyNotice: PrivacyNotice): Future[Unit] = {
     logger.info(s"Putting $privacyNotice privacy notice")
     scanamo.exec(table.put(privacyNotice))
