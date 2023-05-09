@@ -12,11 +12,8 @@ object PrivacyNoticeError {
   final case class OneTrustAuthError(error: OneTrustAuthenticationError, statusCode: StatusCode)
       extends ComponentError(
         "0003",
-        s"Error while reading data from One Trust with message ${error.error}, description${error.error_description} status code $statusCode"
+        s"Error while reading data from One Trust with message ${error.error}, description ${error.error_description} status code $statusCode"
       )
-  final case class OneTrustDeserializationError(body: String, error: Exception)
-      extends ComponentError(
-        "0004",
-        s"Error while reading data from One Trust -> $body and error ${error.getMessage()}"
-      )
+  final case class OneTrustDeserializationError(error: Throwable)
+      extends ComponentError("0004", s"Error while reading data from One Trust with error ${error.getMessage()}")
 }

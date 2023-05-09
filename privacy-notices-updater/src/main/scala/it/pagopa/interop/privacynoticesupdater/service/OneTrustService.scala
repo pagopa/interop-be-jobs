@@ -61,13 +61,13 @@ final class OneTrustServiceImpl(config: OneTrustConfiguration)(implicit
           case Right(success) => Future.successful(Some(success))
           case Left(error)    =>
             error match {
-              case HttpError(body, StatusCode.NotFound)  => {
-                logger.info(s"Receiving Not Found message ${body}")
+              case HttpError(body, StatusCode.NotFound) => {
+                logger.info(s"Receiving Not Found message")
                 if (body.map(_.path).isDefined)(Future.failed(OneTrustHttpError(StatusCode.NotFound)))
                 else (Future.successful(None))
               }
-              case HttpError(_, statusCode)              => Future.failed(OneTrustHttpError(statusCode))
-              case DeserializationException(body, error) => Future.failed(OneTrustDeserializationError(body, error))
+              case HttpError(_, statusCode)             => Future.failed(OneTrustHttpError(statusCode))
+              case DeserializationException(_, error)   => Future.failed(OneTrustDeserializationError(error))
             }
         }
       }
