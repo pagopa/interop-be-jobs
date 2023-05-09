@@ -4,18 +4,19 @@ import it.pagopa.interop.privacynoticesupdater.model.http.{PrivacyNotice, Privac
 import it.pagopa.interop.privacynoticesupdater.model.db.{PrivacyNotice => PrivacyNoticeDb}
 import it.pagopa.interop.privacynoticesupdater.model.db.{PrivacyNoticeVersion => PrivacyNoticeVersionDb}
 
-import java.time.ZoneOffset;
+import java.time.{ZoneOffset, ZoneId};
 
 object PrivacyNoticeConverter {
 
-  val zoneId = ZoneOffset.UTC
+  val zoneUtc = ZoneOffset.UTC
+  val zoneCet = ZoneId.of("Europe/Rome")
 
   implicit class PrivacyNoticeWrapper(private val pn: PrivacyNotice) extends AnyVal {
     def toPersistent: PrivacyNoticeDb =
       PrivacyNoticeDb(
         id = pn.id,
-        createdDate = pn.createdDate.toInstant(zoneId),
-        lastPublishedDate = pn.lastPublishedDate.toInstant(zoneId),
+        createdDate = pn.createdDate.atZone(zoneCet).toInstant().atOffset(zoneUtc),
+        lastPublishedDate = pn.lastPublishedDate.atZone(zoneCet).toInstant().atOffset(zoneUtc),
         organizationId = pn.organizationId,
         responsibleUserId = pn.responsibleUserId,
         privacyNoticeVersion = pn.version.toPersistent
@@ -27,7 +28,7 @@ object PrivacyNoticeConverter {
       PrivacyNoticeVersionDb(
         versionId = pnv.id,
         name = pnv.name,
-        publishedDate = pnv.publishedDate.toInstant(zoneId),
+        publishedDate = pnv.publishedDate.atZone(zoneCet).toInstant().atOffset(zoneUtc),
         status = pnv.status,
         version = pnv.version
       )

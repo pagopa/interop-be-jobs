@@ -4,12 +4,12 @@ import org.scanamo.DynamoFormat
 import org.scanamo.generic.semiauto.deriveDynamoFormat
 
 import java.util.UUID
-import java.time.Instant
+import java.time.OffsetDateTime
 
 final case class PrivacyNotice(
   id: UUID,
-  createdDate: Instant,
-  lastPublishedDate: Instant,
+  createdDate: OffsetDateTime,
+  lastPublishedDate: OffsetDateTime,
   organizationId: UUID,
   responsibleUserId: Option[UUID],
   privacyNoticeVersion: PrivacyNoticeVersion
@@ -18,7 +18,7 @@ final case class PrivacyNotice(
 final case class PrivacyNoticeVersion(
   versionId: UUID,
   name: String,
-  publishedDate: Instant,
+  publishedDate: OffsetDateTime,
   status: String,
   version: Int
 )

@@ -5,8 +5,7 @@ import it.pagopa.interop.commons.logging._
 import com.typesafe.scalalogging.LoggerTakingImplicit
 import it.pagopa.interop.commons.utils.CORRELATION_ID_HEADER
 import akka.actor.ActorSystem
-import org.scanamo.{ScanamoAsync, LocalDynamoDB}
-import software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType._
+import org.scanamo.ScanamoAsync
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
 
 import it.pagopa.interop.privacynoticesupdater.util._
@@ -29,14 +28,7 @@ object Main extends App {
 
   implicit val actorSystem: ActorSystem = ActorSystem("interop-be-privacy-notices-updater")
 
-  val client: DynamoDbAsyncClient    = LocalDynamoDB.client(8000)
-  implicit val scanamo: ScanamoAsync = ScanamoAsync(client)(global)
-  val responseDelete                 = LocalDynamoDB.deleteTable(client)("privacynotices")
-  logger.info(s"Delete privacy notices table $responseDelete")
-
-  val responseCreate = LocalDynamoDB.createTable(client)("privacynotices")("id" -> S)
-  logger.info(s"Create privacy notices table $responseCreate")
-  // implicit val scanamo: ScanamoAsync = ScanamoAsync(DynamoDbAsyncClient.create())(global)
+  implicit val scanamo: ScanamoAsync = ScanamoAsync(DynamoDbAsyncClient.create())(global)
 
   logger.info("Starting privacy notices updater job")
 
@@ -65,15 +57,11 @@ object Main extends App {
   ): Future[Unit] = for {
     token <- ots.getBearerToken()
     ppOts <- ots.getById(config.oneTrust.ppUuid)(token.access_token)
-    _ = logger.info(s"ppOts is ${ppOts}")
     ppDs <- ds.getById(config.oneTrust.ppUuid)
-    _ = logger.info(s"ppDs is ${ppDs}")
-    _      <- ppOts.fold(ppDs.fold(Future.successful(()))(p => ds.delete(p.id)))(p => ds.put(p.toPersistent))
+    _           <- ppOts.fold(ppDs.fold(Future.successful(()))(p => ds.delete(p.id)))(p => ds.put(p.toPersistent))
     tosOts <- ots.getById(config.oneTrust.tosUuid)(token.access_token)
-    _ = logger.info(s"tosOts is ${tosOts}")
     tosDs <- ds.getById(config.oneTrust.tosUuid)
-    _ = logger.info(s"tosDs is ${tosDs}")
-    _ <- tosOts.fold(tosDs.fold(Future.successful(()))(p => ds.delete(p.id)))(p => ds.put(p.toPersistent))
+    _            <- tosOts.fold(tosDs.fold(Future.successful(()))(p => ds.delete(p.id)))(p => ds.put(p.toPersistent))
   } yield ()
 
   def app()(implicit global: ExecutionContext): Future[Unit] = resources()
@@ -84,7 +72,6 @@ object Main extends App {
         }
         .andThen { _ =>
           actorSystem.terminate(): Unit
-          client.close()
         }
     }
 
