@@ -84,6 +84,20 @@ object Dependencies {
     lazy val parser  = namespace %% "interop-commons-parser"        % commonsVersion
   }
 
+  private[this] object scanamo {
+    lazy val scanamo = "org.scanamo" %% "scanamo" % scanamoVersion
+    lazy val testkit = "org.scanamo" %% "scanamo-testkit" % scanamoVersion
+
+  }
+
+  private[this] object sttp {
+    lazy val sttpClient = "com.softwaremill.sttp.client4" %% "core" % sttpVersion
+    lazy val sttpModel  = "com.softwaremill.sttp.model" %% "core" % sttpModelVersion
+    lazy val sttpAkka   = "com.softwaremill.sttp.client4" %% "akka-http-backend" % sttpVersion
+    lazy val stpCirce   = "com.softwaremill.sttp.client4" %% "circe" % sttpVersion
+    lazy val stpLog     = "com.softwaremill.sttp.client4" %% "slf4j-backend" % sttpVersion
+  }
+
   private[this] object scalameta {
     lazy val namespace = "org.scalameta"
     lazy val munit     = namespace %% "munit" % munitVersion
@@ -197,6 +211,22 @@ object Dependencies {
         pagopa.mail     % Compile,
         pagopa.queue    % Compile
       )
-
+    
+    val privacyNoticesUpdaterDependencies: Seq[ModuleID] =
+      Seq(
+        "com.github.pureconfig" %% "pureconfig" % "0.17.2",
+        logback.classic % Compile,
+        cats.core       % Compile,
+        pagopa.commons  % Compile,
+        scanamo.scanamo % Compile,
+        scanamo.testkit % Compile,
+        sttp.sttpClient % Compile,
+        sttp.stpCirce   % Compile,
+        sttp.sttpModel  % Compile,
+        sttp.sttpAkka   % Compile,
+        sttp.stpLog     % Compile,
+        akka.stream     % Compile,
+        circe.generic   % Compile
+    ).map(_.withSources.withJavadoc)
   }
 }
