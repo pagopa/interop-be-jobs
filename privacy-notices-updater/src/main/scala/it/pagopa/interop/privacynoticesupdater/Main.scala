@@ -55,13 +55,13 @@ object Main extends App {
   def execution(config: Configuration, ots: OneTrustService, ds: DynamoService)(implicit
     global: ExecutionContext
   ): Future[Unit] = for {
-    token <- ots.getBearerToken()
-    ppOts <- ots.getById(config.oneTrust.ppUuid)(token.access_token)
-    ppDs <- ds.getById(config.oneTrust.ppUuid)
-    _           <- ppOts.fold(ppDs.fold(Future.successful(()))(p => ds.delete(p.id)))(p => ds.put(p.toPersistent))
+    token  <- ots.getBearerToken()
+    ppOts  <- ots.getById(config.oneTrust.ppUuid)(token.access_token)
+    ppDs   <- ds.getById(config.oneTrust.ppUuid)
+    _      <- ppOts.fold(ppDs.fold(Future.successful(()))(p => ds.delete(p.id)))(p => ds.put(p.toPersistent))
     tosOts <- ots.getById(config.oneTrust.tosUuid)(token.access_token)
-    tosDs <- ds.getById(config.oneTrust.tosUuid)
-    _            <- tosOts.fold(tosDs.fold(Future.successful(()))(p => ds.delete(p.id)))(p => ds.put(p.toPersistent))
+    tosDs  <- ds.getById(config.oneTrust.tosUuid)
+    _      <- tosOts.fold(tosDs.fold(Future.successful(()))(p => ds.delete(p.id)))(p => ds.put(p.toPersistent))
   } yield ()
 
   def app()(implicit global: ExecutionContext): Future[Unit] = resources()
