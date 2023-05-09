@@ -1,6 +1,5 @@
 package it.pagopa.interop.privacynoticesupdater.service
 
-import akka.actor.ActorSystem
 import com.typesafe.scalalogging.{Logger, LoggerTakingImplicit}
 import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
 import it.pagopa.interop.privacynoticesupdater.util.OneTrustConfiguration
@@ -11,12 +10,12 @@ import it.pagopa.interop.privacynoticesupdater.model.http.ErrorFormats._
 import sttp.client4._
 import sttp.model._
 import sttp.client4.circe._
-import sttp.client4.akkahttp._
-import sttp.client4.logging.slf4j.Slf4jLoggingBackend
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration._
 import java.util.UUID
 import java.time.{OffsetDateTime, ZoneId}
+import java.util.concurrent.TimeUnit
 import java.time.temporal.ChronoUnit
 import java.time.format.DateTimeFormatter
 
@@ -29,14 +28,14 @@ trait OneTrustService {
 
 final class OneTrustServiceImpl(config: OneTrustConfiguration)(implicit
   ec: ExecutionContext,
-  actorSystem: ActorSystem,
+  backend: WebSocketBackend[Future],
   contexts: Seq[(String, String)]
 ) extends OneTrustService {
 
   implicit val logger: LoggerTakingImplicit[ContextFieldsToLog] =
     Logger.takingImplicit[ContextFieldsToLog](this.getClass)
 
-  val backend = Slf4jLoggingBackend(AkkaHttpBackend.usingActorSystem(actorSystem))
+  val timeout = FiniteDuration(config.readTimeoutInSeconds, TimeUnit.SECONDS)
 
   override def getById(id: UUID)(bearer: String): Future[Option[PrivacyNotice]] = {
     logger.debug(s"Get Privacy notice with id $id from One Trust")
@@ -50,6 +49,7 @@ final class OneTrustServiceImpl(config: OneTrustConfiguration)(implicit
 
     val sttpRequest = basicRequest.auth
       .bearer(bearer)
+      .readTimeout(timeout)
       .header(Header.accept(MediaType.ApplicationJson))
       .method(Method.GET, uri"${url}")
       .response(asJsonEither[Option[ErrorMessage], PrivacyNotice])
@@ -78,6 +78,7 @@ final class OneTrustServiceImpl(config: OneTrustConfiguration)(implicit
     logger.debug(s"Get bearer token from One Trust")
 
     val sttpRequest = basicRequest
+      .readTimeout(timeout)
       .header(Header.contentType(MediaType.MultipartFormData))
       .header(Header.accept(MediaType.ApplicationJson))
       .multipartBody(

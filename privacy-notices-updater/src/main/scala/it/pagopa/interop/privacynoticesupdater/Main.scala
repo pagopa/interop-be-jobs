@@ -4,9 +4,11 @@ import com.typesafe.scalalogging.Logger
 import it.pagopa.interop.commons.logging._
 import com.typesafe.scalalogging.LoggerTakingImplicit
 import it.pagopa.interop.commons.utils.CORRELATION_ID_HEADER
-import akka.actor.ActorSystem
 import org.scanamo.ScanamoAsync
 import software.amazon.awssdk.services.dynamodb.DynamoDbAsyncClient
+import sttp.client4.logging.slf4j.Slf4jLoggingBackend
+import sttp.client4.httpclient.HttpClientFutureBackend
+import sttp.client4.{BackendOptions, WebSocketBackend}
 
 import it.pagopa.interop.privacynoticesupdater.util._
 import it.pagopa.interop.privacynoticesupdater.service._
@@ -14,8 +16,9 @@ import it.pagopa.interop.privacynoticesupdater.converters.PrivacyNoticeConverter
 
 import scala.concurrent.{Future, ExecutionContext}
 import scala.concurrent.Await
-import scala.concurrent.duration.Duration
 import scala.concurrent.ExecutionContext.global
+import scala.concurrent.duration._
+import java.util.concurrent.TimeUnit
 
 import java.util.UUID
 import scala.util.Failure
@@ -26,30 +29,37 @@ object Main extends App {
 
   implicit val context: List[(String, String)] = (CORRELATION_ID_HEADER -> UUID.randomUUID().toString()) :: Nil
 
-  implicit val actorSystem: ActorSystem = ActorSystem("interop-be-privacy-notices-updater")
-
   implicit val scanamo: ScanamoAsync = ScanamoAsync(DynamoDbAsyncClient.create())(global)
 
   logger.info("Starting privacy notices updater job")
 
-  def getOneTrustService(oneTrustConfiguration: OneTrustConfiguration)(implicit
-    global: ExecutionContext
-  ): Future[OneTrustService] =
-    Future(new OneTrustServiceImpl(oneTrustConfiguration)(global, actorSystem, context))
+  def getOneTrustService(
+    oneTrustConfiguration: OneTrustConfiguration
+  )(implicit global: ExecutionContext): Future[(OneTrustService, WebSocketBackend[Future])] = {
+    implicit val backend = Slf4jLoggingBackend(
+      HttpClientFutureBackend(options =
+        BackendOptions
+          .connectionTimeout(FiniteDuration(oneTrustConfiguration.connectionTimeoutInSeconds, TimeUnit.SECONDS))
+      )
+    )
+    Future((new OneTrustServiceImpl(oneTrustConfiguration)(global, backend, context), backend))
+  }
 
   def getDynamoService(dynamoConfiguration: DynamoConfiguration)(implicit
     global: ExecutionContext
   ): Future[DynamoService] =
     Future(new DynamoServiceImpl(dynamoConfiguration)(global, scanamo, context))
 
-  def resources()(implicit global: ExecutionContext): Future[(Configuration, OneTrustService, DynamoService)] = {
+  def resources()(implicit
+    global: ExecutionContext
+  ): Future[(Configuration, OneTrustService, DynamoService, WebSocketBackend[Future])] = {
     logger.info(s"Start resources")
     for {
       config <- Configuration.read()
       _ = logger.debug(s"Configuration is ${config}")
-      ots <- getOneTrustService(config.oneTrust)
-      ds  <- getDynamoService(config.dynamo)
-    } yield (config, ots, ds)
+      (ots, bk) <- getOneTrustService(config.oneTrust)
+      ds        <- getDynamoService(config.dynamo)
+    } yield (config, ots, ds, bk)
   }
 
   def execution(config: Configuration, ots: OneTrustService, ds: DynamoService)(implicit
@@ -65,13 +75,13 @@ object Main extends App {
   } yield ()
 
   def app()(implicit global: ExecutionContext): Future[Unit] = resources()
-    .flatMap { case (config, otm, ds) =>
+    .flatMap { case (config, otm, ds, bk) =>
       execution(config, otm, ds)
         .andThen { case Failure(e) =>
           logger.error("privacy notices updater got an error", e)
         }
         .andThen { _ =>
-          actorSystem.terminate(): Unit
+          bk.close()
         }
     }
 

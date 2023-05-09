@@ -223,9 +223,7 @@ object Dependencies {
         sttp.sttpClient % Compile,
         sttp.stpCirce   % Compile,
         sttp.sttpModel  % Compile,
-        sttp.sttpAkka   % Compile,
         sttp.stpLog     % Compile,
-        akka.stream     % Compile,
         circe.generic   % Compile
     ).map(_.withSources.withJavadoc)
   }

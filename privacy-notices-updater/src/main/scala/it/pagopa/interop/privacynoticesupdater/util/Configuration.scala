@@ -18,7 +18,9 @@ final case class OneTrustConfiguration(
   ppUuid: UUID,
   tosUuid: UUID,
   clientId: String,
-  clientSecret: String
+  clientSecret: String,
+  connectionTimeoutInSeconds: Int,
+  readTimeoutInSeconds: Int
 )
 
 object Configuration {
