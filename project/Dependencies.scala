@@ -93,7 +93,6 @@ object Dependencies {
   private[this] object sttp {
     lazy val sttpClient = "com.softwaremill.sttp.client4" %% "core" % sttpVersion
     lazy val sttpModel  = "com.softwaremill.sttp.model" %% "core" % sttpModelVersion
-    lazy val sttpAkka   = "com.softwaremill.sttp.client4" %% "akka-http-backend" % sttpVersion
     lazy val stpCirce   = "com.softwaremill.sttp.client4" %% "circe" % sttpVersion
     lazy val stpLog     = "com.softwaremill.sttp.client4" %% "slf4j-backend" % sttpVersion
   }
