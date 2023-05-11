@@ -87,7 +87,6 @@ object Dependencies {
   private[this] object scanamo {
     lazy val scanamo = "org.scanamo" %% "scanamo" % scanamoVersion
     lazy val testkit = "org.scanamo" %% "scanamo-testkit" % scanamoVersion
-
   }
 
   private[this] object sttp {
@@ -218,7 +217,6 @@ object Dependencies {
         cats.core       % Compile,
         pagopa.commons  % Compile,
         scanamo.scanamo % Compile,
-        scanamo.testkit % Compile,
         sttp.sttpClient % Compile,
         sttp.stpCirce   % Compile,
         sttp.sttpModel  % Compile,
