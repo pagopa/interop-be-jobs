@@ -236,8 +236,42 @@ class CreateActionSpec extends FunSuite {
     val result = createAction(institutions, tenants, attributesIndex)
 
     val expectedActivations = Nil
-    val expectedRevocations =
-      Map(PersistentExternalId("IPA", "001") -> List(AttributeInfo(attributeOrigin, attributeCode, Some(timestamp))))
+    val expectedRevocations = Map.empty[PersistentExternalId, List[AttributeInfo]]
+
+    assertEquals(result.activations, expectedActivations)
+    assertEquals(result.revocations, expectedRevocations)
+  }
+
+  test("revoke only the attributes whose origin is also present in the register of institution") {
+    val admittedOrigin         = "IPA"
+    val admittedOriginId       = "001"
+    val existingAttributeId1   = UUID.randomUUID()
+    val existingAttributeCode1 = "CAT1"
+    val forbiddenOrigin        = "AGID"
+    val existingAttributeId2   = UUID.randomUUID()
+    val existingAttributeCode2 = "SDG"
+
+    val institutions: List[Institution]           = List.empty
+    val tenants: List[PersistentTenant]           = List(
+      persistentTenant(
+        admittedOrigin,
+        admittedOriginId,
+        attributes = List(
+          PersistentCertifiedAttribute(id = existingAttributeId1, assignmentTimestamp = timestamp, None),
+          PersistentCertifiedAttribute(id = existingAttributeId2, assignmentTimestamp = timestamp, None)
+        )
+      )
+    )
+    val attributesIndex: Map[UUID, AttributeInfo] =
+      Map(
+        existingAttributeId1 -> AttributeInfo(admittedOrigin, existingAttributeCode1, None),
+        existingAttributeId2 -> AttributeInfo(forbiddenOrigin, existingAttributeCode2, None)
+      )
+
+    val result = createAction(institutions, tenants, attributesIndex)
+
+    val expectedActivations = Nil
+    val expectedRevocations = Map.empty[PersistentExternalId, List[AttributeInfo]]
 
     assertEquals(result.activations, expectedActivations)
     assertEquals(result.revocations, expectedRevocations)

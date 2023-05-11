@@ -9,12 +9,12 @@ import it.pagopa.interop.commons.jwt.service.impl.DefaultInteropTokenGenerator
 import it.pagopa.interop.commons.jwt.{JWTInternalTokenConfig, KID, PrivateKeysKidHolder}
 import it.pagopa.interop.commons.logging.ContextFieldsToLog
 import it.pagopa.interop.commons.signer.service.SignerService
+import it.pagopa.interop.commons.utils.TypeConversions._
 import it.pagopa.interop.partyregistryproxy.client.model.{Institution, Institutions}
 import it.pagopa.interop.tenantmanagement.model.tenant.{PersistentExternalId, PersistentTenant}
 import it.pagopa.interop.tenantprocess.client.model.{ExternalId, InternalAttributeSeed, InternalTenantSeed}
 import it.pagopa.interop.tenantscertifiedattributesupdater.system.ApplicationConfiguration
 import org.mongodb.scala.MongoClient
-import it.pagopa.interop.commons.utils.TypeConversions._
 
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
@@ -61,6 +61,12 @@ object Utils {
     tenants: List[PersistentTenant],
     attributesIndex: Map[UUID, AttributeInfo]
   ): TenantActions = {
+
+    val admittedAttributeOrigins: List[String] = institutions.map(_.origin).distinct
+
+    val admittedAttributesIndex: Map[UUID, AttributeInfo] =
+      attributesIndex.filter(a => admittedAttributeOrigins.contains(a._2.origin))
+
     val fromRegistry: List[TenantSeed] =
       institutions
         .filter(_.id.nonEmpty)
@@ -77,7 +83,7 @@ object Utils {
     val fromTenant: Map[PersistentExternalId, List[AttributeInfo]] =
       tenants
         .map(tenant =>
-          tenant.externalId -> tenant.attributes.flatMap(AttributeInfo.addRevocationTimeStamp(attributesIndex))
+          tenant.externalId -> tenant.attributes.flatMap(AttributeInfo.addRevocationTimeStamp(admittedAttributesIndex))
         )
         .toMap
 
