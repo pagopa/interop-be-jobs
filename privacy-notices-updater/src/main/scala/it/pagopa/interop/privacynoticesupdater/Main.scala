@@ -48,7 +48,7 @@ object Main extends App {
   def getDynamoService(dynamoConfiguration: DynamoConfiguration)(implicit
     global: ExecutionContext
   ): Future[DynamoService] =
-    Future(new DynamoServiceImpl(dynamoConfiguration)(global, scanamo, context))
+    Future(new DynamoServiceImpl(dynamoConfiguration)(global, scanamo))
 
   def resources()(implicit
     global: ExecutionContext
@@ -75,6 +75,9 @@ object Main extends App {
   } yield ()
 
   def app()(implicit global: ExecutionContext): Future[Unit] = resources()
+    .andThen { case Failure(e) =>
+      logger.error("privacy notices configuration got an error", e)
+    }
     .flatMap { case (config, otm, ds, bk) =>
       execution(config, otm, ds)
         .andThen { case Failure(e) =>

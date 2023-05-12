@@ -5,6 +5,7 @@ import it.pagopa.interop.privacynoticesupdater.model.db.{PrivacyNotice => Privac
 import it.pagopa.interop.privacynoticesupdater.model.db.{PrivacyNoticeVersion => PrivacyNoticeVersionDb}
 
 import java.time.{ZoneOffset, ZoneId};
+import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
 
 object PrivacyNoticeConverter {
 
@@ -14,12 +15,15 @@ object PrivacyNoticeConverter {
   implicit class PrivacyNoticeWrapper(private val pn: PrivacyNotice) extends AnyVal {
     def toPersistent: PrivacyNoticeDb =
       PrivacyNoticeDb(
+        pk = s"${PrivacyNoticeDb.pkPrefix}${pn.id}",
+        sk = s"${PrivacyNoticeDb.skPrefix}${pn.id}",
         id = pn.id,
         createdDate = pn.createdDate.atZone(zoneCet).toInstant().atOffset(zoneUtc),
         lastPublishedDate = pn.lastPublishedDate.atZone(zoneCet).toInstant().atOffset(zoneUtc),
         organizationId = pn.organizationId,
         responsibleUserId = pn.responsibleUserId,
-        privacyNoticeVersion = pn.version.toPersistent
+        privacyNoticeVersion = pn.version.toPersistent,
+        createdAt = OffsetDateTimeSupplier.get()
       )
   }
 
