@@ -62,10 +62,10 @@ object Utils {
     attributesIndex: Map[UUID, AttributeInfo]
   ): TenantActions = {
 
-    val admittedAttributeOrigins: List[String] = institutions.map(_.origin).distinct
+    val originsFromPartyRegistry: List[String] = institutions.map(_.origin).distinct
 
-    val admittedAttributesIndex: Map[UUID, AttributeInfo] =
-      attributesIndex.filter(a => admittedAttributeOrigins.contains(a._2.origin))
+    val filteredAttributesIndex: Map[UUID, AttributeInfo] =
+      attributesIndex.filter(a => originsFromPartyRegistry.contains(a._2.origin))
 
     val fromRegistry: List[TenantSeed] =
       institutions
@@ -83,7 +83,7 @@ object Utils {
     val fromTenant: Map[PersistentExternalId, List[AttributeInfo]] =
       tenants
         .map(tenant =>
-          tenant.externalId -> tenant.attributes.flatMap(AttributeInfo.addRevocationTimeStamp(admittedAttributesIndex))
+          tenant.externalId -> tenant.attributes.flatMap(AttributeInfo.addRevocationTimeStamp(filteredAttributesIndex))
         )
         .toMap
 

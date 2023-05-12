@@ -243,19 +243,19 @@ class CreateActionSpec extends FunSuite {
   }
 
   test("revoke only the attributes whose origin is also present in the register of institution") {
-    val admittedOrigin         = "IPA"
-    val admittedOriginId       = "001"
+    val originFromRegistry     = "IPA"
+    val originIdFromRegistry   = "001"
     val existingAttributeId1   = UUID.randomUUID()
     val existingAttributeCode1 = "CAT1"
-    val forbiddenOrigin        = "AGID"
+    val originNotFromRegistry  = "AGID"
     val existingAttributeId2   = UUID.randomUUID()
     val existingAttributeCode2 = "SDG"
 
     val institutions: List[Institution]           = List.empty
     val tenants: List[PersistentTenant]           = List(
       persistentTenant(
-        admittedOrigin,
-        admittedOriginId,
+        originFromRegistry,
+        originIdFromRegistry,
         attributes = List(
           PersistentCertifiedAttribute(id = existingAttributeId1, assignmentTimestamp = timestamp, None),
           PersistentCertifiedAttribute(id = existingAttributeId2, assignmentTimestamp = timestamp, None)
@@ -264,8 +264,8 @@ class CreateActionSpec extends FunSuite {
     )
     val attributesIndex: Map[UUID, AttributeInfo] =
       Map(
-        existingAttributeId1 -> AttributeInfo(admittedOrigin, existingAttributeCode1, None),
-        existingAttributeId2 -> AttributeInfo(forbiddenOrigin, existingAttributeCode2, None)
+        existingAttributeId1 -> AttributeInfo(originFromRegistry, existingAttributeCode1, None),
+        existingAttributeId2 -> AttributeInfo(originNotFromRegistry, existingAttributeCode2, None)
       )
 
     val result = createAction(institutions, tenants, attributesIndex)
