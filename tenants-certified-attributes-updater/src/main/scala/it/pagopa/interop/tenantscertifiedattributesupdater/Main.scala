@@ -79,6 +79,7 @@ object Main extends App with Dependencies {
     bearer  <- generateBearer(jwtConfig, signerService(blockingEc))
     tenants <- tenantRepository.getTenants.flatMap(_.sequence.toFuture)
     _       <- tenants
+      .filter(_.kind.isEmpty)
       .map(t =>
         InternalTenantSeed(
           externalId = ExternalId(origin = t.externalId.origin, value = t.externalId.value),

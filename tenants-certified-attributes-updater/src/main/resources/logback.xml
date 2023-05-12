@@ -33,6 +33,7 @@
     </appender>
 
     <logger name="it.pagopa.interop" level="INFO" />
+    <logger name="org.mongodb" level="WARN" />
 
     <root name="application" level="INFO">
         <appender-ref ref="ASYNC_STDOUT" />
