@@ -1,16 +1,15 @@
 package it.pagopa.interop.attributesloader
 
 import akka.actor.CoordinatedShutdown
-import akka.actor.typed.ActorSystem
-import akka.{actor => classic}
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.scaladsl.adapter.TypedActorSystemOps
+import akka.actor.typed.{ActorSystem, DispatcherSelector}
+import akka.{actor => classic}
 import com.typesafe.scalalogging.{Logger, LoggerTakingImplicit}
 import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 import scala.util.{Failure, Success}
-import scala.concurrent.ExecutionContextExecutor
 
 //shuts down the actor system in case of startup errors
 case object ErrorShutdown   extends CoordinatedShutdown.Reason
@@ -25,7 +24,8 @@ object Main extends App with Dependencies {
   implicit val executionContext: ExecutionContext      = actorSystem.executionContext
   implicit val classicActorSystem: classic.ActorSystem = actorSystem.toClassic
 
-  val blockingEc: ExecutionContextExecutor = actorSystem.dispatchers.lookup(classic.typed.DispatcherSelector.blocking())
+  val blockingEc: ExecutionContextExecutor =
+    actorSystem.dispatchers.lookup(DispatcherSelector.fromConfig("futures-dispatcher"))
 
   logger.info("Loading attributes data...")
 
