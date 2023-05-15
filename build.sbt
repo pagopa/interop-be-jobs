@@ -13,6 +13,7 @@ ThisBuild / githubSuppressPublicationWarning := true
 ThisBuild / resolvers += Resolver.githubPackages("pagopa")
 
 lazy val attributesLoaderModuleName                  = "attributes-loader"
+lazy val tenantsAttributesCheckerModuleName          = "tenants-attributes-checker"
 lazy val tokenDetailsPersisterModuleName             = "token-details-persister"
 lazy val tenantsCertifiedAttributesUpdaterModuleName = "tenants-certified-attributes-updater"
 lazy val metricsReportGeneratorModuleName            = "metrics-report-generator"
@@ -142,7 +143,7 @@ lazy val certifiedMailSender = project
     libraryDependencies ++= Dependencies.Jars.certifiedMailSenderDependencies,
     publish / skip       := true,
     publish              := (()),
-    publishLocal         := (()),
+    publishLocal         := (),
     publishTo            := None
   )
   .dependsOn(certifiedMailSenderModels)
@@ -152,6 +153,21 @@ lazy val certifiedMailSender = project
 lazy val certifiedMailSenderModels = project
   .in(file(certifiedMailSenderModelsModuleName))
   .settings(name := "interop-be-certified-mail-sender-models", scalafmtOnCompile := true, Docker / publish := {})
+
+lazy val tenantsAttributesChecker = project
+  .in(file(tenantsAttributesCheckerModuleName))
+  .settings(
+    name                 := "interop-be-tenants-attributes-checker",
+    Docker / packageName := s"${name.value}",
+    sharedSettings,
+    libraryDependencies ++= Dependencies.Jars.tenantsAttributesChecker,
+    publish / skip       := true,
+    publish              := (()),
+    publishLocal         := (()),
+    publishTo            := None
+  )
+  .enablePlugins(JavaAppPackaging)
+  .enablePlugins(DockerPlugin)
 
 lazy val jobs = project
   .in(file("."))
@@ -163,6 +179,7 @@ lazy val jobs = project
     attributesLoader,
     metricsReportGenerator,
     certifiedMailSender,
-    certifiedMailSenderModels
+    certifiedMailSenderModels,
+    tenantsAttributesChecker
   )
   .settings(Docker / publish := {})

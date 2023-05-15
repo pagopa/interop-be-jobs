@@ -56,14 +56,26 @@ object Dependencies {
     lazy val catalogModels =
       namespace %% "interop-be-catalog-management-models" % catalogManagementVersion
 
+    lazy val catalogManagement =
+      namespace %% "interop-be-catalog-management-client" % catalogManagementVersion
+
     lazy val partyRegistryProxy =
       namespace %% "interop-be-party-registry-proxy-client" % partyRegistryProxyVersion
 
     lazy val tenantModels =
       namespace %% "interop-be-tenant-management-models" % tenantManagementVersion
 
+    lazy val tenantManagement =
+      namespace %% "interop-be-tenant-management-client" % tenantManagementVersion
+
     lazy val tenantProcess =
       namespace %% "interop-be-tenant-process-client" % tenantProcessVersion
+
+    lazy val agreementProcessClient =
+      namespace %% "interop-be-agreement-process-client" % agreementProcessVersion
+
+    lazy val agreementManagementClient =
+      namespace %% "interop-be-agreement-management-client" % agreementManagementVersion
 
     lazy val agreementsModels =
       namespace %% "interop-be-agreement-management-models" % agreementManagementVersion
@@ -198,5 +210,24 @@ object Dependencies {
         pagopa.queue    % Compile
       )
 
+    lazy val tenantsAttributesChecker: Seq[ModuleID] = Seq(
+      akka.actor                        % Compile,
+      akka.actorTyped                   % Compile,
+      cats.core                         % Compile,
+      logback.classic                   % Compile,
+      mongodb.scalaDriver               % Compile,
+      pagopa.attributeModels            % Compile,
+      pagopa.tenantManagement           % Compile,
+      pagopa.tenantModels               % Compile,
+      pagopa.catalogManagement          % Compile,
+      pagopa.catalogModels              % Compile,
+      pagopa.agreementManagementClient  % Compile,
+      pagopa.agreementProcessClient     % Compile,
+      pagopa.agreementsModels           % Compile,
+      pagopa.commons                    % Compile,
+      pagopa.cqrs                       % Compile,
+      pagopa.mail                       % Compile,
+      scalameta.munit                   % Test
+    ).map(_.withSources.withJavadoc)
   }
 }
