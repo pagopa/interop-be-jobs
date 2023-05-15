@@ -226,7 +226,8 @@ object Dependencies {
       circe.core                % Compile,
       circe.generic             % Compile
     ).map(_.withSources.withJavadoc)
-    val privacyNoticesUpdaterDependencies: Seq[ModuleID] =
+
+  lazy val privacyNoticesUpdaterDependencies: Seq[ModuleID] =
       Seq(
         "com.github.pureconfig" %% "pureconfig" % "0.17.2",
         logback.classic % Compile,
