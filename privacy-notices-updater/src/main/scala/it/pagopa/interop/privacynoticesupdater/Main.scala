@@ -14,11 +14,9 @@ import it.pagopa.interop.privacynoticesupdater.util._
 import it.pagopa.interop.privacynoticesupdater.service._
 import it.pagopa.interop.privacynoticesupdater.converters.PrivacyNoticeConverter._
 
-import scala.concurrent.{Future, ExecutionContext}
-import scala.concurrent.Await
-import scala.concurrent.ExecutionContext.global
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future, Await}
+import java.util.concurrent.{ExecutorService, Executors, TimeUnit}
 import scala.concurrent.duration._
-import java.util.concurrent.TimeUnit
 
 import java.util.UUID
 import scala.util.Failure
@@ -29,30 +27,30 @@ object Main extends App {
 
   implicit val context: List[(String, String)] = (CORRELATION_ID_HEADER -> UUID.randomUUID().toString()) :: Nil
 
-  implicit val scanamo: ScanamoAsync = ScanamoAsync(DynamoDbAsyncClient.create())(global)
+  val blockingThreadPool: ExecutorService           =
+    Executors.newFixedThreadPool(1.max(Runtime.getRuntime.availableProcessors() - 1))
+  implicit val blockingEC: ExecutionContextExecutor = ExecutionContext.fromExecutor(blockingThreadPool)
+
+  implicit val scanamo: ScanamoAsync = ScanamoAsync(DynamoDbAsyncClient.create())
 
   logger.info("Starting privacy notices updater job")
 
   def getOneTrustService(
     oneTrustConfiguration: OneTrustConfiguration
-  )(implicit global: ExecutionContext): Future[(OneTrustService, WebSocketBackend[Future])] = {
+  ): Future[(OneTrustService, WebSocketBackend[Future])] = {
     implicit val backend = Slf4jLoggingBackend(
       HttpClientFutureBackend(options =
         BackendOptions
           .connectionTimeout(FiniteDuration(oneTrustConfiguration.connectionTimeoutInSeconds, TimeUnit.SECONDS))
       )
     )
-    Future((new OneTrustServiceImpl(oneTrustConfiguration)(global, backend, context), backend))
+    Future((new OneTrustServiceImpl(oneTrustConfiguration)(blockingEC, backend, context), backend))
   }
 
-  def getDynamoService(dynamoConfiguration: DynamoConfiguration)(implicit
-    global: ExecutionContext
-  ): Future[DynamoService] =
-    Future(new DynamoServiceImpl(dynamoConfiguration)(global, scanamo))
+  def getDynamoService(dynamoConfiguration: DynamoConfiguration): Future[DynamoService] =
+    Future(new DynamoServiceImpl(dynamoConfiguration)(blockingEC, scanamo))
 
-  def resources()(implicit
-    global: ExecutionContext
-  ): Future[(Configuration, OneTrustService, DynamoService, WebSocketBackend[Future])] = {
+  def resources(): Future[(Configuration, OneTrustService, DynamoService, WebSocketBackend[Future])] = {
     logger.info(s"Start resources")
     for {
       config <- Configuration.read()
@@ -62,19 +60,31 @@ object Main extends App {
     } yield (config, ots, ds, bk)
   }
 
-  def execution(config: Configuration, ots: OneTrustService, ds: DynamoService)(implicit
-    global: ExecutionContext
-  ): Future[Unit] = for {
+  def execution(config: Configuration, ots: OneTrustService, ds: DynamoService): Future[Unit] = for {
     token  <- ots.getBearerToken()
     ppOts  <- ots.getById(config.oneTrust.ppUuid)(token.access_token)
     ppDs   <- ds.getById(config.oneTrust.ppUuid)
-    _      <- ppOts.fold(ppDs.fold(Future.successful(()))(p => ds.delete(p.pnId)))(p => ds.put(p.toPersistent))
+    _      <- ppOts match {
+      case Some(p) => ds.put(p.toPersistent)
+      case None    =>
+        ppDs match {
+          case Some(p) => ds.delete(p.pnId)
+          case None    => Future.successful(())
+        }
+    }
     tosOts <- ots.getById(config.oneTrust.tosUuid)(token.access_token)
     tosDs  <- ds.getById(config.oneTrust.tosUuid)
-    _      <- tosOts.fold(tosDs.fold(Future.successful(()))(p => ds.delete(p.pnId)))(p => ds.put(p.toPersistent))
+    _      <- tosOts match {
+      case Some(p) => ds.put(p.toPersistent)
+      case None    =>
+        tosDs match {
+          case Some(p) => ds.delete(p.pnId)
+          case None    => Future.successful(())
+        }
+    }
   } yield ()
 
-  def app()(implicit global: ExecutionContext): Future[Unit] = resources()
+  def app(): Future[Unit] = resources()
     .andThen { case Failure(e) =>
       logger.error("privacy notices configuration got an error", e)
     }
@@ -88,6 +98,6 @@ object Main extends App {
         }
     }
 
-  Await.ready(app()(global), Duration.Inf): Unit
+  Await.ready(app(), Duration.Inf): Unit
   logger.info("Completed privacy notices updater job")
 }
