@@ -17,7 +17,7 @@ object PrivacyNoticeConverter {
       PrivacyNoticeDb(
         pk = s"${PrivacyNoticeDb.pkPrefix}${pn.id}",
         sk = s"${PrivacyNoticeDb.skPrefix}${pn.id}",
-        id = pn.id,
+        pnId = pn.id,
         createdDate = pn.createdDate.atZone(zoneCet).toInstant().atOffset(zoneUtc),
         lastPublishedDate = pn.lastPublishedDate.atZone(zoneCet).toInstant().atOffset(zoneUtc),
         organizationId = pn.organizationId,
