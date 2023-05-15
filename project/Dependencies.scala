@@ -62,6 +62,9 @@ object Dependencies {
     lazy val tenantModels =
       namespace %% "interop-be-tenant-management-models" % tenantManagementVersion
 
+    lazy val tenantManagement =
+      namespace %% "interop-be-tenant-management-client" % tenantManagementVersion
+  
     lazy val tenantProcess =
       namespace %% "interop-be-tenant-process-client" % tenantProcessVersion
 
@@ -210,6 +213,19 @@ object Dependencies {
         pagopa.queue    % Compile
       )
     
+  lazy val eservicesMonitoringExporter: Seq[ModuleID] = Seq(
+      cats.core                 % Compile,
+      "com.github.pureconfig"   %% "pureconfig" % "0.17.2",
+      logback.classic           % Compile,
+      mongodb.scalaDriver       % Compile,
+      pagopa.catalogModels      % Compile,
+      pagopa.tenantModels       % Compile,
+      pagopa.commons            % Compile,
+      pagopa.cqrs               % Compile,
+      pagopa.file               % Compile,
+      circe.core                % Compile,
+      circe.generic             % Compile
+    ).map(_.withSources.withJavadoc)
     val privacyNoticesUpdaterDependencies: Seq[ModuleID] =
       Seq(
         "com.github.pureconfig" %% "pureconfig" % "0.17.2",
