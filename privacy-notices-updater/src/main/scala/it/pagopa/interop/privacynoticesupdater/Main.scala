@@ -20,6 +20,7 @@ import scala.concurrent.duration._
 
 import java.util.UUID
 import scala.util.Failure
+import scala.concurrent.ExecutionContext.global
 
 object Main extends App {
   val logger: LoggerTakingImplicit[ContextFieldsToLog] =
@@ -31,20 +32,20 @@ object Main extends App {
     Executors.newFixedThreadPool(1.max(Runtime.getRuntime.availableProcessors() - 1))
   implicit val blockingEC: ExecutionContextExecutor = ExecutionContext.fromExecutor(blockingThreadPool)
 
-  implicit val scanamo: ScanamoAsync = ScanamoAsync(DynamoDbAsyncClient.create())
+  implicit val scanamo: ScanamoAsync = ScanamoAsync(DynamoDbAsyncClient.create())(blockingEC)
 
   logger.info("Starting privacy notices updater job")
 
   def getOneTrustService(
     oneTrustConfiguration: OneTrustConfiguration
-  ): Future[(OneTrustService, WebSocketBackend[Future])] = {
-    implicit val backend = Slf4jLoggingBackend(
+  ): Future[(OneTrustService, WebSocketBackend[Future])] = Future {
+    val backend: WebSocketBackend[Future] = Slf4jLoggingBackend(
       HttpClientFutureBackend(options =
         BackendOptions
           .connectionTimeout(FiniteDuration(oneTrustConfiguration.connectionTimeoutInSeconds, TimeUnit.SECONDS))
-      )
+      )(blockingEC)
     )
-    Future((new OneTrustServiceImpl(oneTrustConfiguration)(blockingEC, backend, context), backend))
+    (new OneTrustServiceImpl(oneTrustConfiguration)(blockingEC, backend, context), backend)
   }
 
   def getDynamoService(dynamoConfiguration: DynamoConfiguration): Future[DynamoService] =
@@ -69,7 +70,7 @@ object Main extends App {
       case None    =>
         ppDs match {
           case Some(p) => ds.delete(p.pnId)
-          case None    => Future.successful(())
+          case None    => Future.unit
         }
     }
     tosOts <- ots.getById(config.oneTrust.tosUuid)(token.access_token)
@@ -86,7 +87,7 @@ object Main extends App {
 
   def app(): Future[Unit] = resources()
     .andThen { case Failure(e) =>
-      logger.error("privacy notices configuration got an error", e)
+      logger.error("Privacy notices configuration got an error", e)
     }
     .flatMap { case (config, otm, ds, bk) =>
       execution(config, otm, ds)
@@ -94,9 +95,9 @@ object Main extends App {
           logger.error("privacy notices updater got an error", e)
         }
         .andThen { _ =>
-          bk.close()
-        }
-    }
+          bk.close().map(_ => blockingThreadPool.shutdown())(global)
+        }(global)
+    }(global)
 
   Await.ready(app(), Duration.Inf): Unit
   logger.info("Completed privacy notices updater job")
