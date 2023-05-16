@@ -8,10 +8,7 @@ import com.typesafe.scalalogging.{Logger, LoggerTakingImplicit}
 import it.pagopa.interop.commons.cqrs.service.{MongoDbReadModelService, ReadModelService}
 import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
 import it.pagopa.interop.commons.utils.CORRELATION_ID_HEADER
-import it.pagopa.interop.tenantsattributeschecker.util.ReadModelQueries.{
-  getExpiredAttributesAgreements,
-  getExpiredAttributesTenants
-}
+import it.pagopa.interop.tenantsattributeschecker.util.ReadModelQueries._
 //import it.pagopa.interop.tenantsattributeschecker.service.AgreementProcessService
 
 import java.util.UUID
@@ -49,9 +46,11 @@ object Main extends App with Dependencies {
 //  } yield (es, blockingEC, fm, rm, jobs, config)
 
   val job = for {
-    tenants <- getExpiredAttributesTenants(readModelService)
-    expiredAttributes = tenants.flatMap(_.attributes.map(_.id.toString))
+    tenants <- getAllExpiredAttributesTenants(readModelService)
+    _                 = tenants.map(println(_))
+    expiredAttributes = tenants.map(_.attributes.id.toString)
     agreements <- getExpiredAttributesAgreements(readModelService, expiredAttributes)
+    _ = agreements.map(println(_))
     _ = readModelService.close()
     _ = logger.info("Completed tenants attributes checker job")
     _ = actorSystem.terminate()

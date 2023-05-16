@@ -11,7 +11,7 @@ import scala.concurrent.ExecutionContextExecutor
 
 trait Dependencies {
 
-  implicit val contexts: Seq[(String, String)] = (CORRELATION_ID_HEADER -> UUID.randomUUID().toString()) :: Nil
+  implicit val contexts: Seq[(String, String)] = (CORRELATION_ID_HEADER -> UUID.randomUUID().toString) :: Nil
 
 //  def agreementProcessService(
 //    blockingEc: ExecutionContextExecutor

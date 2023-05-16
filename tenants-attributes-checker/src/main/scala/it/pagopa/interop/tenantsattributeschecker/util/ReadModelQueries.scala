@@ -3,34 +3,40 @@ package it.pagopa.interop.tenantsattributeschecker.util
 import it.pagopa.interop.agreementmanagement.model.agreement.PersistentAgreement
 import it.pagopa.interop.agreementmanagement.model.persistence.JsonFormats.paFormat
 import it.pagopa.interop.commons.cqrs.service.ReadModelService
-import it.pagopa.interop.tenantmanagement.model.persistence.JsonFormats.ptFormat
-import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenant
-import it.pagopa.interop.tenantsattributeschecker.ApplicationConfiguration.{
-  agreementsCollection,
-  dateTimeSupplier,
-  tenantsCollection
-}
+import it.pagopa.interop.tenantsattributeschecker.ApplicationConfiguration._
+import org.mongodb.scala.bson.conversions.Bson
+import org.mongodb.scala.model.Aggregates._
 import org.mongodb.scala.model.Filters._
 
 import scala.concurrent.{ExecutionContext, Future}
 
 object ReadModelQueries {
 
-  def getExpiredAttributesTenants(rm: ReadModelService)(implicit ec: ExecutionContext): Future[Seq[PersistentTenant]] =
-    getAll(100)(
-      rm.find[PersistentTenant](
-        tenantsCollection,
-        lte("data.attributes.verifiedBy.extensionDate", dateTimeSupplier.get().toString),
-        _,
-        _
+  def getAllExpiredAttributesTenants(rm: ReadModelService)(implicit ec: ExecutionContext): Future[Seq[Tenant]] =
+    getAll(100)(getExpiredAttributesTenants(_, _, rm))
+
+  def getExpiredAttributesTenants(offset: Int, limit: Int, readModelService: ReadModelService)(implicit
+    ec: ExecutionContext
+  ): Future[Seq[Tenant]] = {
+
+    val aggregation: List[Bson] = List(
+      unwind("$data.attributes"),
+      `match`(
+        lte(
+          "data.attributes.verifiedBy.verificationDate", // TODO rimpiazzare con extensionDate
+          dateTimeSupplier.get().toString
+        )
       )
     )
+
+    readModelService.aggregate[Tenant](tenantsCollection, aggregation, offset, limit)
+  }
 
   def getExpiredAttributesAgreements(rm: ReadModelService, expiredAttributes: Seq[String])(implicit
     ec: ExecutionContext
   ): Future[Seq[PersistentAgreement]] =
     getAll(100)(
-      rm.find[PersistentAgreement](agreementsCollection, in("data.verifiedAttributes.id", expiredAttributes), _, _)
+      rm.find[PersistentAgreement](agreementsCollection, in("data.verifiedAttributes.id", expiredAttributes: _*), _, _)
     )
 
   private def getAll[T](
