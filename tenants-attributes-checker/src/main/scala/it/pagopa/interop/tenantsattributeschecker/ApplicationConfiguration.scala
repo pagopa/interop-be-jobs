@@ -1,13 +1,28 @@
 package it.pagopa.interop.tenantsattributeschecker
 
+import akka.actor.typed.ActorSystem
+import akka.actor.typed.scaladsl.Behaviors
+import akka.actor.typed.scaladsl.adapter.TypedActorSystemOps
+import akka.{actor => classic}
 import com.typesafe.config.{Config, ConfigFactory}
 import it.pagopa.interop.commons.cqrs.model.ReadModelConfig
+import it.pagopa.interop.commons.utils.CORRELATION_ID_HEADER
 import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
+
+import java.util.UUID
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 
 object ApplicationConfiguration {
 
-  val config: Config = ConfigFactory.load()
+  implicit val actorSystem: ActorSystem[Nothing]       =
+    ActorSystem[Nothing](Behaviors.empty, "interop-be-tenants-attributes-checker")
+  implicit val blockingEc: ExecutionContextExecutor    =
+    actorSystem.dispatchers.lookup(classic.typed.DispatcherSelector.blocking())
+  implicit val executionContext: ExecutionContext      = actorSystem.executionContext
+  implicit val classicActorSystem: classic.ActorSystem = actorSystem.toClassic
+  implicit val context: List[(String, String)]         = (CORRELATION_ID_HEADER -> UUID.randomUUID().toString) :: Nil
 
+  val config: Config                           = ConfigFactory.load()
   val dateTimeSupplier: OffsetDateTimeSupplier = OffsetDateTimeSupplier
 
   val agreementsCollection: String =
@@ -18,6 +33,7 @@ object ApplicationConfiguration {
 
   val attributesCollection: String =
     config.getString("read-model.collections.attributes")
+  val tenantProcessURL: String     = config.getString("services.tenant-process")
 
   val tenantsCollection: String =
     config.getString("read-model.collections.tenants")

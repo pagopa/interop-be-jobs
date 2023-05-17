@@ -1,59 +1,64 @@
 package it.pagopa.interop.tenantsattributeschecker
 
-import akka.actor.typed.ActorSystem
-import akka.actor.typed.scaladsl.Behaviors
-import akka.actor.typed.scaladsl.adapter.TypedActorSystemOps
-import akka.{actor => classic}
 import com.typesafe.scalalogging.{Logger, LoggerTakingImplicit}
 import it.pagopa.interop.commons.cqrs.service.{MongoDbReadModelService, ReadModelService}
 import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
-import it.pagopa.interop.commons.utils.CORRELATION_ID_HEADER
+import it.pagopa.interop.tenantsattributeschecker.ApplicationConfiguration.{actorSystem, context, executionContext}
 import it.pagopa.interop.tenantsattributeschecker.util.ReadModelQueries._
+import it.pagopa.interop.tenantsattributeschecker.util.jobs.applyStrategy
+import it.pagopa.interop.tenantsattributeschecker.util.{ExpiringAgreements, TenantData}
 //import it.pagopa.interop.tenantsattributeschecker.service.AgreementProcessService
 
 import java.util.UUID
+import scala.concurrent.Await
 import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor}
 
-object Main extends App with Dependencies {
+object Main extends App {
 
   implicit val logger: LoggerTakingImplicit[ContextFieldsToLog] =
     Logger.takingImplicit[ContextFieldsToLog](this.getClass.getCanonicalName)
-  implicit val actorSystem: ActorSystem[Nothing]                =
-    ActorSystem[Nothing](Behaviors.empty, "interop-be-tenants-certified-attributes-updater")
-  implicit val executionContext: ExecutionContext               = actorSystem.executionContext
-  implicit val classicActorSystem: classic.ActorSystem          = actorSystem.toClassic
 
-  val blockingEc: ExecutionContextExecutor = actorSystem.dispatchers.lookup(classic.typed.DispatcherSelector.blocking())
-  implicit val context: List[(String, String)]    = (CORRELATION_ID_HEADER -> UUID.randomUUID().toString) :: Nil
-  implicit val readModelService: ReadModelService = new MongoDbReadModelService(
-    ApplicationConfiguration.readModelConfig
-  )
-
-//  val agreementsProcessService: AgreementProcessService = agreementProcessService(blockingEc)
+  val readModelService: ReadModelService = new MongoDbReadModelService(ApplicationConfiguration.readModelConfig)
 
   logger.info("Starting tenants attributes checker job")
 
-//  def resources(implicit
-//                ec: ExecutionContext
-//               ): Future[(ExecutorService, ExecutionContextExecutor, ReadModelService, Jobs, Configuration)] = for {
-//    config <- Configuration.read()
-//    es <- Future(Executors.newFixedThreadPool(1.max(Runtime.getRuntime.availableProcessors() - 1)))
-//    blockingEC = ExecutionContext.fromExecutor(es)
-//    fm <- Future(FileManager.get(FileManager.S3)(blockingEC))
-//    rm <- Future(new MongoDbReadModelService(config.readModel))
-//    jobs <- Future(new Jobs(config, fm, rm))
-//  } yield (es, blockingEC, fm, rm, jobs, config)
-
   val job = for {
     tenants <- getAllExpiredAttributesTenants(readModelService)
-    _                 = tenants.map(println(_))
-    expiredAttributes = tenants.map(_.attributes.id.toString)
+    _                                  = tenants.map(println(_))
+    tenantsData: Map[UUID, TenantData] = tenants
+      .groupBy(_.id)
+      .view
+      .mapValues(tenantValues =>
+        TenantData(
+          tenantValues.map(_.attributes),
+          tenantValues.head.mails // getting the mails from the head because they are the same in every record
+        )
+      )
+      .toMap
+
+    _                 = tenantsData.map(println(_))
+    expiredAttributes = applyStrategy(tenantsData)
     agreements <- getExpiredAttributesAgreements(readModelService, expiredAttributes)
-    _ = agreements.map(println(_))
-    _ = readModelService.close()
-    _ = logger.info("Completed tenants attributes checker job")
-    _ = actorSystem.terminate()
+    _                  = agreements.map(println(_))
+    expiringAgreements = agreements.map(agreement =>
+      ExpiringAgreements(
+        agreement.id,
+        agreement.eserviceId,
+        agreement.descriptorId,
+        agreement.consumerId, {
+          val tenantData          = tenantsData(agreement.consumerId)
+          val agreementAttributes = agreement.verifiedAttributes.map(_.id)
+          TenantData(
+            tenantData.attributesExpired.filter(tenantAttribute => agreementAttributes.contains(tenantAttribute.id)),
+            tenantData.mails
+          )
+        }
+      )
+    )
+    _                  = expiringAgreements.map(println(_))
+    _                  = readModelService.close()
+    _                  = logger.info("Completed tenants attributes checker job")
+    _                  = actorSystem.terminate()
     _ <- actorSystem.whenTerminated
 
   } yield ()

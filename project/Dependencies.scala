@@ -219,6 +219,7 @@ object Dependencies {
       pagopa.attributeModels            % Compile,
       pagopa.tenantManagement           % Compile,
       pagopa.tenantModels               % Compile,
+      pagopa.tenantProcess              % Compile,
       pagopa.catalogManagement          % Compile,
       pagopa.catalogModels              % Compile,
       pagopa.agreementManagementClient  % Compile,

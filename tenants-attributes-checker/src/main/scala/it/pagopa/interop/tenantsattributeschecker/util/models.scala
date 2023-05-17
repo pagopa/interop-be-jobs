@@ -13,6 +13,14 @@ import spray.json.{DeserializationException, JsString, JsValue, RootJsonFormat}
 import java.util.UUID
 
 final case class Tenant(id: UUID, attributes: PersistentVerifiedAttribute, mails: List[PersistentTenantMail])
+final case class TenantData(attributesExpired: Seq[PersistentVerifiedAttribute], mails: List[PersistentTenantMail])
+final case class ExpiringAgreements(
+  agreementId: UUID,
+  eserviceId: UUID,
+  descriptorId: UUID,
+  consumerId: UUID,
+  consumerData: TenantData
+)
 
 object Tenant {
 
