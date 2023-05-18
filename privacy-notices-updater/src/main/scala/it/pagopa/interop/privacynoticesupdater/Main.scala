@@ -1,5 +1,6 @@
 package it.pagopa.interop.privacynoticesupdater
 
+import cats.syntax.all._
 import com.typesafe.scalalogging.Logger
 import it.pagopa.interop.commons.logging._
 import com.typesafe.scalalogging.LoggerTakingImplicit
@@ -62,19 +63,13 @@ object Main extends App {
   }
 
   def execution(config: Configuration, ots: OneTrustService, ds: DynamoService): Future[Unit] = for {
-    token  <- ots.getBearerToken()
-    ppOts  <- ots.getById(config.oneTrust.ppUuid)(token.access_token)
-    ppDs   <- ds.getById(config.oneTrust.ppUuid)
-    _      <- ppOts
-      .map(p => ds.put(p.toPersistent))
-      .orElse(ppDs.map(p => ds.delete(p.pnId)))
-      .getOrElse(Future.unit)
+    token <- ots.getBearerToken()
+    ppOts <- ots.getById(config.oneTrust.ppUuid)(token.access_token)
+    ppDs  <- ds.getById(config.oneTrust.ppUuid)
+    _ = ppOts.map(p => ds.put(p.toPersistent)) <+> ppDs.map(p => ds.delete(p.pnId)) <+> Future.unit.some
     tosOts <- ots.getById(config.oneTrust.tosUuid)(token.access_token)
     tosDs  <- ds.getById(config.oneTrust.tosUuid)
-    _      <- tosOts
-      .map(p => ds.put(p.toPersistent))
-      .orElse(tosDs.map(p => ds.delete(p.pnId)))
-      .getOrElse(Future.unit)
+    _ = tosOts.map(p => ds.put(p.toPersistent)) <+> tosDs.map(p => ds.delete(p.pnId)) <+> Future.unit.some
   } yield ()
 
   def app(): Future[Unit] = resources()
