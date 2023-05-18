@@ -10,6 +10,7 @@ import it.pagopa.interop.privacynoticesupdater.error.PrivacyNoticeError._
 import org.scanamo.DynamoReadError.describe
 import org.scanamo._
 import org.scanamo.syntax._
+import org.scanamo.ops.ScanamoOps
 
 import scala.concurrent.{Future, ExecutionContext}
 import java.util.UUID
@@ -33,26 +34,27 @@ final class DynamoServiceImpl(config: DynamoConfiguration)(implicit ec: Executio
 
   override def put(privacyNotice: PrivacyNotice)(implicit contexts: Seq[(String, String)]): Future[Unit] = {
     logger.info(s"Putting $privacyNotice privacy notice")
-    scanamo
-      .exec(table.put(privacyNotice))
+    val operation: ScanamoOps[Unit] = table.put(privacyNotice)
+
+    scanamo.exec(operation)
   }
 
   override def delete(id: UUID)(implicit contexts: Seq[(String, String)]): Future[Unit] = {
     logger.info(s"Deleting privacy notice with id $id")
-    scanamo
-      .exec(
-        table
-          .delete("pk" === s"${PrivacyNotice.pkPrefix}$id" and "sk" === s"${PrivacyNotice.skPrefix}$id")
-      )
+    val operation: ScanamoOps[Unit] =
+      table.delete("pk" === s"${PrivacyNotice.pkPrefix}$id" and "sk" === s"${PrivacyNotice.skPrefix}$id")
+
+    scanamo.exec(operation)
   }
 
   override def getById(id: UUID)(implicit contexts: Seq[(String, String)]): Future[Option[PrivacyNotice]] = {
     logger.info(s"Getting id $id privacy notice")
-    scanamo
-      .exec { table.get("pk" === s"${PrivacyNotice.pkPrefix}$id" and "sk" === s"${PrivacyNotice.skPrefix}$id") }
-      .flatMap {
-        case Some(value) => value.leftMap(err => DynamoReadingError(describe(err))).toFuture.some.sequence
-        case None        => Future.successful(None)
-      }
+    val operation: ScanamoOps[Option[Either[DynamoReadError, PrivacyNotice]]] =
+      table.get("pk" === s"${PrivacyNotice.pkPrefix}$id" and "sk" === s"${PrivacyNotice.skPrefix}$id")
+
+    scanamo.exec(operation).flatMap {
+      case Some(value) => value.leftMap(err => DynamoReadingError(describe(err))).toFuture.some.sequence
+      case None        => Future.successful(None)
+    }
   }
 }

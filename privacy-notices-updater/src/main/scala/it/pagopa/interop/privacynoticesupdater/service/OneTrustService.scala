@@ -56,20 +56,15 @@ final class OneTrustServiceImpl(config: OneTrustConfiguration)(implicit
       .send(backend)
 
     sttpRequest.flatMap { response =>
-      {
-        response.body match {
-          case Right(success) => Future.successful(Some(success))
-          case Left(error)    =>
-            error match {
-              case HttpError(body, StatusCode.NotFound) => {
-                logger.info(s"Receiving Not Found message")
-                if (body.map(_.path).isDefined)(Future.failed(OneTrustHttpError(StatusCode.NotFound)))
-                else (Future.successful(None))
-              }
-              case HttpError(_, statusCode)             => Future.failed(OneTrustHttpError(statusCode))
-              case DeserializationException(_, error)   => Future.failed(OneTrustDeserializationError(error))
-            }
+      response.body match {
+        case Right(success)                             => Future.successful(Some(success))
+        case Left(HttpError(body, StatusCode.NotFound)) => {
+          logger.info(s"Receiving Not Found message")
+          if (body.map(_.path).isDefined)(Future.failed(OneTrustHttpError(StatusCode.NotFound)))
+          else (Future.successful(None))
         }
+        case Left(HttpError(_, statusCode))             => Future.failed(OneTrustHttpError(statusCode))
+        case Left(DeserializationException(_, error))   => Future.failed(OneTrustDeserializationError(error))
       }
     }
   }
@@ -92,12 +87,9 @@ final class OneTrustServiceImpl(config: OneTrustConfiguration)(implicit
 
     sttpRequest.flatMap { response =>
       response.body match {
-        case Right(success) => Future.successful(success)
-        case Left(error)    =>
-          error match {
-            case HttpError(body, statusCode)        => Future.failed(OneTrustAuthError(body, statusCode))
-            case DeserializationException(_, error) => Future.failed(OneTrustDeserializationError(error))
-          }
+        case Right(success)                           => Future.successful(success)
+        case Left(HttpError(body, statusCode))        => Future.failed(OneTrustAuthError(body, statusCode))
+        case Left(DeserializationException(_, error)) => Future.failed(OneTrustDeserializationError(error))
       }
     }
   }
