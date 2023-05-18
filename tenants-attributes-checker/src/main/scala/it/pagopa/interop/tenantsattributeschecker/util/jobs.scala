@@ -1,33 +1,46 @@
 package it.pagopa.interop.tenantsattributeschecker.util
 
 import it.pagopa.interop.tenantmanagement.model.tenant.PersistentVerificationRenewal
-import it.pagopa.interop.tenantsattributeschecker.ApplicationConfiguration
 import it.pagopa.interop.tenantsattributeschecker.ApplicationConfiguration.{actorSystem, blockingEc, context}
-import it.pagopa.interop.tenantsattributeschecker.service.TenantProcessService
-import it.pagopa.interop.tenantsattributeschecker.service.impl.TenantProcessServiceImpl
+import it.pagopa.interop.tenantsattributeschecker.service.impl.{
+  AgreementProcessServiceImpl,
+  TenantManagementServiceImpl
+}
+import it.pagopa.interop.tenantsattributeschecker.service.{AgreementProcessService, TenantManagementService}
 
-import java.util.UUID
+import java.time.{Duration, OffsetDateTime}
 
 object jobs {
 
-  private val tenantProcess: TenantProcessService =
-    TenantProcessServiceImpl(ApplicationConfiguration.tenantProcessURL, blockingEc)
+  private val tenantManagement: TenantManagementService =
+    TenantManagementServiceImpl(blockingEc)
+  private val agreementProcess: AgreementProcessService =
+    AgreementProcessServiceImpl(blockingEc)
 
-  def applyStrategy(expiredAttributes: Map[UUID, TenantData]): List[String] = {
+  def applyStrategy(tenants: List[TenantData]): Unit = {
 
     val result = for {
-      (id, values) <- expiredAttributes
-      attribute    <- values.attributesExpired
-      verifiedBy   <- attribute.verifiedBy
+      tenant     <- tenants
+      attribute  <- tenant.attributesExpired
+      verifiedBy <- attribute.verifiedBy
     } yield verifiedBy.renewal match {
       case PersistentVerificationRenewal.REVOKE_ON_EXPIRATION =>
-        tenantProcess.revokeVerifiedAttribute(id, attribute.id)
-        Some(attribute.id.toString)
+        agreementProcess.computeAgreementsByAttribute(tenant.id, attribute.id)
       case PersistentVerificationRenewal.AUTOMATIC_RENEWAL    => {
-        None // TODO AGGIORNARE IL NUOVO VALORE SU DOCUMENTDB
+        // TODO AGGIORNARE IL NUOVO VALORE SU DOCUMENTDB
+
+        val newExtensionDate: Option[OffsetDateTime] = for {
+          extensionDate  <- verifiedBy.extensionDate
+          expirationDate <- verifiedBy.expirationDate
+        } yield extensionDate.plus(Duration.between(verifiedBy.verificationDate, expirationDate))
+
+        tenantManagement.updateTenantAttribute(
+          tenant.id,
+          attribute.id,
+          TenantAttribute(verified = verifiedBy.copy(extensionDate = newExtensionDate))
+        )
       }
     }
 
-    result.flatten.toList
   }
 }

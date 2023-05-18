@@ -25,21 +25,12 @@ object ApplicationConfiguration {
   val config: Config                           = ConfigFactory.load()
   val dateTimeSupplier: OffsetDateTimeSupplier = OffsetDateTimeSupplier
 
-  val agreementsCollection: String =
-    config.getString("read-model.collections.agreements")
-
   val agreementProcessURL: String =
     config.getString("services.agreement-process")
-
-  val attributesCollection: String =
-    config.getString("read-model.collections.attributes")
-  val tenantProcessURL: String     = config.getString("services.tenant-process")
+  val tenantManagementURL: String = config.getString("services.tenant-management")
 
   val tenantsCollection: String =
     config.getString("read-model.collections.tenants")
-
-  val eservicesCollection: String =
-    config.getString("read-model.collections.eservices")
 
   val readModelConfig: ReadModelConfig = {
     val connectionString: String = config.getString("read-model.connection-string")
