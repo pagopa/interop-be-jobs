@@ -19,7 +19,7 @@ final case class AgreementProcessServiceImpl(blockingEc: ExecutionContextExecuto
     extends AgreementProcessService {
 
   private val invoker: ApiInvoker = ApiInvoker(EnumsSerializers.all, blockingEc)(system.classicSystem)
-  val api: AgreementApi           = AgreementApi(ApplicationConfiguration.agreementProcessURL)
+  private val api: AgreementApi   = AgreementApi(ApplicationConfiguration.agreementProcessURL)
 
   implicit val logger: LoggerTakingImplicit[ContextFieldsToLog] =
     Logger.takingImplicit[ContextFieldsToLog](this.getClass)

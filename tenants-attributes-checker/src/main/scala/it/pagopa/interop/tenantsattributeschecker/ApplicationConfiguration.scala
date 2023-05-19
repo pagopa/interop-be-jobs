@@ -25,6 +25,8 @@ object ApplicationConfiguration {
   val config: Config                           = ConfigFactory.load()
   val dateTimeSupplier: OffsetDateTimeSupplier = OffsetDateTimeSupplier
 
+  val tenantProcessURL: String    =
+    config.getString("services.tenant-process")
   val agreementProcessURL: String =
     config.getString("services.agreement-process")
   val tenantManagementURL: String = config.getString("services.tenant-management")

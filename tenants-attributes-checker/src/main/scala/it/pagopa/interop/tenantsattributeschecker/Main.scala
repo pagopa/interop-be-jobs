@@ -5,7 +5,6 @@ import it.pagopa.interop.commons.cqrs.service.MongoDbReadModelService
 import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
 import it.pagopa.interop.tenantsattributeschecker.ApplicationConfiguration.{actorSystem, context, executionContext}
 import it.pagopa.interop.tenantsattributeschecker.util.ReadModelQueries._
-import it.pagopa.interop.tenantsattributeschecker.util.TenantData
 import it.pagopa.interop.tenantsattributeschecker.util.jobs.applyStrategy
 
 import scala.concurrent.Await
@@ -22,18 +21,17 @@ object Main extends App {
 
   val job = for {
     tenants <- getAllExpiredAttributesTenants(readModelService)
-    _           = tenants.map(println(_))
-    tenantsData = tenants
-      .groupBy(_.id)
-      .map { case (id, tenantValues) =>
-        TenantData(id, tenantValues.map(_.attributes))
-      }
-      .toList
-    _           = tenantsData.map(println(_))
-    _           = applyStrategy(tenantsData)
-    _           = readModelService.close()
-    _           = logger.info("Completed tenants attributes checker job")
-    _           = actorSystem.terminate()
+//    tenantsData = tenants
+//      .groupBy(_.id)
+//      .map { case (id, tenantValues) =>
+//        TenantData(id, tenantValues.map(_.attributes))
+//      }
+//      .toList
+    _ = applyStrategy(tenants)
+    // TODO SEND PECs
+    _ = readModelService.close()
+    _ = logger.info("Completed tenants attributes checker job")
+    _ = actorSystem.terminate()
     _ <- actorSystem.whenTerminated
 
   } yield ()

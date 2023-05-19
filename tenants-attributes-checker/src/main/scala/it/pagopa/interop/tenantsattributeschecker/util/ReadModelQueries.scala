@@ -1,6 +1,8 @@
 package it.pagopa.interop.tenantsattributeschecker.util
 
 import it.pagopa.interop.commons.cqrs.service.MongoDbReadModelService
+import it.pagopa.interop.tenantmanagement.model.persistence.JsonFormats.ptFormat
+import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenant
 import it.pagopa.interop.tenantsattributeschecker.ApplicationConfiguration._
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.Aggregates._
@@ -10,14 +12,14 @@ import scala.concurrent.Future
 
 object ReadModelQueries {
 
-  def getAllExpiredAttributesTenants(rm: MongoDbReadModelService): Future[Seq[Tenant]] =
+  def getAllExpiredAttributesTenants(rm: MongoDbReadModelService): Future[Seq[PersistentTenant]] =
     getAll(100)(getExpiredAttributesTenants(_, _, rm))
 
   def getExpiredAttributesTenants(
     offset: Int,
     limit: Int,
     readModelService: MongoDbReadModelService
-  ): Future[Seq[Tenant]] = {
+  ): Future[Seq[PersistentTenant]] = {
 
     val aggregation: List[Bson] = List(
       unwind("$data.attributes"),
@@ -29,7 +31,7 @@ object ReadModelQueries {
       )
     )
 
-    readModelService.aggregate[Tenant](tenantsCollection, aggregation, offset, limit)
+    readModelService.aggregate[PersistentTenant](tenantsCollection, aggregation, offset, limit)
   }
 
   private def getAll[T](limit: Int)(get: (Int, Int) => Future[Seq[T]]): Future[Seq[T]] = {
