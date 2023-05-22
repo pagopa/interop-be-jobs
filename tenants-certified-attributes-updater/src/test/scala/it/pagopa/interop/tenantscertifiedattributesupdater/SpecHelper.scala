@@ -4,7 +4,8 @@ import it.pagopa.interop.partyregistryproxy.client.model.Institution
 import it.pagopa.interop.tenantmanagement.model.tenant.{
   PersistentExternalId,
   PersistentTenant,
-  PersistentTenantAttribute
+  PersistentTenantAttribute,
+  PersistentTenantKind
 }
 
 import java.time.{OffsetDateTime, ZoneOffset}
@@ -22,6 +23,7 @@ object SpecHelper {
     attributes: List[PersistentTenantAttribute] = Nil
   ): PersistentTenant = PersistentTenant(
     id = UUID.randomUUID(),
+    kind = Some(PersistentTenantKind.PA),
     selfcareId = None,
     externalId = PersistentExternalId(origin, value),
     features = Nil,
@@ -29,8 +31,7 @@ object SpecHelper {
     createdAt = timestamp,
     updatedAt = None,
     mails = Nil,
-    name = defaultName,
-    kind = None
+    name = defaultName
   )
 
   def institution(origin: String, originId: String, category: String): Institution = Institution(
