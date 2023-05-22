@@ -33,7 +33,8 @@ object Utils {
           state = descriptor.state.toApi,
           basePath = descriptor.serverUrls,
           producerName = e.producerName,
-          versionNumber = descriptor.version.toInt
+          versionNumber = descriptor.version.toInt,
+          audience = descriptor.audience
         )
       )
   }

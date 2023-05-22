@@ -12,7 +12,8 @@ final case class EService(
   state: State,
   basePath: Seq[String],
   producerName: String,
-  versionNumber: Int
+  versionNumber: Int,
+  audience: Seq[String]
 )
 
 object EService {

@@ -31,7 +31,7 @@ object ReadModelQueries {
             computed(
               "descriptors",
               Document(
-                """{$map:{"input":"$data.descriptors","as":"descriptor","in":{"id":"$$descriptor.id","state":"$$descriptor.state","serverUrls":"$$descriptor.serverUrls","version":"$$descriptor.version"}}}"""
+                """{$map:{"input":"$data.descriptors","as":"descriptor","in":{"id":"$$descriptor.id","state":"$$descriptor.state","serverUrls":"$$descriptor.serverUrls","audience":"$$descriptor.audience","version":"$$descriptor.version"}}}"""
               )
             )
           )
