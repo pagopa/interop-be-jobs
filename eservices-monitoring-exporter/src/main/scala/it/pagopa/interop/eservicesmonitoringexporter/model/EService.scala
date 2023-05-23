@@ -16,6 +16,20 @@ final case class EService(
   audience: Seq[String]
 )
 
+sealed trait State
+
+object State {
+  case object ACTIVE   extends State
+  case object INACTIVE extends State
+}
+
+sealed trait Technology
+
+object Technology {
+  case object REST extends Technology
+  case object SOAP extends Technology
+}
+
 object EService {
   implicit val eServiceEncoder: Encoder.AsObject[EService] = deriveEncoder[EService]
 }
