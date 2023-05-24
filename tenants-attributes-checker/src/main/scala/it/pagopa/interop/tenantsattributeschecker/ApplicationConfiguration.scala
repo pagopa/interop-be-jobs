@@ -22,17 +22,15 @@ object ApplicationConfiguration {
   implicit val classicActorSystem: classic.ActorSystem = actorSystem.toClassic
   implicit val context: List[(String, String)]         = (CORRELATION_ID_HEADER -> UUID.randomUUID().toString) :: Nil
 
-  val config: Config                           = ConfigFactory.load()
+  private val config: Config                   = ConfigFactory.load()
   val dateTimeSupplier: OffsetDateTimeSupplier = OffsetDateTimeSupplier
 
   val tenantProcessURL: String    =
     config.getString("services.tenant-process")
   val agreementProcessURL: String =
     config.getString("services.agreement-process")
-  val tenantManagementURL: String = config.getString("services.tenant-management")
-
-  val tenantsCollection: String =
-    config.getString("read-model.collections.tenants")
+  val tenantsCollection: String   =
+    config.getString("read-model.collection-tenants")
 
   val readModelConfig: ReadModelConfig = {
     val connectionString: String = config.getString("read-model.connection-string")

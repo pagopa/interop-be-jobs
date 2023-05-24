@@ -1,13 +1,13 @@
 package it.pagopa.interop.tenantsattributeschecker.service
 
-import it.pagopa.interop.tenantprocess.client.model.{Tenant, UpdateVerifiedTenantAttributeSeed}
+import it.pagopa.interop.tenantprocess.client.model.Tenant
 
 import java.util.UUID
 import scala.concurrent.Future
 
 trait TenantProcessService {
 
-  def updateVerifiedAttribute(tenantId: UUID, attributeId: UUID, seed: UpdateVerifiedTenantAttributeSeed)(implicit
+  def updateVerifiedAttributeExtensionDate(tenantId: UUID, attributeId: UUID, verifierId: UUID)(implicit
     contexts: Seq[(String, String)]
   ): Future[Tenant]
 }

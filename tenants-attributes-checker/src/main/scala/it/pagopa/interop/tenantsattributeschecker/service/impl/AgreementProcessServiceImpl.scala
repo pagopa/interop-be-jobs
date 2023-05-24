@@ -2,12 +2,11 @@ package it.pagopa.interop.tenantsattributeschecker.service.impl
 
 import akka.actor.typed.ActorSystem
 import com.typesafe.scalalogging.{Logger, LoggerTakingImplicit}
-import it.pagopa.interop.agreementprocess.client.api.AgreementApi
+import it.pagopa.interop.agreementprocess.client.api.{AgreementApi, EnumsSerializers}
 import it.pagopa.interop.agreementprocess.client.invoker.{ApiInvoker, BearerToken}
 import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
 import it.pagopa.interop.commons.utils.TypeConversions.EitherOps
 import it.pagopa.interop.commons.utils.extractHeaders
-import it.pagopa.interop.tenantmanagement.client.api.EnumsSerializers
 import it.pagopa.interop.tenantsattributeschecker.ApplicationConfiguration
 import it.pagopa.interop.tenantsattributeschecker.service.AgreementProcessService
 
@@ -28,6 +27,7 @@ final case class AgreementProcessServiceImpl(blockingEc: ExecutionContextExecuto
     contexts: Seq[(String, String)]
   ): Future[Unit] = {
     implicit val ec: ExecutionContext = blockingEc
+
     for {
       (bearerToken, correlationId, ip) <- extractHeaders(contexts).toFuture
       request = api.computeAgreementsByAttribute(

@@ -6,30 +6,32 @@ import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenant
 import it.pagopa.interop.tenantsattributeschecker.ApplicationConfiguration._
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.Aggregates._
+import org.mongodb.scala.model.Filters
 import org.mongodb.scala.model.Filters._
 
 import scala.concurrent.Future
 
 object ReadModelQueries {
 
-  def getAllExpiredAttributesTenants(rm: MongoDbReadModelService): Future[Seq[PersistentTenant]] =
-    getAll(100)(getExpiredAttributesTenants(_, _, rm))
+  def getAllExpiredAttributesTenants(
+    rm: MongoDbReadModelService,
+    expirationInMonth: Boolean = false
+  ): Future[Seq[PersistentTenant]] =
+    getAll(100)(getExpiredAttributesTenants(_, _, rm, expirationInMonth))
 
-  def getExpiredAttributesTenants(
+  private def getExpiredAttributesTenants(
     offset: Int,
     limit: Int,
-    readModelService: MongoDbReadModelService
+    readModelService: MongoDbReadModelService,
+    expirationInMonth: Boolean
   ): Future[Seq[PersistentTenant]] = {
 
-    val aggregation: List[Bson] = List(
-      unwind("$data.attributes"),
-      `match`(
-        lte(
-          "data.attributes.verifiedBy.verificationDate", // TODO rimpiazzare con extensionDate
-          dateTimeSupplier.get().toString
-        )
-      )
-    )
+    val dateFilter: Bson =
+      if (expirationInMonth)
+        Filters.eq("data.attributes.verifiedBy.extensionDate", dateTimeSupplier.get().plusMonths(1).toString)
+      else lte("data.attributes.verifiedBy.extensionDate", dateTimeSupplier.get().toString)
+
+    val aggregation: List[Bson] = List(unwind("$data.attributes"), `match`(dateFilter))
 
     readModelService.aggregate[PersistentTenant](tenantsCollection, aggregation, offset, limit)
   }
@@ -41,5 +43,4 @@ object ReadModelQueries {
     )
     go(0)(Nil)
   }
-
 }

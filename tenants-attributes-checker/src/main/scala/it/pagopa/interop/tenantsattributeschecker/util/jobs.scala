@@ -1,5 +1,6 @@
 package it.pagopa.interop.tenantsattributeschecker.util
 
+import cats.implicits.{catsSyntaxOptionId, toFunctorFilterOps, toTraverseOps}
 import it.pagopa.interop.tenantmanagement.model.tenant.{
   PersistentTenant,
   PersistentVerificationRenewal,
@@ -9,44 +10,33 @@ import it.pagopa.interop.tenantsattributeschecker.ApplicationConfiguration.{acto
 import it.pagopa.interop.tenantsattributeschecker.service.impl.{AgreementProcessServiceImpl, TenantProcessServiceImpl}
 import it.pagopa.interop.tenantsattributeschecker.service.{AgreementProcessService, TenantProcessService}
 
-import java.time.{Duration, OffsetDateTime}
+import scala.concurrent.Future
 
 object jobs {
 
-//  private val tenantManagement: TenantManagementService =
-//    TenantManagementServiceImpl(blockingEc)
   private val agreementProcess: AgreementProcessService =
     AgreementProcessServiceImpl(blockingEc)
   private val tenantProcess: TenantProcessService       =
     TenantProcessServiceImpl(blockingEc)
 
-  def applyStrategy(tenants: Seq[PersistentTenant]): Unit = {
+  def applyStrategy(tenants: List[PersistentTenant]): Future[Unit] = {
 
-    for {
-      tenant            <- tenants
-      attribute         <- tenant.attributes
-      verifiedAttribute <- attribute match {
-        case v: PersistentVerifiedAttribute => Some(v)
-        case _                              => None
+    val result = for {
+      tenant     <- tenants
+      attribute  <- tenant.attributes.mapFilter {
+        case v: PersistentVerifiedAttribute => v.some
+        case _                              => Option.empty[PersistentVerifiedAttribute]
       }
-      verifier          <- verifiedAttribute.verifiedBy
-    } yield verifier.renewal match {
-      case PersistentVerificationRenewal.REVOKE_ON_EXPIRATION =>
-        agreementProcess.computeAgreementsByAttribute(tenant.id, attribute.id)
-      case PersistentVerificationRenewal.AUTOMATIC_RENEWAL    =>
-        // TODO AGGIORNARE IL NUOVO VALORE SU DOCUMENTDB
+      verifiedBy <- attribute.verifiedBy
+    } yield (tenant.id, attribute.id, verifiedBy.id, verifiedBy.renewal)
 
-        val newExtensionDate: Option[OffsetDateTime] = for {
-          extensionDate  <- verifier.extensionDate
-          expirationDate <- verifier.expirationDate
-        } yield extensionDate.plus(Duration.between(verifier.verificationDate, expirationDate))
-
-        tenantProcess.updateVerifiedAttribute(
-          tenant.id,
-          attribute.id,
-          UpdateVerifiedTenantAttributeSeed(extensionDate = newExtensionDate)
-        )
-    }
-
+    result
+      .traverse {
+        case (tenantId, attributeId, verifierId, PersistentVerificationRenewal.AUTOMATIC_RENEWAL) =>
+          tenantProcess.updateVerifiedAttributeExtensionDate(tenantId, attributeId, verifierId)
+        case (tenantId, attributeId, _, PersistentVerificationRenewal.REVOKE_ON_EXPIRATION)       =>
+          agreementProcess.computeAgreementsByAttribute(tenantId, attributeId)
+      }
+      .map(_ => ())
   }
 }

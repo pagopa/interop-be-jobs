@@ -6,7 +6,7 @@ import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLo
 import it.pagopa.interop.commons.utils.withHeaders
 import it.pagopa.interop.tenantprocess.client.api.{EnumsSerializers, TenantApi}
 import it.pagopa.interop.tenantprocess.client.invoker.{ApiInvoker, ApiRequest, BearerToken}
-import it.pagopa.interop.tenantprocess.client.model.{Tenant, UpdateVerifiedTenantAttributeSeed}
+import it.pagopa.interop.tenantprocess.client.model.Tenant
 import it.pagopa.interop.tenantsattributeschecker.ApplicationConfiguration
 import it.pagopa.interop.tenantsattributeschecker.service.TenantProcessService
 
@@ -22,16 +22,16 @@ final case class TenantProcessServiceImpl(blockingEc: ExecutionContextExecutor)(
   private implicit val logger: LoggerTakingImplicit[ContextFieldsToLog] =
     Logger.takingImplicit[ContextFieldsToLog](this.getClass)
 
-  override def updateVerifiedAttribute(tenantId: UUID, attributeId: UUID, seed: UpdateVerifiedTenantAttributeSeed)(
-    implicit contexts: Seq[(String, String)]
+  override def updateVerifiedAttributeExtensionDate(tenantId: UUID, attributeId: UUID, verifierId: UUID)(implicit
+    contexts: Seq[(String, String)]
   ): Future[Tenant] =
     withHeaders[Tenant] { (bearerToken, correlationId, ip) =>
       val request: ApiRequest[Tenant] =
-        api.updateVerifiedAttribute(
+        api.updateVerifiedAttributeExtensionDate(
           xCorrelationId = correlationId,
           tenantId = tenantId,
           attributeId = attributeId,
-          updateVerifiedTenantAttributeSeed = seed,
+          verifierId = verifierId,
           xForwardedFor = ip
         )(BearerToken(bearerToken))
       invoker.invoke(request, s"Updating verified attribute $attributeId to $tenantId")
