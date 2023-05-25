@@ -1,7 +1,7 @@
 package it.pagopa.interop.eservicesmonitoringexporter.util
 
-import it.pagopa.interop.catalogmanagement.{model => DependencyCatalog}
 import it.pagopa.interop.eservicesmonitoringexporter.model._
+import it.pagopa.interop.catalogmanagement.{model => DependencyCatalog}
 import it.pagopa.interop.eservicesmonitoringexporter.model.State.{ACTIVE, INACTIVE}
 import it.pagopa.interop.eservicesmonitoringexporter.model.Technology.{REST, SOAP}
 
@@ -29,11 +29,12 @@ object Utils {
           name = e.name,
           eserviceId = e.id,
           versionId = descriptor.id,
-          technology = e.technology.toApi,
-          state = descriptor.state.toApi,
+          technology = e.technology.toApi.toString,
+          state = descriptor.state.toApi.toString,
           basePath = descriptor.serverUrls,
           producerName = e.producerName,
-          versionNumber = descriptor.version.toInt
+          versionNumber = descriptor.version.toInt,
+          audience = descriptor.audience
         )
       )
   }

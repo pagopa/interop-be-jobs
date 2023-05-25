@@ -19,10 +19,11 @@ final case class DescriptorDB(
   id: UUID,
   state: DependencyCatalog.CatalogDescriptorState,
   serverUrls: Seq[String],
+  audience: Seq[String],
   version: String
 )
 
 object EServiceDB {
-  implicit val descriptorDBFormat: RootJsonFormat[DescriptorDB] = jsonFormat4(DescriptorDB.apply)
+  implicit val descriptorDBFormat: RootJsonFormat[DescriptorDB] = jsonFormat5(DescriptorDB.apply)
   implicit val eServiceDBFormat: RootJsonFormat[EServiceDB]     = jsonFormat5(EServiceDB.apply)
 }

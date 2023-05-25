@@ -60,6 +60,9 @@ object Main extends App {
   }
 
   def app(): Future[Unit] = resources()
+    .andThen { case Failure(e) =>
+      logger.error("Unable to load resources", e)
+    }
     .flatMap { case (config, fm, rm, es) =>
       execution(config, fm, rm)
         .andThen { case Failure(e) =>
