@@ -6,7 +6,6 @@ import it.pagopa.interop.privacynoticesupdater.model.db.{PrivacyNoticeVersion =>
 
 import java.time.{ZoneOffset, ZoneId};
 import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
-import java.time.temporal.ChronoUnit
 
 object PrivacyNoticeConverter {
 
@@ -22,7 +21,7 @@ object PrivacyNoticeConverter {
         organizationId = pn.organizationId,
         responsibleUserId = pn.responsibleUserId,
         privacyNoticeVersion = pn.version.toPersistent,
-        persistedAt = OffsetDateTimeSupplier.get().truncatedTo(ChronoUnit.SECONDS)
+        persistedAt = OffsetDateTimeSupplier.get()
       )
   }
 
