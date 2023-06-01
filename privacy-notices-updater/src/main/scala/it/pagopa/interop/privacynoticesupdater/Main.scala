@@ -66,10 +66,16 @@ object Main extends App {
     token  <- ots.getBearerToken()
     ppOts  <- ots.getById(config.oneTrust.ppUuid)(token.access_token)
     ppDs   <- ds.getById(config.oneTrust.ppUuid)
-    _      <- ppOts.map(p => ds.put(p.toPersistent)).orElse(ppDs.map(p => ds.delete(p.pnId))).getOrElse(Future.unit)
+    _      <- ppOts
+      .map(p => ds.put(p.toPersistent))
+      .orElse(ppDs.map(p => ds.delete(p.privacyNoticeId)))
+      .getOrElse(Future.unit)
     tosOts <- ots.getById(config.oneTrust.tosUuid)(token.access_token)
     tosDs  <- ds.getById(config.oneTrust.tosUuid)
-    _      <- tosOts.map(p => ds.put(p.toPersistent)).orElse(tosDs.map(p => ds.delete(p.pnId))).getOrElse(Future.unit)
+    _      <- tosOts
+      .map(p => ds.put(p.toPersistent))
+      .orElse(tosDs.map(p => ds.delete(p.privacyNoticeId)))
+      .getOrElse(Future.unit)
   } yield ()
 
   def app(): Future[Unit] = resources()

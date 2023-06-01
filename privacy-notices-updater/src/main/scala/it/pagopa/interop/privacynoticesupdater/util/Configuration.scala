@@ -10,7 +10,7 @@ import java.util.UUID
 
 final case class Configuration(dynamo: DynamoConfiguration, oneTrust: OneTrustConfiguration)
 
-final case class DynamoConfiguration(tableName: String)
+final case class DynamoConfiguration(tableNamePrivacy: String)
 
 final case class OneTrustConfiguration(
   tokenUrl: String,
