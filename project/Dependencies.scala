@@ -86,6 +86,11 @@ object Dependencies {
     lazy val partyManagement =
       namespace %% "interop-selfcare-party-management-client" % partyManagementClientVersion
 
+    lazy val partyProcessClient = namespace %% "interop-selfcare-party-process-client" % partyProcessVersion
+
+    lazy val certifiedMailSenderModels =
+      namespace %% "interop-be-certified-mail-sender-models" % certifiedMailSenderModelsVersion
+
     lazy val commons = namespace %% "interop-commons-utils"         % commonsVersion
     lazy val mail    = namespace %% "interop-commons-mail-manager"  % commonsVersion
     lazy val jwt     = namespace %% "interop-commons-jwt"           % commonsVersion
@@ -216,15 +221,11 @@ object Dependencies {
       cats.core                         % Compile,
       logback.classic                   % Compile,
       mongodb.scalaDriver               % Compile,
-//      pagopa.attributeModels            % Compile,
-//      pagopa.tenantManagement           % Compile,
       pagopa.tenantModels               % Compile,
       pagopa.tenantProcess              % Compile,
-//      pagopa.catalogManagement          % Compile,
-//      pagopa.catalogModels              % Compile,
-//      pagopa.agreementManagementClient  % Compile,
+      pagopa.certifiedMailSenderModels  % Compile,
       pagopa.agreementProcessClient     % Compile,
-//      pagopa.agreementsModels           % Compile,
+      pagopa.partyProcessClient         % Compile,
       pagopa.commons                    % Compile,
       pagopa.cqrs                       % Compile,
       scalameta.munit                   % Test

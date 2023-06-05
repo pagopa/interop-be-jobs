@@ -28,7 +28,7 @@ object ReadModelQueries {
 
     val dateFilter: Bson =
       if (expirationInMonth)
-        Filters.eq("data.attributes.verifiedBy.extensionDate", dateTimeSupplier.get().plusMonths(1).toString)
+        Filters.eq("data.attributes.verifiedBy.extensionDate", dateTimeSupplier.get().plusDays(30).toString)
       else lte("data.attributes.verifiedBy.extensionDate", dateTimeSupplier.get().toString)
 
     val aggregation: List[Bson] = List(unwind("$data.attributes"), `match`(dateFilter))

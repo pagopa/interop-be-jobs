@@ -1,0 +1,4 @@
+{
+  "subject": "Notifica scadenza attributo ${attributeId} entro 30 giorni",
+  "body": "<!DOCTYPE html>\n<html lang=\"it\">\n\n<head>\n    <meta charset=\"UTF-8\">\n    <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n</head>\n\n<body>\n    <div style=\"white-space: pre-line;\">\n        Buongiorno,\n\n        questa è una notifica automatica, si prega di non rispondere.\n\n        L'attributo ${attributeId} scadrà fra 30 giorni e ${ifRevoke}verrà rinnovato automaticamente.\n\n        Un saluto\n\n        Team PDND Interoperabilità\n    </div>\n\n</body>\n\n</html>"
+}
