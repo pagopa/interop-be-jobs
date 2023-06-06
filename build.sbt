@@ -213,8 +213,7 @@ lazy val jobs = project
     certifiedMailSender,
     certifiedMailSenderModels,
     eservicesMonitoringExporter,
-    privacyNoticesUpdater
-    certifiedMailSenderModels,
+    privacyNoticesUpdater,
     tenantsAttributesChecker
   )
   .settings(Docker / publish := {})

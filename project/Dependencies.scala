@@ -254,6 +254,7 @@ object Dependencies {
         sttp.stpLog     % Compile,
         circe.generic   % Compile
     ).map(_.withSources.withJavadoc)
+
     lazy val tenantsAttributesChecker: Seq[ModuleID] = Seq(
       akka.actor                        % Compile,
       akka.actorTyped                   % Compile,
