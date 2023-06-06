@@ -21,6 +21,8 @@ lazy val paDigitaleReportGeneratorModuleName         = "padigitale-report-genera
 lazy val dashboardMetricsGeneratorModuleName         = "dashboard-metrics-report-generator"
 lazy val certifiedMailSenderModuleName               = "certified-mail-sender"
 lazy val certifiedMailSenderModelsModuleName         = "certified-mail-sender-models"
+lazy val eservicesMonitoringExporterModuleName       = "eservices-monitoring-exporter"
+lazy val privacyNoticesUpdaterModuleName             = "privacy-notices-updater"
 
 cleanFiles += baseDirectory.value / certifiedMailSenderModuleName / "target"
 cleanFiles += baseDirectory.value / certifiedMailSenderModelsModuleName / "target"
@@ -143,16 +145,46 @@ lazy val certifiedMailSender = project
     libraryDependencies ++= Dependencies.Jars.certifiedMailSenderDependencies,
     publish / skip       := true,
     publish              := (()),
-    publishLocal         := (),
+    publishLocal         := (()),
     publishTo            := None
   )
   .dependsOn(certifiedMailSenderModels)
   .enablePlugins(JavaAppPackaging)
   .enablePlugins(DockerPlugin)
 
+lazy val eservicesMonitoringExporter = project
+  .in(file(eservicesMonitoringExporterModuleName))
+  .settings(
+    name                 := "interop-be-eservices-monitoring-exporter",
+    Docker / packageName := s"${name.value}",
+    sharedSettings,
+    libraryDependencies ++= Dependencies.Jars.eservicesMonitoringExporter,
+    publish / skip       := true,
+    publish              := (()),
+    publishLocal         := (()),
+    publishTo            := None
+  )
+  .enablePlugins(JavaAppPackaging)
+  .enablePlugins(DockerPlugin)
+
 lazy val certifiedMailSenderModels = project
   .in(file(certifiedMailSenderModelsModuleName))
   .settings(name := "interop-be-certified-mail-sender-models", scalafmtOnCompile := true, Docker / publish := {})
+
+lazy val privacyNoticesUpdater = project
+  .in(file(privacyNoticesUpdaterModuleName))
+  .settings(
+    name                 := "interop-be-privacy-notices-updater",
+    Docker / packageName := s"${name.value}",
+    sharedSettings,
+    libraryDependencies ++= Dependencies.Jars.privacyNoticesUpdaterDependencies,
+    publish / skip       := true,
+    publish              := (()),
+    publishLocal         := (()),
+    publishTo            := None
+  )
+  .enablePlugins(JavaAppPackaging)
+  .enablePlugins(DockerPlugin)
 
 lazy val tenantsAttributesChecker = project
   .in(file(tenantsAttributesCheckerModuleName))
@@ -179,6 +211,9 @@ lazy val jobs = project
     attributesLoader,
     metricsReportGenerator,
     certifiedMailSender,
+    certifiedMailSenderModels,
+    eservicesMonitoringExporter,
+    privacyNoticesUpdater
     certifiedMailSenderModels,
     tenantsAttributesChecker
   )

@@ -101,6 +101,18 @@ object Dependencies {
     lazy val parser  = namespace %% "interop-commons-parser"        % commonsVersion
   }
 
+  private[this] object scanamo {
+    lazy val scanamo = "org.scanamo" %% "scanamo" % scanamoVersion
+    lazy val testkit = "org.scanamo" %% "scanamo-testkit" % scanamoVersion
+  }
+
+  private[this] object sttp {
+    lazy val sttpClient = "com.softwaremill.sttp.client4" %% "core" % sttpVersion
+    lazy val sttpModel  = "com.softwaremill.sttp.model" %% "core" % sttpModelVersion
+    lazy val stpCirce   = "com.softwaremill.sttp.client4" %% "circe" % sttpVersion
+    lazy val stpLog     = "com.softwaremill.sttp.client4" %% "slf4j-backend" % sttpVersion
+  }
+
   private[this] object scalameta {
     lazy val namespace = "org.scalameta"
     lazy val munit     = namespace %% "munit" % munitVersion
@@ -215,6 +227,33 @@ object Dependencies {
         pagopa.queue    % Compile
       )
 
+  lazy val eservicesMonitoringExporter: Seq[ModuleID] = Seq(
+      cats.core                 % Compile,
+      "com.github.pureconfig"   %% "pureconfig" % "0.17.2",
+      logback.classic           % Compile,
+      mongodb.scalaDriver       % Compile,
+      pagopa.catalogModels      % Compile,
+      pagopa.tenantModels       % Compile,
+      pagopa.commons            % Compile,
+      pagopa.cqrs               % Compile,
+      pagopa.file               % Compile,
+      circe.core                % Compile,
+      circe.generic             % Compile
+    ).map(_.withSources.withJavadoc)
+
+  lazy val privacyNoticesUpdaterDependencies: Seq[ModuleID] =
+      Seq(
+        "com.github.pureconfig" %% "pureconfig" % "0.17.2",
+        logback.classic % Compile,
+        cats.core       % Compile,
+        pagopa.commons  % Compile,
+        scanamo.scanamo % Compile,
+        sttp.sttpClient % Compile,
+        sttp.stpCirce   % Compile,
+        sttp.sttpModel  % Compile,
+        sttp.stpLog     % Compile,
+        circe.generic   % Compile
+    ).map(_.withSources.withJavadoc)
     lazy val tenantsAttributesChecker: Seq[ModuleID] = Seq(
       akka.actor                        % Compile,
       akka.actorTyped                   % Compile,
