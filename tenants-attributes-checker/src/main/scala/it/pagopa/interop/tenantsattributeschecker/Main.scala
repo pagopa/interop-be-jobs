@@ -31,7 +31,7 @@ object Main extends App {
     _              <- Future.traverse(tenantsInMonth) { tenant =>
       Future.traverse(tenant.attributes.collect { case v: PersistentVerifiedAttribute => v }) { attribute =>
         Future.traverse(attribute.verifiedBy) { verifiedBy =>
-          sendEnvelope(attribute.id, tenant, verifiedBy.renewal, expirationMailTemplate)
+          sendEnvelope(attribute.id, tenant, verifiedBy, expirationMailTemplate)
         }
       }
     }

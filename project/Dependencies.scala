@@ -226,6 +226,7 @@ object Dependencies {
       pagopa.certifiedMailSenderModels  % Compile,
       pagopa.agreementProcessClient     % Compile,
       pagopa.partyProcessClient         % Compile,
+      pagopa.attributeRegistryProcess   % Compile,
       pagopa.commons                    % Compile,
       pagopa.cqrs                       % Compile,
       scalameta.munit                   % Test

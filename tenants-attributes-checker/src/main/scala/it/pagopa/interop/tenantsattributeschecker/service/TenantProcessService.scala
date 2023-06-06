@@ -10,4 +10,6 @@ trait TenantProcessService {
   def updateVerifiedAttributeExtensionDate(tenantId: UUID, attributeId: UUID, verifierId: UUID)(implicit
     contexts: Seq[(String, String)]
   ): Future[Tenant]
+
+  def getTenant(tenantId: UUID)(implicit contexts: Seq[(String, String)]): Future[Tenant]
 }

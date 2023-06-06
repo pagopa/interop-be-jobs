@@ -36,4 +36,11 @@ final case class TenantProcessServiceImpl(blockingEc: ExecutionContextExecutor)(
         )(BearerToken(bearerToken))
       invoker.invoke(request, s"Updating verified attribute $attributeId to $tenantId")
     }
+
+  override def getTenant(tenantId: UUID)(implicit contexts: Seq[(String, String)]): Future[Tenant] =
+    withHeaders[Tenant] { (bearerToken, correlationId, ip) =>
+      val request: ApiRequest[Tenant] =
+        api.getTenant(xCorrelationId = correlationId, xForwardedFor = ip, id = tenantId)(BearerToken(bearerToken))
+      invoker.invoke(request, s"Getting tenant with id $tenantId")
+    }
 }

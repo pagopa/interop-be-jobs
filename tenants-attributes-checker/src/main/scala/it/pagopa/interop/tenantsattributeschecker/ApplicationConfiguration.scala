@@ -32,6 +32,8 @@ object ApplicationConfiguration {
     config.getString("services.tenant-process")
   val agreementProcessURL: String              =
     config.getString("services.agreement-process")
+  val attributeRegistryProcessURL: String      =
+    config.getString("services.attribute-registry-process")
   val tenantsCollection: String                =
     config.getString("read-model.collection-tenants")
 

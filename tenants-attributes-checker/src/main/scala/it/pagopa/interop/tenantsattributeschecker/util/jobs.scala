@@ -5,6 +5,7 @@ import it.pagopa.interop.commons.utils.TypeConversions.OptionOps
 import it.pagopa.interop.commons.utils.service.UUIDSupplier
 import it.pagopa.interop.tenantmanagement.model.tenant.{
   PersistentTenant,
+  PersistentTenantVerifier,
   PersistentVerificationRenewal,
   PersistentVerifiedAttribute
 }
@@ -16,6 +17,7 @@ import it.pagopa.interop.tenantsattributeschecker.ApplicationConfiguration.{
 }
 import it.pagopa.interop.tenantsattributeschecker.service.impl.{
   AgreementProcessServiceImpl,
+  AttributeRegistryProcessServiceImpl,
   MailTemplate,
   PartyProcessServiceImpl,
   QueueServiceImpl,
@@ -24,6 +26,7 @@ import it.pagopa.interop.tenantsattributeschecker.service.impl.{
 }
 import it.pagopa.interop.tenantsattributeschecker.service.{
   AgreementProcessService,
+  AttributeRegistryProcessService,
   PartyProcessService,
   QueueService,
   TenantProcessService
@@ -36,13 +39,13 @@ import scala.concurrent.Future
 
 object jobs {
 
-  private val agreementProcess: AgreementProcessService =
-    AgreementProcessServiceImpl(blockingEc)
-  private val tenantProcess: TenantProcessService       =
-    TenantProcessServiceImpl(blockingEc)
-  private val queueService: QueueService                = new QueueServiceImpl(certifiedMailQueueName)
-  private val partyProcessService: PartyProcessService  = new PartyProcessServiceImpl
-  private val expiredMailTemplate: MailTemplate         = MailTemplate.expired()
+  private val agreementProcess: AgreementProcessService                 = AgreementProcessServiceImpl(blockingEc)
+  private val tenantProcess: TenantProcessService                       = TenantProcessServiceImpl(blockingEc)
+  private val attributeRegistryProcess: AttributeRegistryProcessService =
+    AttributeRegistryProcessServiceImpl(blockingEc)
+  private val queueService: QueueService                                = new QueueServiceImpl(certifiedMailQueueName)
+  private val partyProcessService: PartyProcessService                  = new PartyProcessServiceImpl
+  private val expiredMailTemplate: MailTemplate                         = MailTemplate.expired()
 
   def applyStrategy(tenants: List[PersistentTenant]): Future[Unit] = {
 
@@ -57,7 +60,7 @@ object jobs {
                 case PersistentVerificationRenewal.REVOKE_ON_EXPIRATION =>
                   agreementProcess.computeAgreementsByAttribute(tenant.id, attribute.id)
               }
-              _ <- sendEnvelope(attribute.id, tenant, verifiedBy.renewal, expiredMailTemplate)
+              _ <- sendEnvelope(attribute.id, tenant, verifiedBy, expiredMailTemplate)
             } yield ()
           }
         }
@@ -68,31 +71,50 @@ object jobs {
   def sendEnvelope(
     attributeId: UUID,
     tenant: PersistentTenant,
-    renewal: PersistentVerificationRenewal,
+    verifier: PersistentTenantVerifier,
     mailTemplate: MailTemplate
   ): Future[Unit] = {
     val envelopeId: UUID = UUIDSupplier.get()
 
-    def createBody: String = mailTemplate.body.interpolate(
-      Map(
-        "ifRevoke"    -> {
-          if (renewal == PersistentVerificationRenewal.REVOKE_ON_EXPIRATION) "non "
-          else ""
-        },
-        "attributeId" -> attributeId.toString
-      )
-    )
+    def createBody(attributeName: String, providerName: String): String = {
+      val ifRevoke = if (verifier.renewal == PersistentVerificationRenewal.REVOKE_ON_EXPIRATION) {
+        (
+          "L'attributo ti verrà revocato e questo potrebbe avere impatti sullo stato di alcune tue richieste di fruizione.",
+          "L'attributo ti è stato revocato e questo potrebbe avere impatti sullo stato di alcune tue richieste di fruizione."
+        )
+      } else ("", "")
 
-    val subject: String = mailTemplate.subject.interpolate(Map("attributeId" -> attributeId.toString))
+      val ifRenewal = if (verifier.renewal == PersistentVerificationRenewal.AUTOMATIC_RENEWAL) {
+        (
+          "Per scelta del fruitore, l'attributo ti verrà rinnovato automaticamente; non ci sono quindi impatti sulle tue richieste di fruizione.",
+          "Per scelta del fruitore, l'attributo è stato rinnovato automaticamente; non ci sono quindi impatti sulle tue richieste di fruizione."
+        )
+      } else ("", "")
+
+      mailTemplate.body.interpolate(
+        Map(
+          "ifRevokeExpiration"  -> ifRevoke._1,
+          "ifRenewalExpiration" -> ifRenewal._1,
+          "ifRevokeExpired"     -> ifRevoke._2,
+          "ifRenewalExpired"    -> ifRenewal._2,
+          "attributeName"       -> attributeName,
+          "providerName"        -> providerName
+        )
+      )
+    }
+
+    val subject: String = mailTemplate.subject
 
     val envelope: Future[InteropEnvelope] = for {
       tenantSelfcareId <- tenant.selfcareId.toFuture(SelfcareIdNotFound(tenant.id))
-      tenant           <- partyProcessService.getInstitution(tenantSelfcareId)
+      provider         <- tenantProcess.getTenant(verifier.id)
+      tenantSelfcare   <- partyProcessService.getInstitution(tenantSelfcareId)
+      attribute        <- attributeRegistryProcess.getAttributeById(attributeId)
     } yield InteropEnvelope(
       id = envelopeId,
-      recipients = List(tenant.digitalAddress),
+      recipients = List(tenantSelfcare.digitalAddress),
       subject = subject,
-      body = createBody,
+      body = createBody(attribute.name, provider.name),
       attachments = List.empty
     )
 
