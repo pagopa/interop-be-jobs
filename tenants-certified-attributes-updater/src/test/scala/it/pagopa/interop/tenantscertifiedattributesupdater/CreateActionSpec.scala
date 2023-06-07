@@ -13,6 +13,7 @@ import it.pagopa.interop.tenantscertifiedattributesupdater.util.Utils._
 import munit.FunSuite
 
 import java.util.UUID
+import it.pagopa.interop.commons.utils.Digester
 
 class CreateActionSpec extends FunSuite {
   test("Create new Tenant with attributes if Tenant does not exist") {
@@ -22,13 +23,15 @@ class CreateActionSpec extends FunSuite {
     val originId2      = "002"
     val attributeCode1 = "CAT1"
     val attributeCode2 = "CAT2"
+    val kind           = "KIND"
+    val kindSha256     = Digester.toSha256(kind.getBytes())
 
     val institutions: List[Institution]           =
       List(
-        institution(origin1, originId1, attributeCode1),
-        institution(origin1, originId1, attributeCode2),
-        institution(origin2, originId1, attributeCode2),
-        institution(origin1, originId2, attributeCode2)
+        institution(origin1, originId1, attributeCode1, kind),
+        institution(origin1, originId1, attributeCode2, kind),
+        institution(origin2, originId1, attributeCode2, kind),
+        institution(origin1, originId2, attributeCode2, kind)
       )
     val tenants: List[PersistentTenant]           = List(persistentTenant("ORIG1", "VAL1"))
     val attributesIndex: Map[UUID, AttributeInfo] = Map.empty
@@ -38,14 +41,20 @@ class CreateActionSpec extends FunSuite {
     val expectedActivations = List(
       InternalTenantSeed(
         externalId = ExternalId(origin2, originId1),
-        certifiedAttributes =
-          List(InternalAttributeSeed(origin2, attributeCode2), InternalAttributeSeed(origin2, originId1)),
+        certifiedAttributes = List(
+          InternalAttributeSeed(origin2, attributeCode2),
+          InternalAttributeSeed(origin2, originId1),
+          InternalAttributeSeed(origin2, kindSha256)
+        ),
         name = defaultName
       ),
       InternalTenantSeed(
         externalId = ExternalId(origin1, originId2),
-        certifiedAttributes =
-          List(InternalAttributeSeed(origin1, attributeCode2), InternalAttributeSeed(origin1, originId2)),
+        certifiedAttributes = List(
+          InternalAttributeSeed(origin1, attributeCode2),
+          InternalAttributeSeed(origin1, originId2),
+          InternalAttributeSeed(origin1, kindSha256)
+        ),
         name = defaultName
       ),
       InternalTenantSeed(
@@ -53,6 +62,7 @@ class CreateActionSpec extends FunSuite {
         certifiedAttributes = List(
           InternalAttributeSeed(origin1, attributeCode1),
           InternalAttributeSeed(origin1, originId1),
+          InternalAttributeSeed(origin1, kindSha256),
           InternalAttributeSeed(origin1, attributeCode2)
         ),
         name = defaultName
@@ -69,9 +79,11 @@ class CreateActionSpec extends FunSuite {
     val originId       = "001"
     val attributeCode1 = "CAT1"
     val attributeCode2 = "CAT2"
+    val kind           = "KIND"
+    val kindSha256     = Digester.toSha256(kind.getBytes())
 
     val institutions: List[Institution]           =
-      List(institution(origin, originId, attributeCode1), institution(origin, originId, attributeCode2))
+      List(institution(origin, originId, attributeCode1, kind), institution(origin, originId, attributeCode2, kind))
     val tenants: List[PersistentTenant]           = List(persistentTenant(origin, originId))
     val attributesIndex: Map[UUID, AttributeInfo] = Map.empty
 
@@ -83,6 +95,7 @@ class CreateActionSpec extends FunSuite {
         certifiedAttributes = List(
           InternalAttributeSeed(origin, attributeCode1),
           InternalAttributeSeed(origin, originId),
+          InternalAttributeSeed(origin, kindSha256),
           InternalAttributeSeed(origin, attributeCode2)
         ),
         name = defaultName
@@ -101,12 +114,14 @@ class CreateActionSpec extends FunSuite {
     val existingAttributeCode = "CAT1"
     val attributeCode2        = "CAT2"
     val attributeCode3        = "CAT3"
+    val kind                  = "KIND"
+    val kindSha256            = Digester.toSha256(kind.getBytes())
 
     val institutions: List[Institution]           =
       List(
-        institution(origin, originId, existingAttributeCode),
-        institution(origin, originId, attributeCode2),
-        institution(origin, originId, attributeCode3)
+        institution(origin, originId, existingAttributeCode, kind),
+        institution(origin, originId, attributeCode2, kind),
+        institution(origin, originId, attributeCode3, kind)
       )
     val tenants: List[PersistentTenant]           = List(
       persistentTenant(
@@ -126,6 +141,7 @@ class CreateActionSpec extends FunSuite {
         certifiedAttributes = List(
           InternalAttributeSeed(origin, attributeCode2),
           InternalAttributeSeed(origin, originId),
+          InternalAttributeSeed(origin, kindSha256),
           InternalAttributeSeed(origin, attributeCode3)
         ),
         name = "test_name"
@@ -142,8 +158,10 @@ class CreateActionSpec extends FunSuite {
     val origin        = "ORIGIN"
     val originId      = "OO1"
     val attributeCode = "CAT1"
+    val kind          = "KIND"
+    val kindSha256    = Digester.toSha256(kind.getBytes())
 
-    val institutions: List[Institution]           = List(institution(origin, originId, attributeCode))
+    val institutions: List[Institution]           = List(institution(origin, originId, attributeCode, kind))
     val tenants: List[PersistentTenant]           = List(
       persistentTenant(
         origin,
@@ -165,8 +183,11 @@ class CreateActionSpec extends FunSuite {
     val expectedActivations = List(
       InternalTenantSeed(
         externalId = ExternalId(origin, originId),
-        certifiedAttributes =
-          List(InternalAttributeSeed(origin, attributeCode), InternalAttributeSeed(origin, originId)),
+        certifiedAttributes = List(
+          InternalAttributeSeed(origin, attributeCode),
+          InternalAttributeSeed(origin, originId),
+          InternalAttributeSeed(origin, kindSha256)
+        ),
         name = defaultName
       )
     )
@@ -183,8 +204,9 @@ class CreateActionSpec extends FunSuite {
     val existingAttributeCode1 = "CAT1"
     val existingAttributeId2   = UUID.randomUUID()
     val existingAttributeCode2 = "CAT2"
+    val kind                   = "KIND"
 
-    val institutions: List[Institution]           = List(institution(origin, originId, existingAttributeCode2))
+    val institutions: List[Institution]           = List(institution(origin, originId, existingAttributeCode2, kind))
     val tenants: List[PersistentTenant]           = List(
       persistentTenant(
         origin,

@@ -10,6 +10,7 @@ import it.pagopa.interop.commons.jwt.{JWTInternalTokenConfig, KID, PrivateKeysKi
 import it.pagopa.interop.commons.logging.ContextFieldsToLog
 import it.pagopa.interop.commons.signer.service.SignerService
 import it.pagopa.interop.commons.utils.TypeConversions._
+import it.pagopa.interop.commons.utils.Digester
 import it.pagopa.interop.partyregistryproxy.client.model.{Institution, Institutions}
 import it.pagopa.interop.tenantmanagement.model.tenant.{PersistentExternalId, PersistentTenant}
 import it.pagopa.interop.tenantprocess.client.model.{ExternalId, InternalAttributeSeed, InternalTenantSeed}
@@ -75,7 +76,8 @@ object Utils {
             TenantId(institution.origin, institution.originId, institution.description),
             List(
               AttributeInfo(institution.origin, institution.category, None),
-              AttributeInfo(institution.origin, institution.originId, None)
+              AttributeInfo(institution.origin, institution.originId, None),
+              AttributeInfo(institution.origin, Digester.toSha256(institution.kind.getBytes), None)
             )
           )
         )
