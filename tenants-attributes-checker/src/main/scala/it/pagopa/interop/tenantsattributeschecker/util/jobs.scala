@@ -45,7 +45,7 @@ object jobs {
     AttributeRegistryProcessServiceImpl(blockingEc)
   private val queueService: QueueService                                = new QueueServiceImpl(certifiedMailQueueName)
   private val partyProcessService: PartyProcessService                  = new PartyProcessServiceImpl
-  private val expiredMailTemplate: MailTemplate                         = MailTemplate.expired()
+  private val (consumerExpiredTemplate, providerExpiredTemplate): (MailTemplate, MailTemplate) = MailTemplate.expired()
 
   def applyStrategy(tenants: List[PersistentTenant]): Future[Unit] = {
 
@@ -60,7 +60,7 @@ object jobs {
                 case PersistentVerificationRenewal.REVOKE_ON_EXPIRATION =>
                   agreementProcess.computeAgreementsByAttribute(tenant.id, attribute.id)
               }
-              _ <- sendEnvelope(attribute.id, tenant, verifiedBy, expiredMailTemplate)
+              _ <- sendEnvelope(attribute.id, tenant, verifiedBy, consumerExpiredTemplate, providerExpiredTemplate)
             } yield ()
           }
         }
@@ -70,54 +70,95 @@ object jobs {
 
   def sendEnvelope(
     attributeId: UUID,
-    tenant: PersistentTenant,
+    consumer: PersistentTenant,
     verifier: PersistentTenantVerifier,
-    mailTemplate: MailTemplate
+    consumerMailTemplate: MailTemplate,
+    providerMailTemplate: MailTemplate
   ): Future[Unit] = {
-    val envelopeId: UUID = UUIDSupplier.get()
 
-    def createBody(attributeName: String, providerName: String): String = {
-      val ifRevoke = if (verifier.renewal == PersistentVerificationRenewal.REVOKE_ON_EXPIRATION) {
-        (
-          "L'attributo ti verrà revocato e questo potrebbe avere impatti sullo stato di alcune tue richieste di fruizione.",
-          "L'attributo ti è stato revocato e questo potrebbe avere impatti sullo stato di alcune tue richieste di fruizione."
-        )
-      } else ("", "")
+    case class Message(expiration: String, expired: String)
 
-      val ifRenewal = if (verifier.renewal == PersistentVerificationRenewal.AUTOMATIC_RENEWAL) {
-        (
-          "Per scelta del fruitore, l'attributo ti verrà rinnovato automaticamente; non ci sono quindi impatti sulle tue richieste di fruizione.",
-          "Per scelta del fruitore, l'attributo è stato rinnovato automaticamente; non ci sono quindi impatti sulle tue richieste di fruizione."
-        )
-      } else ("", "")
+    def createMessage(expiration: String, expired: String): Message =
+      if (verifier.renewal == PersistentVerificationRenewal.REVOKE_ON_EXPIRATION) Message(expiration, expired)
+      else Message("", "")
 
-      mailTemplate.body.interpolate(
+    def createBody(
+      template: MailTemplate,
+      revokeMsg: Message,
+      renewalMsg: Message,
+      attributeName: String,
+      providerName: String,
+      consumerName: String
+    ): String =
+      template.body.interpolate(
         Map(
-          "ifRevokeExpiration"  -> ifRevoke._1,
-          "ifRenewalExpiration" -> ifRenewal._1,
-          "ifRevokeExpired"     -> ifRevoke._2,
-          "ifRenewalExpired"    -> ifRenewal._2,
+          "ifRevokeExpiration"  -> revokeMsg.expiration,
+          "ifRenewalExpiration" -> renewalMsg.expiration,
+          "ifRevokeExpired"     -> revokeMsg.expired,
+          "ifRenewalExpired"    -> renewalMsg.expired,
           "attributeName"       -> attributeName,
-          "providerName"        -> providerName
+          "providerName"        -> providerName,
+          "consumerName"        -> consumerName
         )
       )
+
+    def createProviderBody(attributeName: String, providerName: String, consumerName: String): String = {
+      val ifRevoke = createMessage(
+        "L'attributo sarà revocato e questo potrebbe avere impatti sullo stato di alcune sue richieste di fruizione.",
+        "L'attributo è stato revocato al fruitore e questo potrebbe avere impatti sullo stato di alcune sue richieste di fruizione."
+      )
+
+      val ifRenewal = createMessage(
+        "Per tua scelta, l'attributo verrà rinnovato automaticamente; non ci sono quindi impatti sulle sue richieste di fruizione.",
+        "Per tua scelta, l'attributo è stato rinnovato automaticamente; non ci sono quindi impatti sulle sue richieste di fruizione."
+      )
+
+      createBody(providerMailTemplate, ifRevoke, ifRenewal, attributeName, providerName, consumerName)
     }
 
-    val subject: String = mailTemplate.subject
+    def createConsumerBody(attributeName: String, providerName: String, consumerName: String): String = {
+      val ifRevoke = createMessage(
+        "L'attributo ti verrà revocato e questo potrebbe avere impatti sullo stato di alcune tue richieste di fruizione.",
+        "L'attributo ti è stato revocato e questo potrebbe avere impatti sullo stato di alcune tue richieste di fruizione."
+      )
 
-    val envelope: Future[InteropEnvelope] = for {
-      tenantSelfcareId <- tenant.selfcareId.toFuture(SelfcareIdNotFound(tenant.id))
-      provider         <- tenantProcess.getTenant(verifier.id)
-      tenantSelfcare   <- partyProcessService.getInstitution(tenantSelfcareId)
-      attribute        <- attributeRegistryProcess.getAttributeById(attributeId)
-    } yield InteropEnvelope(
-      id = envelopeId,
-      recipients = List(tenantSelfcare.digitalAddress),
-      subject = subject,
-      body = createBody(attribute.name, provider.name),
-      attachments = List.empty
+      val ifRenewal = createMessage(
+        "Per scelta del fruitore, l'attributo ti verrà rinnovato automaticamente; non ci sono quindi impatti sulle tue richieste di fruizione.",
+        "Per scelta del fruitore, l'attributo è stato rinnovato automaticamente; non ci sono quindi impatti sulle tue richieste di fruizione."
+      )
+
+      createBody(consumerMailTemplate, ifRevoke, ifRenewal, attributeName, providerName, consumerName)
+    }
+
+    val envelope: Future[(InteropEnvelope, InteropEnvelope)] = for {
+      provider           <- tenantProcess.getTenant(verifier.id)
+      providerSelfcareId <- provider.selfcareId.toFuture(SelfcareIdNotFound(provider.id))
+      consumerSelfcareId <- consumer.selfcareId.toFuture(SelfcareIdNotFound(consumer.id))
+      providerSelfcare   <- partyProcessService.getInstitution(providerSelfcareId)
+      consumerSelfcare   <- partyProcessService.getInstitution(consumerSelfcareId)
+      attribute          <- attributeRegistryProcess.getAttributeById(attributeId)
+    } yield (
+      InteropEnvelope(
+        id = UUIDSupplier.get(),
+        recipients = List(consumerSelfcare.digitalAddress),
+        subject = consumerMailTemplate.subject,
+        body = createConsumerBody(attribute.name, provider.name, consumer.name),
+        attachments = List.empty
+      ),
+      InteropEnvelope(
+        id = UUIDSupplier.get(),
+        recipients = List(providerSelfcare.digitalAddress),
+        subject = providerMailTemplate.subject,
+        body = createProviderBody(attribute.name, provider.name, consumer.name),
+        attachments = List.empty
+      )
     )
 
-    envelope.flatMap(queueService.send[InteropEnvelope]).map(_ => ())
+    envelope.flatMap { case (consumerEnvelope, providerEnvelope) =>
+      for {
+        _ <- queueService.send[InteropEnvelope](consumerEnvelope)
+        _ <- queueService.send[InteropEnvelope](providerEnvelope)
+      } yield ()
+    }
   }
 }

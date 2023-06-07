@@ -1,0 +1,19 @@
+{
+  "subject": "Scadenza attributo in 30 giorni",
+  "body": "<!DOCTYPE html>\n<html lang=\"it\">\n\n<head>\n    <meta charset=\"UTF-8\">\n    <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n</head>\n\n<body>\n    <div style=\"white-space: pre-line;\">\n        Ciao,\n\n        l'attributo <strong>${attributeName}</strong> che hai riconosciuto all'ente <strong>${consumerName}</strong> scadrà tra 30 giorni.\n\n${ifRevokeExpiration}${ifRenewalExpiration}\n\nPer monitorare lo stato degli attributi, <a href=\"https://selfcare.pagopa.it/\" title=\"Accedi a PDND Interoperabilità\">accedi a PDND Interoperabilità</a>.\n\nA presto,\nIl team di PDND Interoperabilità\n    </div>\n\n</body>\n\n</html>"
+}
+
+/*
+Ciao,
+
+l'attributo ${attributeName} che hai riconosciuto all'ente ${consumerName} scadrà tra 30 giorni.
+
+${ifRevoke - L'attributo sarà revocato e questo potrebbe avere impatti sullo stato di alcune sue richieste di fruizione.}
+
+${ifRenewal - Per tua scelta, l'attributo verrà rinnovato automaticamente; non ci sono quindi impatti sulle sue richieste di fruizione.}
+
+Per monitorare lo stato degli attributi, accedi a PDND Interoperabilità.
+
+A presto,
+Il team di PDND Interoperabilità
+*/

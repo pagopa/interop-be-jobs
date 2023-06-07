@@ -20,7 +20,8 @@ object Main extends App {
   private val readModelService: MongoDbReadModelService = new MongoDbReadModelService(
     ApplicationConfiguration.readModelConfig
   )
-  private val expirationMailTemplate: MailTemplate      = MailTemplate.expiration()
+  private val (consumerExpirationTemplate, providerExpirationTemplate): (MailTemplate, MailTemplate) =
+    MailTemplate.expiration()
 
   logger.info("Starting tenants attributes checker job")
 
@@ -31,7 +32,7 @@ object Main extends App {
     _              <- Future.traverse(tenantsInMonth) { tenant =>
       Future.traverse(tenant.attributes.collect { case v: PersistentVerifiedAttribute => v }) { attribute =>
         Future.traverse(attribute.verifiedBy) { verifiedBy =>
-          sendEnvelope(attribute.id, tenant, verifiedBy, expirationMailTemplate)
+          sendEnvelope(attribute.id, tenant, verifiedBy, consumerExpirationTemplate, providerExpirationTemplate)
         }
       }
     }
