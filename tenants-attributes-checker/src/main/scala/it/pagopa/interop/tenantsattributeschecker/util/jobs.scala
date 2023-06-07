@@ -64,8 +64,12 @@ object jobs {
 
     case class Message(expiration: String, expired: String)
 
-    def createMessage(expiration: String, expired: String): Message =
+    def createRevokeMessage(expiration: String, expired: String): Message =
       if (verifier.renewal == PersistentVerificationRenewal.REVOKE_ON_EXPIRATION) Message(expiration, expired)
+      else Message("", "")
+
+    def createRenewalMessage(expiration: String, expired: String): Message =
+      if (verifier.renewal == PersistentVerificationRenewal.AUTOMATIC_RENEWAL) Message(expiration, expired)
       else Message("", "")
 
     def createBody(
@@ -89,12 +93,12 @@ object jobs {
       )
 
     def createProviderBody(attributeName: String, providerName: String, consumerName: String): String = {
-      val ifRevoke = createMessage(
+      val ifRevoke = createRevokeMessage(
         "L'attributo sarà revocato e questo potrebbe avere impatti sullo stato di alcune sue richieste di fruizione.",
         "L'attributo è stato revocato al fruitore e questo potrebbe avere impatti sullo stato di alcune sue richieste di fruizione."
       )
 
-      val ifRenewal = createMessage(
+      val ifRenewal = createRenewalMessage(
         "Per tua scelta, l'attributo verrà rinnovato automaticamente; non ci sono quindi impatti sulle sue richieste di fruizione.",
         "Per tua scelta, l'attributo è stato rinnovato automaticamente; non ci sono quindi impatti sulle sue richieste di fruizione."
       )
@@ -103,12 +107,12 @@ object jobs {
     }
 
     def createConsumerBody(attributeName: String, providerName: String, consumerName: String): String = {
-      val ifRevoke = createMessage(
+      val ifRevoke = createRevokeMessage(
         "L'attributo ti verrà revocato e questo potrebbe avere impatti sullo stato di alcune tue richieste di fruizione.",
         "L'attributo ti è stato revocato e questo potrebbe avere impatti sullo stato di alcune tue richieste di fruizione."
       )
 
-      val ifRenewal = createMessage(
+      val ifRenewal = createRenewalMessage(
         "Per scelta del fruitore, l'attributo ti verrà rinnovato automaticamente; non ci sono quindi impatti sulle tue richieste di fruizione.",
         "Per scelta del fruitore, l'attributo è stato rinnovato automaticamente; non ci sono quindi impatti sulle tue richieste di fruizione."
       )
