@@ -15,22 +15,8 @@ import it.pagopa.interop.tenantsattributeschecker.ApplicationConfiguration.{
   certifiedMailQueueName,
   context
 }
-import it.pagopa.interop.tenantsattributeschecker.service.impl.{
-  AgreementProcessServiceImpl,
-  AttributeRegistryProcessServiceImpl,
-  MailTemplate,
-  PartyProcessServiceImpl,
-  QueueServiceImpl,
-  TenantProcessServiceImpl,
-  interopEnvelopFormat
-}
-import it.pagopa.interop.tenantsattributeschecker.service.{
-  AgreementProcessService,
-  AttributeRegistryProcessService,
-  PartyProcessService,
-  QueueService,
-  TenantProcessService
-}
+import it.pagopa.interop.tenantsattributeschecker.service.impl._
+import it.pagopa.interop.tenantsattributeschecker.service._
 import it.pagopa.interop.tenantsattributeschecker.util.errors._
 import it.pagopa.interop.commons.utils.TypeConversions._
 
