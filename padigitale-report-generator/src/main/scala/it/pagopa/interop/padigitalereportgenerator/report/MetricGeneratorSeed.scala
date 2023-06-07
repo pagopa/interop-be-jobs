@@ -6,6 +6,6 @@ final case class MetricGeneratorSeed(
   version: String,
   state: String,
   createdAt: OffsetDateTime,
-  activatedAt: OffsetDateTime,
+  publishedAt: OffsetDateTime,
   fileExtractedMetrics: FileExtractedMetrics
 )
