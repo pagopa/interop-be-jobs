@@ -9,8 +9,8 @@ import it.pagopa.interop.commons.jwt.service.impl.DefaultInteropTokenGenerator
 import it.pagopa.interop.commons.jwt.{JWTInternalTokenConfig, KID, PrivateKeysKidHolder}
 import it.pagopa.interop.commons.logging.ContextFieldsToLog
 import it.pagopa.interop.commons.signer.service.SignerService
-import it.pagopa.interop.commons.utils.TypeConversions._
 import it.pagopa.interop.commons.utils.Digester
+import it.pagopa.interop.commons.utils.TypeConversions._
 import it.pagopa.interop.partyregistryproxy.client.model.{Institution, Institutions}
 import it.pagopa.interop.tenantmanagement.model.tenant.{PersistentExternalId, PersistentTenant}
 import it.pagopa.interop.tenantprocess.client.model.{ExternalId, InternalAttributeSeed, InternalTenantSeed}
@@ -93,7 +93,8 @@ object Utils {
 
     val activations: List[InternalTenantSeed] =
       fromRegistry
-        .filter(AttributeInfo.canBeActivated(fromTenant))
+        .map(extractActivable(fromTenant))
+        .filter(_.attributesInfo.nonEmpty)
         .groupMapReduce[TenantId, Set[AttributeInfo]](_.id)(tenantSeed => tenantSeed.attributesInfo.toSet)(_ ++ _)
         .toList
         .map { case (tenantId, attrs) =>
@@ -106,8 +107,8 @@ object Utils {
 
     val revocations: Map[PersistentExternalId, List[AttributeInfo]] =
       fromTenant.toList
-        .flatMap { case (externalId, attrs) => List(externalId).zip(attrs) }
-        .filter(AttributeInfo.isRevocable(fromRegistry).tupled)
+        .flatMap { case (externalId, attrs) => attrs.map(attr => externalId -> attr) }
+        .flatMap(extractRevocable(fromRegistry).tupled)
         .groupMap[PersistentExternalId, AttributeInfo](_._1)(_._2)
 
     TenantActions(activations, revocations)
@@ -171,10 +172,47 @@ object Utils {
   ): Future[Unit] =
     Future
       .traverseWithLatch(10)(list) { case (externalId, attributeInfos) =>
-        logger.info(s"Processing tenant ${externalId} with attributes ${attributeInfos.mkString(",")}")
+        logger.info(s"Processing tenant $externalId with attributes ${attributeInfos.mkString(",")}")
         Future.traverseWithLatch(10)(attributeInfos)(revoker(externalId, _))
       }
       .map(_ => ())
+
+  private def extractActivable(fromTenant: Map[PersistentExternalId, List[AttributeInfo]]): TenantSeed => TenantSeed =
+    tenantSeed =>
+      tenantSeed.copy(attributesInfo = tenantSeed.attributesInfo.filter(canBeActivated(fromTenant, tenantSeed.id)))
+
+  private def canBeActivated(
+    fromTenant: Map[PersistentExternalId, List[AttributeInfo]],
+    id: TenantId
+  ): AttributeInfo => Boolean = attributeFromRegistry =>
+    !fromTenant
+      .get(id.toPersistentExternalId)
+      .exists(attributesFromTenant => // check if exist in tenant
+        attributesFromTenant.exists { attributeFromTenant =>
+          attributeFromTenant.code == attributeFromRegistry.code &&
+          attributeFromTenant.origin == attributeFromRegistry.origin &&
+          attributeFromTenant.revocationTimestamp.isEmpty
+        }
+      )
+
+  private def extractRevocable(
+    fromRegistry: List[TenantSeed]
+  ): (PersistentExternalId, AttributeInfo) => Option[(PersistentExternalId, AttributeInfo)] =
+    (tenantId, attributeFromTenant) =>
+      Option.when(canBeRevoked(fromRegistry, tenantId, attributeFromTenant))((tenantId, attributeFromTenant))
+
+  private def canBeRevoked(
+    fromRegistry: List[TenantSeed],
+    tenantId: PersistentExternalId,
+    attributeFromTenant: AttributeInfo
+  ): Boolean = !fromRegistry.exists { tenantSeed => // check if exists in registry
+    tenantSeed.id.toPersistentExternalId == tenantId &&
+    tenantSeed.attributesInfo
+      .exists(attributeFromRegistry =>
+        attributeFromTenant.code == attributeFromRegistry.code &&
+          attributeFromTenant.origin == attributeFromRegistry.origin
+      )
+  }
 
   def shutdown()(implicit client: MongoClient, actorSystem: ActorSystem[_]): Unit = {
     client.close()
