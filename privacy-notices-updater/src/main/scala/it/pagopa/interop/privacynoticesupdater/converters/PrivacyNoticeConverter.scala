@@ -15,15 +15,13 @@ object PrivacyNoticeConverter {
   implicit class PrivacyNoticeWrapper(private val pn: PrivacyNotice) extends AnyVal {
     def toPersistent: PrivacyNoticeDb =
       PrivacyNoticeDb(
-        pk = s"${PrivacyNoticeDb.pkPrefix}${pn.id}",
-        sk = s"${PrivacyNoticeDb.skPrefix}${pn.id}",
-        pnId = pn.id,
+        privacyNoticeId = pn.id,
         createdDate = pn.createdDate.atZone(zoneCet).toInstant().atOffset(zoneUtc),
         lastPublishedDate = pn.lastPublishedDate.atZone(zoneCet).toInstant().atOffset(zoneUtc),
         organizationId = pn.organizationId,
         responsibleUserId = pn.responsibleUserId,
         privacyNoticeVersion = pn.version.toPersistent,
-        createdAt = OffsetDateTimeSupplier.get()
+        persistedAt = OffsetDateTimeSupplier.get()
       )
   }
 
