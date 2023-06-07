@@ -29,12 +29,12 @@ final class DynamoServiceImpl(config: DynamoConfiguration)(implicit ec: Executio
   implicit val logger: LoggerTakingImplicit[ContextFieldsToLog] =
     Logger.takingImplicit[ContextFieldsToLog](this.getClass)
 
-  val table: Table[PrivacyNotice] =
-    Table[PrivacyNotice](config.tableName)
+  val tableNamePrivacy: Table[PrivacyNotice] =
+    Table[PrivacyNotice](config.tableNamePrivacy)
 
   override def put(privacyNotice: PrivacyNotice)(implicit contexts: Seq[(String, String)]): Future[Unit] = {
     logger.info(s"Putting $privacyNotice privacy notice")
-    val operation: ScanamoOps[Unit] = table.put(privacyNotice)
+    val operation: ScanamoOps[Unit] = tableNamePrivacy.put(privacyNotice)
 
     scanamo.exec(operation)
   }
@@ -42,7 +42,7 @@ final class DynamoServiceImpl(config: DynamoConfiguration)(implicit ec: Executio
   override def delete(id: UUID)(implicit contexts: Seq[(String, String)]): Future[Unit] = {
     logger.info(s"Deleting privacy notice with id $id")
     val operation: ScanamoOps[Unit] =
-      table.delete("pk" === s"${PrivacyNotice.pkPrefix}$id" and "sk" === s"${PrivacyNotice.skPrefix}$id")
+      tableNamePrivacy.delete("privacyNoticeId" === s"$id")
 
     scanamo.exec(operation)
   }
@@ -50,7 +50,7 @@ final class DynamoServiceImpl(config: DynamoConfiguration)(implicit ec: Executio
   override def getById(id: UUID)(implicit contexts: Seq[(String, String)]): Future[Option[PrivacyNotice]] = {
     logger.info(s"Getting id $id privacy notice")
     val operation: ScanamoOps[Option[Either[DynamoReadError, PrivacyNotice]]] =
-      table.get("pk" === s"${PrivacyNotice.pkPrefix}$id" and "sk" === s"${PrivacyNotice.skPrefix}$id")
+      tableNamePrivacy.get("privacyNoticeId" === s"$id")
 
     scanamo.exec(operation).flatMap {
       case Some(value) => value.leftMap(err => DynamoReadingError(describe(err))).toFuture.some.sequence
