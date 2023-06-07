@@ -34,7 +34,7 @@ object SpecHelper {
     name = defaultName
   )
 
-  def institution(origin: String, originId: String, category: String): Institution = Institution(
+  def institution(origin: String, originId: String, category: String, kind: String): Institution = Institution(
     id = UUID.randomUUID().toString,
     originId = originId,
     o = None,
@@ -46,7 +46,8 @@ object SpecHelper {
     digitalAddress = "",
     address = "",
     zipCode = "",
-    origin = origin
+    origin = origin,
+    kind = kind
   )
 
 }
