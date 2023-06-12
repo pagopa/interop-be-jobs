@@ -33,7 +33,7 @@ object jobs {
   private val partyProcessService: PartyProcessService                  = new PartyProcessServiceImpl
   private val (consumerExpiredTemplate, providerExpiredTemplate): (MailTemplate, MailTemplate) = MailTemplate.expired()
 
-  def applyStrategy(tenants: List[PersistentTenant]): Future[Unit] = {
+  def applyStrategyOnExpiredAttributes(tenants: List[PersistentTenant]): Future[Unit] = {
 
     Future
       .traverse(tenants) { tenant =>
@@ -121,7 +121,7 @@ object jobs {
     }
 
     val envelope: Future[(InteropEnvelope, InteropEnvelope)] = for {
-      provider           <- tenantProcess.getTenant(verifier.id)
+      producer           <- tenantProcess.getTenant(verifier.id)
       providerSelfcareId <- provider.selfcareId.toFuture(SelfcareIdNotFound(provider.id))
       consumerSelfcareId <- consumer.selfcareId.toFuture(SelfcareIdNotFound(consumer.id))
       providerSelfcare   <- partyProcessService.getInstitution(providerSelfcareId)

@@ -8,7 +8,7 @@ final case class MailTemplate(subject: String, body: String)
 
 object MailTemplate {
 
-  def expiration(): (MailTemplate, MailTemplate) = {
+  val expiration: (MailTemplate, MailTemplate) = {
     val consumer: BufferedSource = Source.fromResource("mailTemplates/activation/consumer-expiration-mail.json")
     val provider: BufferedSource = Source.fromResource("mailTemplates/activation/provider-expiration-mail.json")
     (
@@ -17,7 +17,7 @@ object MailTemplate {
     )
   }
 
-  def expired(): (MailTemplate, MailTemplate) = {
+  val expired: (MailTemplate, MailTemplate) = {
     val consumer: BufferedSource = Source.fromResource("mailTemplates/activation/consumer-expired-mail.json")
     val provider: BufferedSource = Source.fromResource("mailTemplates/activation/provider-expired-mail.json")
     (

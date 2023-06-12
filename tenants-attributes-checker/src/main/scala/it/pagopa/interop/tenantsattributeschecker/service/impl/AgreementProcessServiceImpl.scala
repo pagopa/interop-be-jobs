@@ -38,7 +38,6 @@ final case class AgreementProcessServiceImpl(blockingEc: ExecutionContextExecuto
       )(BearerToken(bearerToken))
       result <- invoker
         .invoke(request, s"Agreements state compute triggered for Tenant $consumerId and Attribute $attributeId")
-        .recoverWith { case _ => Future.unit } // Do not fail because this service should not be blocked by this update
     } yield result
   }
 }
