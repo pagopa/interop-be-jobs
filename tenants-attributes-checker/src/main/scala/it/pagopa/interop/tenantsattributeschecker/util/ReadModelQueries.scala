@@ -27,8 +27,9 @@ object ReadModelQueries {
     readModelService: MongoDbReadModelService
   ): Future[Seq[PersistentTenant]] = {
 
-    val dateFilter: Bson =
-      Filters.eq("data.attributes.verifiedBy.extensionDate", dateTimeSupplier.get().plusDays(30).toString)
+    val timestamp = dateTimeSupplier.get().plusDays(30).toInstant.toEpochMilli
+
+    val dateFilter: Bson = Filters.eq("data.attributes.verifiedBy.extensionDate", timestamp)
 
     val aggregation: List[Bson] = List(unwind("$data.attributes"), `match`(dateFilter))
 
@@ -41,7 +42,9 @@ object ReadModelQueries {
     readModelService: MongoDbReadModelService
   ): Future[Seq[PersistentTenant]] = {
 
-    val dateFilter: Bson = lte("data.attributes.verifiedBy.extensionDate", dateTimeSupplier.get().toString)
+    val timestamp = dateTimeSupplier.get().toInstant.toEpochMilli
+
+    val dateFilter: Bson = lte("data.attributes.verifiedBy.extensionDate", timestamp)
 
     val aggregation: List[Bson] = List(unwind("$data.attributes"), `match`(dateFilter))
 

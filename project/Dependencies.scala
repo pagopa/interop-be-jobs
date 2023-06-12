@@ -280,7 +280,6 @@ object Dependencies {
       pagopa.attributeRegistryProcess   % Compile,
       pagopa.commons                    % Compile,
       pagopa.cqrs                       % Compile,
-      scalameta.munit                   % Test,
       scalamock.core                    % Test,
       scalatest.core                    % Test
     ).map(_.withSources.withJavadoc)
