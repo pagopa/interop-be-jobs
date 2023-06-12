@@ -13,23 +13,35 @@ import scala.concurrent.Future
 
 object ReadModelQueries {
 
-  def getAllExpiredAttributesTenants(
-    rm: MongoDbReadModelService,
-    expirationInMonth: Boolean = false
-  ): Future[Seq[PersistentTenant]] =
-    getAll(100)(getExpiredAttributesTenants(_, _, rm, expirationInMonth))
+  type TenantRetrievalFunction = (Int, Int, MongoDbReadModelService) => Future[Seq[PersistentTenant]]
 
-  private def getExpiredAttributesTenants(
+  def getAllAttributesTenants(
+    rm: MongoDbReadModelService,
+    tenantRetrieval: TenantRetrievalFunction
+  ): Future[Seq[PersistentTenant]] =
+    getAll(100)(tenantRetrieval(_, _, rm))
+
+  def getExpiringAttributesTenants(
     offset: Int,
     limit: Int,
-    readModelService: MongoDbReadModelService,
-    expirationInMonth: Boolean
+    readModelService: MongoDbReadModelService
   ): Future[Seq[PersistentTenant]] = {
 
     val dateFilter: Bson =
-      if (expirationInMonth)
-        Filters.eq("data.attributes.verifiedBy.extensionDate", dateTimeSupplier.get().plusDays(30).toString)
-      else lte("data.attributes.verifiedBy.extensionDate", dateTimeSupplier.get().toString)
+      Filters.eq("data.attributes.verifiedBy.extensionDate", dateTimeSupplier.get().plusDays(30).toString)
+
+    val aggregation: List[Bson] = List(unwind("$data.attributes"), `match`(dateFilter))
+
+    readModelService.aggregate[PersistentTenant](tenantsCollection, aggregation, offset, limit)
+  }
+
+  def getExpiredAttributesTenants(
+    offset: Int,
+    limit: Int,
+    readModelService: MongoDbReadModelService
+  ): Future[Seq[PersistentTenant]] = {
+
+    val dateFilter: Bson = lte("data.attributes.verifiedBy.extensionDate", dateTimeSupplier.get().toString)
 
     val aggregation: List[Bson] = List(unwind("$data.attributes"), `match`(dateFilter))
 

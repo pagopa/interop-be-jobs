@@ -26,8 +26,8 @@ object ApplicationConfiguration {
 
   val dateTimeSupplier: OffsetDateTimeSupplier = OffsetDateTimeSupplier
   val certifiedMailQueueName: String           = config.getString("services.certified-mail-queue-name")
-  val partyProcessURL: String                  = config.getString("services.party-process")
-  val partyProcessApiKey: String               = config.getString("services.party-process-api-key")
+  val selfcareV2URL: String                    = config.getString("services.selfcare-v2")
+  val selfcareV2ApiKey: String                 = config.getString("services.selfcare-v2-api-key")
   val tenantProcessURL: String                 =
     config.getString("services.tenant-process")
   val agreementProcessURL: String              =

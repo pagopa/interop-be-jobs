@@ -1,7 +1,7 @@
 package it.pagopa.interop.tenantsattributeschecker.util
 
 import it.pagopa.interop.certifiedMailSender.InteropEnvelope
-import it.pagopa.interop.commons.utils.TypeConversions.OptionOps
+import it.pagopa.interop.commons.utils.TypeConversions.{OptionOps, _}
 import it.pagopa.interop.commons.utils.service.UUIDSupplier
 import it.pagopa.interop.tenantmanagement.model.tenant.{
   PersistentTenant,
@@ -13,12 +13,13 @@ import it.pagopa.interop.tenantsattributeschecker.ApplicationConfiguration.{
   actorSystem,
   blockingEc,
   certifiedMailQueueName,
-  context
+  context,
+  selfcareV2ApiKey,
+  selfcareV2URL
 }
-import it.pagopa.interop.tenantsattributeschecker.service.impl._
 import it.pagopa.interop.tenantsattributeschecker.service._
+import it.pagopa.interop.tenantsattributeschecker.service.impl._
 import it.pagopa.interop.tenantsattributeschecker.util.errors._
-import it.pagopa.interop.commons.utils.TypeConversions._
 
 import java.util.UUID
 import scala.concurrent.Future
@@ -30,8 +31,11 @@ object jobs {
   private val attributeRegistryProcess: AttributeRegistryProcessService =
     AttributeRegistryProcessServiceImpl(blockingEc)
   private val queueService: QueueService                                = new QueueServiceImpl(certifiedMailQueueName)
-  private val partyProcessService: PartyProcessService                  = new PartyProcessServiceImpl
-  private val (consumerExpiredTemplate, producerExpiredTemplate): (MailTemplate, MailTemplate) = MailTemplate.expired
+  private val selfcareClientService: SelfcareClientService              =
+    new SelfcareClientServiceImpl(selfcareV2URL, selfcareV2ApiKey)
+  private val (consumerExpiredTemplate, producerExpiredTemplate): (MailTemplate, MailTemplate)   = MailTemplate.expired
+  private val (consumerExpiringTemplate, producerExpiringTemplate): (MailTemplate, MailTemplate) =
+    MailTemplate.expiring
 
   def applyStrategyOnExpiredAttributes(tenants: List[PersistentTenant]): Future[Unit] = {
 
@@ -48,6 +52,18 @@ object jobs {
               }
               _ <- sendEnvelope(attribute.id, tenant, verifiedBy, consumerExpiredTemplate, producerExpiredTemplate)
             } yield ()
+          }
+        }
+      }
+      .map(_ => ())
+  }
+
+  def applyStrategyOnExpiringAttributes(tenants: List[PersistentTenant]): Future[Unit] = {
+    Future
+      .traverse(tenants) { tenant =>
+        Future.traverse(tenant.attributes.collect { case v: PersistentVerifiedAttribute => v }) { attribute =>
+          Future.traverse(attribute.verifiedBy) { verifiedBy =>
+            sendEnvelope(attribute.id, tenant, verifiedBy, consumerExpiringTemplate, producerExpiringTemplate)
           }
         }
       }
@@ -124,8 +140,8 @@ object jobs {
       producer           <- tenantProcess.getTenant(verifier.id)
       producerSelfcareId <- producer.selfcareId.toFuture(SelfcareIdNotFound(producer.id))
       consumerSelfcareId <- consumer.selfcareId.toFuture(SelfcareIdNotFound(consumer.id))
-      producerSelfcare   <- partyProcessService.getInstitution(producerSelfcareId)
-      consumerSelfcare   <- partyProcessService.getInstitution(consumerSelfcareId)
+      producerSelfcare   <- selfcareClientService.getInstitution(producerSelfcareId)
+      consumerSelfcare   <- selfcareClientService.getInstitution(consumerSelfcareId)
       attribute          <- attributeRegistryProcess.getAttributeById(attributeId)
     } yield (
       InteropEnvelope(

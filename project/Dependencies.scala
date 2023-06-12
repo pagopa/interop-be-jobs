@@ -86,7 +86,8 @@ object Dependencies {
     lazy val partyManagement =
       namespace %% "interop-selfcare-party-management-client" % partyManagementClientVersion
 
-    lazy val partyProcessClient = namespace %% "interop-selfcare-party-process-client" % partyProcessVersion
+    lazy val selfcareV2Client =
+      namespace %% "interop-selfcare-v2-client" % selfcareV2ClientVersion
 
     lazy val certifiedMailSenderModels =
       namespace %% "interop-be-certified-mail-sender-models" % certifiedMailSenderModelsVersion
@@ -116,6 +117,16 @@ object Dependencies {
   private[this] object scalameta {
     lazy val namespace = "org.scalameta"
     lazy val munit     = namespace %% "munit" % munitVersion
+  }
+
+  private[this] object scalamock {
+    lazy val namespace = "org.scalamock"
+    lazy val core = namespace %% "scalamock" % scalaMockVersion
+  }
+
+  private[this] object scalatest {
+    lazy val namespace = "org.scalatest"
+    lazy val core = namespace %% "scalatest" % scalatestVersion
   }
 
   object Jars {
@@ -265,11 +276,13 @@ object Dependencies {
       pagopa.tenantProcess              % Compile,
       pagopa.certifiedMailSenderModels  % Compile,
       pagopa.agreementProcessClient     % Compile,
-      pagopa.partyProcessClient         % Compile,
+      pagopa.selfcareV2Client           % Compile,
       pagopa.attributeRegistryProcess   % Compile,
       pagopa.commons                    % Compile,
       pagopa.cqrs                       % Compile,
-      scalameta.munit                   % Test
+      scalameta.munit                   % Test,
+      scalamock.core                    % Test,
+      scalatest.core                    % Test
     ).map(_.withSources.withJavadoc)
   }
 }
