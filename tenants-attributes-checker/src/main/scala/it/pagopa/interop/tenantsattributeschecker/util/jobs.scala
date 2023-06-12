@@ -31,7 +31,7 @@ object jobs {
     AttributeRegistryProcessServiceImpl(blockingEc)
   private val queueService: QueueService                                = new QueueServiceImpl(certifiedMailQueueName)
   private val partyProcessService: PartyProcessService                  = new PartyProcessServiceImpl
-  private val (consumerExpiredTemplate, providerExpiredTemplate): (MailTemplate, MailTemplate) = MailTemplate.expired()
+  private val (consumerExpiredTemplate, producerExpiredTemplate): (MailTemplate, MailTemplate) = MailTemplate.expired
 
   def applyStrategyOnExpiredAttributes(tenants: List[PersistentTenant]): Future[Unit] = {
 
@@ -46,7 +46,7 @@ object jobs {
                 case PersistentVerificationRenewal.REVOKE_ON_EXPIRATION =>
                   agreementProcess.computeAgreementsByAttribute(tenant.id, attribute.id)
               }
-              _ <- sendEnvelope(attribute.id, tenant, verifiedBy, consumerExpiredTemplate, providerExpiredTemplate)
+              _ <- sendEnvelope(attribute.id, tenant, verifiedBy, consumerExpiredTemplate, producerExpiredTemplate)
             } yield ()
           }
         }
@@ -59,7 +59,7 @@ object jobs {
     consumer: PersistentTenant,
     verifier: PersistentTenantVerifier,
     consumerMailTemplate: MailTemplate,
-    providerMailTemplate: MailTemplate
+    producerMailTemplate: MailTemplate
   ): Future[Unit] = {
 
     case class Message(expiration: String, expired: String)
@@ -77,7 +77,7 @@ object jobs {
       revokeMsg: Message,
       renewalMsg: Message,
       attributeName: String,
-      providerName: String,
+      producerName: String,
       consumerName: String
     ): String =
       template.body.interpolate(
@@ -87,12 +87,12 @@ object jobs {
           "ifRevokeExpired"     -> revokeMsg.expired,
           "ifRenewalExpired"    -> renewalMsg.expired,
           "attributeName"       -> attributeName,
-          "providerName"        -> providerName,
+          "producerName"        -> producerName,
           "consumerName"        -> consumerName
         )
       )
 
-    def createProviderBody(attributeName: String, providerName: String, consumerName: String): String = {
+    def createProducerBody(attributeName: String, producerName: String, consumerName: String): String = {
       val ifRevoke = createRevokeMessage(
         "L'attributo sarà revocato e questo potrebbe avere impatti sullo stato di alcune sue richieste di fruizione.",
         "L'attributo è stato revocato al fruitore e questo potrebbe avere impatti sullo stato di alcune sue richieste di fruizione."
@@ -103,10 +103,10 @@ object jobs {
         "Per tua scelta, l'attributo è stato rinnovato automaticamente; non ci sono quindi impatti sulle sue richieste di fruizione."
       )
 
-      createBody(providerMailTemplate, ifRevoke, ifRenewal, attributeName, providerName, consumerName)
+      createBody(producerMailTemplate, ifRevoke, ifRenewal, attributeName, producerName, consumerName)
     }
 
-    def createConsumerBody(attributeName: String, providerName: String, consumerName: String): String = {
+    def createConsumerBody(attributeName: String, producerName: String, consumerName: String): String = {
       val ifRevoke = createRevokeMessage(
         "L'attributo ti verrà revocato e questo potrebbe avere impatti sullo stato di alcune tue richieste di fruizione.",
         "L'attributo ti è stato revocato e questo potrebbe avere impatti sullo stato di alcune tue richieste di fruizione."
@@ -117,14 +117,14 @@ object jobs {
         "Per scelta del fruitore, l'attributo è stato rinnovato automaticamente; non ci sono quindi impatti sulle tue richieste di fruizione."
       )
 
-      createBody(consumerMailTemplate, ifRevoke, ifRenewal, attributeName, providerName, consumerName)
+      createBody(consumerMailTemplate, ifRevoke, ifRenewal, attributeName, producerName, consumerName)
     }
 
     val envelope: Future[(InteropEnvelope, InteropEnvelope)] = for {
       producer           <- tenantProcess.getTenant(verifier.id)
-      providerSelfcareId <- provider.selfcareId.toFuture(SelfcareIdNotFound(provider.id))
+      producerSelfcareId <- producer.selfcareId.toFuture(SelfcareIdNotFound(producer.id))
       consumerSelfcareId <- consumer.selfcareId.toFuture(SelfcareIdNotFound(consumer.id))
-      providerSelfcare   <- partyProcessService.getInstitution(providerSelfcareId)
+      producerSelfcare   <- partyProcessService.getInstitution(producerSelfcareId)
       consumerSelfcare   <- partyProcessService.getInstitution(consumerSelfcareId)
       attribute          <- attributeRegistryProcess.getAttributeById(attributeId)
     } yield (
@@ -132,22 +132,22 @@ object jobs {
         id = UUIDSupplier.get(),
         recipients = List(consumerSelfcare.digitalAddress),
         subject = consumerMailTemplate.subject,
-        body = createConsumerBody(attribute.name, provider.name, consumer.name),
+        body = createConsumerBody(attribute.name, producer.name, consumer.name),
         attachments = List.empty
       ),
       InteropEnvelope(
         id = UUIDSupplier.get(),
-        recipients = List(providerSelfcare.digitalAddress),
-        subject = providerMailTemplate.subject,
-        body = createProviderBody(attribute.name, provider.name, consumer.name),
+        recipients = List(producerSelfcare.digitalAddress),
+        subject = producerMailTemplate.subject,
+        body = createProducerBody(attribute.name, producer.name, consumer.name),
         attachments = List.empty
       )
     )
 
-    envelope.flatMap { case (consumerEnvelope, providerEnvelope) =>
+    envelope.flatMap { case (consumerEnvelope, producerEnvelope) =>
       for {
         _ <- queueService.send[InteropEnvelope](consumerEnvelope)
-        _ <- queueService.send[InteropEnvelope](providerEnvelope)
+        _ <- queueService.send[InteropEnvelope](producerEnvelope)
       } yield ()
     }
   }

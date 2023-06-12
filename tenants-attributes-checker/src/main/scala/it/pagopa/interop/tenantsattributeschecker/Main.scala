@@ -7,7 +7,7 @@ import it.pagopa.interop.tenantmanagement.model.tenant.PersistentVerifiedAttribu
 import it.pagopa.interop.tenantsattributeschecker.ApplicationConfiguration.{actorSystem, context, executionContext}
 import it.pagopa.interop.tenantsattributeschecker.service.impl.MailTemplate
 import it.pagopa.interop.tenantsattributeschecker.util.ReadModelQueries.getAllExpiredAttributesTenants
-import it.pagopa.interop.tenantsattributeschecker.util.jobs.{applyStrategy, sendEnvelope}
+import it.pagopa.interop.tenantsattributeschecker.util.jobs.{applyStrategyOnExpiredAttributes, sendEnvelope}
 
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.Duration
@@ -20,19 +20,19 @@ object Main extends App {
   private val readModelService: MongoDbReadModelService = new MongoDbReadModelService(
     ApplicationConfiguration.readModelConfig
   )
-  private val (consumerExpirationTemplate, providerExpirationTemplate): (MailTemplate, MailTemplate) =
-    MailTemplate.expiration()
+  private val (consumerExpirationTemplate, producerExpirationTemplate): (MailTemplate, MailTemplate) =
+    MailTemplate.expiration
 
   logger.info("Starting tenants attributes checker job")
 
   private val job: Future[Unit] = for {
     tenants        <- getAllExpiredAttributesTenants(readModelService)
-    _              <- applyStrategy(tenants.toList)
+    _              <- applyStrategyOnExpiredAttributes(tenants.toList)
     tenantsInMonth <- getAllExpiredAttributesTenants(readModelService, expirationInMonth = true)
     _              <- Future.traverse(tenantsInMonth) { tenant =>
       Future.traverse(tenant.attributes.collect { case v: PersistentVerifiedAttribute => v }) { attribute =>
         Future.traverse(attribute.verifiedBy) { verifiedBy =>
-          sendEnvelope(attribute.id, tenant, verifiedBy, consumerExpirationTemplate, providerExpirationTemplate)
+          sendEnvelope(attribute.id, tenant, verifiedBy, consumerExpirationTemplate, producerExpirationTemplate)
         }
       }
     }
