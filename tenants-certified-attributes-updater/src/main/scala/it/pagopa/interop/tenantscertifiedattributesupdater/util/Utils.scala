@@ -107,7 +107,7 @@ object Utils {
 
     val revocations: Map[PersistentExternalId, List[AttributeInfo]] =
       fromTenant.toList
-        .flatMap { case (externalId, attrs) => attrs.map(attr => externalId -> attr) }
+        .flatMap { case (externalId, attrs) => attrs.tupleLeft(externalId) }
         .flatMap(extractRevocable(fromRegistry).tupled)
         .groupMap[PersistentExternalId, AttributeInfo](_._1)(_._2)
 
@@ -184,16 +184,21 @@ object Utils {
   private def canBeActivated(
     fromTenant: Map[PersistentExternalId, List[AttributeInfo]],
     id: TenantId
-  ): AttributeInfo => Boolean = attributeFromRegistry =>
-    !fromTenant
-      .get(id.toPersistentExternalId)
-      .exists(attributesFromTenant => // check if exist in tenant
-        attributesFromTenant.exists { attributeFromTenant =>
-          attributeFromTenant.code == attributeFromRegistry.code &&
-          attributeFromTenant.origin == attributeFromRegistry.origin &&
-          attributeFromTenant.revocationTimestamp.isEmpty
-        }
-      )
+  ): AttributeInfo => Boolean = attributeFromRegistry => !canNotBeActivated(fromTenant, id, attributeFromRegistry)
+
+  private def canNotBeActivated(
+    fromTenant: Map[PersistentExternalId, List[AttributeInfo]],
+    id: TenantId,
+    attributeFromRegistry: AttributeInfo
+  ): Boolean = fromTenant
+    .get(id.toPersistentExternalId)
+    .exists(attributesFromTenant => // check if exist in tenant
+      attributesFromTenant.exists { attributeFromTenant =>
+        attributeFromTenant.code == attributeFromRegistry.code &&
+        attributeFromTenant.origin == attributeFromRegistry.origin &&
+        attributeFromTenant.revocationTimestamp.isEmpty
+      }
+    )
 
   private def extractRevocable(
     fromRegistry: List[TenantSeed]
@@ -205,7 +210,13 @@ object Utils {
     fromRegistry: List[TenantSeed],
     tenantId: PersistentExternalId,
     attributeFromTenant: AttributeInfo
-  ): Boolean = !fromRegistry.exists { tenantSeed => // check if exists in registry
+  ): Boolean = !canNotBeRevoked(fromRegistry, tenantId, attributeFromTenant)
+
+  private def canNotBeRevoked(
+    fromRegistry: List[TenantSeed],
+    tenantId: PersistentExternalId,
+    attributeFromTenant: AttributeInfo
+  ): Boolean = fromRegistry.exists { tenantSeed => // check if exists in registry
     tenantSeed.id.toPersistentExternalId == tenantId &&
     tenantSeed.attributesInfo
       .exists(attributeFromRegistry =>
