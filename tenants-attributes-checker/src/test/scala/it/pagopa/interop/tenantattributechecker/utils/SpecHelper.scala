@@ -68,15 +68,14 @@ trait SpecHelper extends MockFactory with SpecData {
     (mockQueueService
       .send[InteropEnvelope](_: InteropEnvelope)(_: JsonWriter[InteropEnvelope]))
       .expects(consumerEnvelope, *)
+      .returns(Future.successful("sent"))
       .once(): Unit
 
     (mockQueueService
       .send[InteropEnvelope](_: InteropEnvelope)(_: JsonWriter[InteropEnvelope]))
       .expects(producerEnvelope, *)
+      .returns(Future.successful("sent"))
       .once(): Unit
   }
 
-//  def assertBody(envelope: InteropEnvelope, expectedBody: String): Unit = {
-//    assert(envelope.body == expectedBody, "Assertion failed")
-//  }
 }

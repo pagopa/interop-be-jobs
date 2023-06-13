@@ -37,18 +37,18 @@ class TenantsAttributesCheckerSuite extends AnyFunSuite with SpecHelper {
             |</head>
             |
             |<body>
-            |     <div style="white-space: pre-line;">
-            |     Ciao,
+            |    <div style="white-space: pre-line;">
+            |        Ciao,
             |
-            |     l'attributo <strong>${attribute.name}</strong> che ti è stato riconosciuto dall'ente <strong>${producer.name}</strong> scadrà tra 30 giorni.
+            |        l'attributo <strong>${attribute.name}</strong> che ti è stato riconosciuto dall'ente <strong>${producer.name}</strong> scadrà tra 30 giorni.
             |
-            |     L'attributo ti verrà revocato e questo potrebbe avere impatti sullo stato di alcune tue richieste di fruizione.
+            |L'attributo ti verrà revocato e questo potrebbe avere impatti sullo stato di alcune tue richieste di fruizione.
             |
-            |     Per monitorare lo stato dei tuoi attributi, <a href="https://selfcare.pagopa.it/" title="Accedi a PDND Interoperabilità">accedi a PDND Interoperabilità</a>.
+            |Per monitorare lo stato dei tuoi attributi, <a href="https://selfcare.pagopa.it/" title="Accedi a PDND Interoperabilità">accedi a PDND Interoperabilità</a>.
             |
-            |     A presto,
-            |     Il team di PDND Interoperabilità
-            |     </div>
+            |A presto,
+            |Il team di PDND Interoperabilità
+            |    </div>
             |
             |</body>
             |
@@ -86,10 +86,5 @@ class TenantsAttributesCheckerSuite extends AnyFunSuite with SpecHelper {
       )
 
     Await.ready(result, Duration.Inf)
-
-//    ScalaFutures.whenReady(result, timeout(5.seconds)) { _ =>
-//      assertBody(capturedEnvelopes(0), htmlBodyProducer)
-//      assertBody(capturedEnvelopes(1), htmlBodyConsumer)
-//    }
   }
 }
