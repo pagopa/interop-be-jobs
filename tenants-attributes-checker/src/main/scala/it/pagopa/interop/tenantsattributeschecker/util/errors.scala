@@ -7,5 +7,5 @@ import java.util.UUID
 object errors {
 
   final case class SelfcareIdNotFound(tenantId: UUID)
-      extends ComponentError("0000", s"Selfcare id not found for tenant ${tenantId.toString}")
+      extends ComponentError("0001", s"Selfcare id not found for tenant ${tenantId.toString}")
 }

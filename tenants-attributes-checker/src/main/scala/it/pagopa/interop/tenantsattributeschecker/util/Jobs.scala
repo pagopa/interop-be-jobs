@@ -1,7 +1,7 @@
 package it.pagopa.interop.tenantsattributeschecker.util
 
 import it.pagopa.interop.certifiedMailSender.InteropEnvelope
-import it.pagopa.interop.commons.utils.TypeConversions.{OptionOps, _}
+import it.pagopa.interop.commons.utils.TypeConversions._
 import it.pagopa.interop.commons.utils.service.UUIDSupplier
 import it.pagopa.interop.tenantmanagement.model.tenant.{
   PersistentTenant,
@@ -9,14 +9,7 @@ import it.pagopa.interop.tenantmanagement.model.tenant.{
   PersistentVerificationRenewal,
   PersistentVerifiedAttribute
 }
-import it.pagopa.interop.tenantsattributeschecker.ApplicationConfiguration.{
-  actorSystem,
-  blockingEc,
-  certifiedMailQueueName,
-  context,
-  selfcareV2ApiKey,
-  selfcareV2URL
-}
+import it.pagopa.interop.tenantsattributeschecker.ApplicationConfiguration.{blockingEc, context}
 import it.pagopa.interop.tenantsattributeschecker.service._
 import it.pagopa.interop.tenantsattributeschecker.service.impl._
 import it.pagopa.interop.tenantsattributeschecker.util.errors._
@@ -24,48 +17,54 @@ import it.pagopa.interop.tenantsattributeschecker.util.errors._
 import java.util.UUID
 import scala.concurrent.Future
 
-object jobs {
+class Jobs(
+  agreementProcess: AgreementProcessService,
+  tenantProcess: TenantProcessService,
+  attributeRegistryProcess: AttributeRegistryProcessService,
+  queueService: QueueService,
+  selfcareClientService: SelfcareClientService,
+  uuidSupplier: UUIDSupplier
+) {
 
-  private val agreementProcess: AgreementProcessService                 = AgreementProcessServiceImpl(blockingEc)
-  private val tenantProcess: TenantProcessService                       = TenantProcessServiceImpl(blockingEc)
-  private val attributeRegistryProcess: AttributeRegistryProcessService =
-    AttributeRegistryProcessServiceImpl(blockingEc)
-  private val queueService: QueueService                                = new QueueServiceImpl(certifiedMailQueueName)
-  private val selfcareClientService: SelfcareClientService              =
-    new SelfcareClientServiceImpl(selfcareV2URL, selfcareV2ApiKey)
+  private case class Message(expiring: String, expired: String)
   private val (consumerExpiredTemplate, producerExpiredTemplate): (MailTemplate, MailTemplate)   = MailTemplate.expired
   private val (consumerExpiringTemplate, producerExpiringTemplate): (MailTemplate, MailTemplate) =
     MailTemplate.expiring
 
   def applyStrategyOnExpiredAttributes(tenants: List[PersistentTenant]): Future[Unit] = {
 
+    val data: List[(PersistentTenant, PersistentVerifiedAttribute, PersistentTenantVerifier)] = for {
+      tenant     <- tenants
+      attribute  <- tenant.attributes.collect { case v: PersistentVerifiedAttribute => v }
+      verifiedBy <- attribute.verifiedBy
+    } yield (tenant, attribute, verifiedBy)
+
     Future
-      .traverse(tenants) { tenant =>
-        Future.traverse(tenant.attributes.collect { case v: PersistentVerifiedAttribute => v }) { attribute =>
-          Future.traverse(attribute.verifiedBy) { verifiedBy =>
-            for {
-              _ <- verifiedBy.renewal match {
-                case PersistentVerificationRenewal.AUTOMATIC_RENEWAL    =>
-                  tenantProcess.updateVerifiedAttributeExtensionDate(tenant.id, attribute.id, verifiedBy.id)
-                case PersistentVerificationRenewal.REVOKE_ON_EXPIRATION =>
-                  agreementProcess.computeAgreementsByAttribute(tenant.id, attribute.id)
-              }
-              _ <- sendEnvelope(attribute.id, tenant, verifiedBy, consumerExpiredTemplate, producerExpiredTemplate)
-            } yield ()
+      .traverseWithLatch(10)(data) { case (tenant, attribute, verifiedBy) =>
+        for {
+          _ <- verifiedBy.renewal match {
+            case PersistentVerificationRenewal.AUTOMATIC_RENEWAL    =>
+              tenantProcess.updateVerifiedAttributeExtensionDate(tenant.id, attribute.id, verifiedBy.id)
+            case PersistentVerificationRenewal.REVOKE_ON_EXPIRATION =>
+              agreementProcess.computeAgreementsByAttribute(tenant.id, attribute.id)
           }
-        }
+          _ <- sendEnvelope(attribute.id, tenant, verifiedBy, consumerExpiredTemplate, producerExpiredTemplate)
+        } yield ()
       }
       .map(_ => ())
   }
 
   def applyStrategyOnExpiringAttributes(tenants: List[PersistentTenant]): Future[Unit] = {
+
+    val data: List[(PersistentTenant, PersistentVerifiedAttribute, PersistentTenantVerifier)] = for {
+      tenant     <- tenants
+      attribute  <- tenant.attributes.collect { case v: PersistentVerifiedAttribute => v }
+      verifiedBy <- attribute.verifiedBy
+    } yield (tenant, attribute, verifiedBy)
+
     Future
-      .traverse(tenants) { tenant =>
-        Future.traverse(tenant.attributes.collect { case v: PersistentVerifiedAttribute => v }) { attribute =>
-          Future.traverse(attribute.verifiedBy) { verifiedBy =>
-            sendEnvelope(attribute.id, tenant, verifiedBy, consumerExpiringTemplate, producerExpiringTemplate)
-          }
-        }
+      .traverseWithLatch(10)(data) { case (tenant, attribute, verifiedBy) =>
+        sendEnvelope(attribute.id, tenant, verifiedBy, consumerExpiringTemplate, producerExpiringTemplate)
       }
       .map(_ => ())
   }
@@ -78,14 +77,12 @@ object jobs {
     producerMailTemplate: MailTemplate
   ): Future[Unit] = {
 
-    case class Message(expiration: String, expired: String)
-
-    def createRevokeMessage(expiration: String, expired: String): Message =
-      if (verifier.renewal == PersistentVerificationRenewal.REVOKE_ON_EXPIRATION) Message(expiration, expired)
+    def createRevokeMessage(expiring: String, expired: String): Message =
+      if (verifier.renewal == PersistentVerificationRenewal.REVOKE_ON_EXPIRATION) Message(expiring, expired)
       else Message("", "")
 
-    def createRenewalMessage(expiration: String, expired: String): Message =
-      if (verifier.renewal == PersistentVerificationRenewal.AUTOMATIC_RENEWAL) Message(expiration, expired)
+    def createRenewalMessage(expiring: String, expired: String): Message =
+      if (verifier.renewal == PersistentVerificationRenewal.AUTOMATIC_RENEWAL) Message(expiring, expired)
       else Message("", "")
 
     def createBody(
@@ -98,8 +95,8 @@ object jobs {
     ): String =
       template.body.interpolate(
         Map(
-          "ifRevokeExpiration"  -> revokeMsg.expiration,
-          "ifRenewalExpiration" -> renewalMsg.expiration,
+          "ifRevokeExpiration"  -> revokeMsg.expiring,
+          "ifRenewalExpiration" -> renewalMsg.expiring,
           "ifRevokeExpired"     -> revokeMsg.expired,
           "ifRenewalExpired"    -> renewalMsg.expired,
           "attributeName"       -> attributeName,
@@ -145,14 +142,14 @@ object jobs {
       attribute          <- attributeRegistryProcess.getAttributeById(attributeId)
     } yield (
       InteropEnvelope(
-        id = UUIDSupplier.get(),
+        id = uuidSupplier.get(),
         recipients = List(consumerSelfcare.digitalAddress),
         subject = consumerMailTemplate.subject,
         body = createConsumerBody(attribute.name, producer.name, consumer.name),
         attachments = List.empty
       ),
       InteropEnvelope(
-        id = UUIDSupplier.get(),
+        id = uuidSupplier.get(),
         recipients = List(producerSelfcare.digitalAddress),
         subject = producerMailTemplate.subject,
         body = createProducerBody(attribute.name, producer.name, consumer.name),

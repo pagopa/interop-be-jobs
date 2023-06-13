@@ -3,15 +3,22 @@ package it.pagopa.interop.tenantsattributeschecker
 import com.typesafe.scalalogging.{Logger, LoggerTakingImplicit}
 import it.pagopa.interop.commons.cqrs.service.MongoDbReadModelService
 import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
-import it.pagopa.interop.tenantsattributeschecker.ApplicationConfiguration.{actorSystem, context, executionContext}
-import it.pagopa.interop.tenantsattributeschecker.util.ReadModelQueries._
-import it.pagopa.interop.tenantsattributeschecker.util.jobs.{
-  applyStrategyOnExpiredAttributes,
-  applyStrategyOnExpiringAttributes
+import it.pagopa.interop.commons.utils.service.UUIDSupplier
+import it.pagopa.interop.tenantsattributeschecker.ApplicationConfiguration.{
+  actorSystem,
+  blockingEc,
+  certifiedMailQueueName,
+  context,
+  selfcareV2ApiKey,
+  selfcareV2URL
 }
+import it.pagopa.interop.tenantsattributeschecker.service.impl.{TenantProcessServiceImpl, _}
+import it.pagopa.interop.tenantsattributeschecker.util.Jobs
+import it.pagopa.interop.tenantsattributeschecker.util.ReadModelQueries._
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
+import scala.util.{Failure, Success}
 
 object Main extends App {
 
@@ -22,18 +29,34 @@ object Main extends App {
     ApplicationConfiguration.readModelConfig
   )
 
+  val jobs = new Jobs(
+    agreementProcess = AgreementProcessServiceImpl(blockingEc),
+    tenantProcess = TenantProcessServiceImpl(blockingEc),
+    attributeRegistryProcess = AttributeRegistryProcessServiceImpl(blockingEc),
+    queueService = new QueueServiceImpl(certifiedMailQueueName),
+    selfcareClientService = new SelfcareClientServiceImpl(selfcareV2URL, selfcareV2ApiKey),
+    uuidSupplier = UUIDSupplier
+  )
+
   logger.info("Starting tenants attributes checker job")
 
   private val job: Future[Unit] = for {
     tenantsExpired  <- getAllAttributesTenants(readModelService, getExpiredAttributesTenants)
-    _               <- applyStrategyOnExpiredAttributes(tenantsExpired.toList)
+    _               <- jobs.applyStrategyOnExpiredAttributes(tenantsExpired.toList)
     tenantsExpiring <- getAllAttributesTenants(readModelService, getExpiringAttributesTenants)
-    _               <- applyStrategyOnExpiringAttributes(tenantsExpiring.toList)
-    _ = readModelService.close()
-    _ = logger.info("Completed tenants attributes checker job")
-    _ = actorSystem.terminate()
-    _ <- actorSystem.whenTerminated
+    _               <- jobs.applyStrategyOnExpiringAttributes(tenantsExpiring.toList)
   } yield ()
 
-  Await.ready(job, Duration.Inf)
+  private val actualJob = job
+    .andThen {
+      case Failure(e) => logger.info("Tenants attributes checker job failed with exception", e)
+      case Success(_) => logger.info("Completed tenants attributes checker job")
+    }
+    .andThen { _ =>
+      readModelService.close()
+      actorSystem.terminate()
+    }
+    .transformWith(_ => actorSystem.whenTerminated)
+
+  Await.ready(actualJob, Duration.Inf)
 }

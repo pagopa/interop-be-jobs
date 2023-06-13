@@ -13,7 +13,6 @@ import it.pagopa.interop.tenantsattributeschecker.service.AgreementProcessServic
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
-// Note: The service takes a blocking execution context in order to implement a fire and forget call of computeAgreementsByAttribute
 final case class AgreementProcessServiceImpl(blockingEc: ExecutionContextExecutor)(implicit system: ActorSystem[_])
     extends AgreementProcessService {
 
