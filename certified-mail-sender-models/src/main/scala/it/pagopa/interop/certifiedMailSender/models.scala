@@ -4,7 +4,7 @@ import java.util.UUID
 
 final case class MailAttachment(name: String, bytes: Array[Byte], mimetype: String) {
   override def equals(obj: Any): Boolean = obj match {
-    case MailAttachment(a, b, c) => name == a && c == mimetype && bytes.sameElements(b)
+    case MailAttachment(n, b, m) => name == n && m == mimetype && bytes.sameElements(b)
     case _                       => false
   }
 }

@@ -40,14 +40,14 @@ object Main extends App {
 
   logger.info("Starting tenants attributes checker job")
 
-  private val job: Future[Unit] = for {
+  private val execution: Future[Unit] = for {
     tenantsExpired  <- getAllAttributesTenants(readModelService, getExpiredAttributesTenants)
     _               <- jobs.applyStrategyOnExpiredAttributes(tenantsExpired.toList)
     tenantsExpiring <- getAllAttributesTenants(readModelService, getExpiringAttributesTenants)
     _               <- jobs.applyStrategyOnExpiringAttributes(tenantsExpiring.toList)
   } yield ()
 
-  private val actualJob = job
+  private val init = execution
     .andThen {
       case Failure(e) => logger.info("Tenants attributes checker job failed with exception", e)
       case Success(_) => logger.info("Completed tenants attributes checker job")
@@ -58,5 +58,5 @@ object Main extends App {
     }
     .transformWith(_ => actorSystem.whenTerminated)
 
-  Await.ready(actualJob, Duration.Inf)
+  Await.ready(init, Duration.Inf)
 }
