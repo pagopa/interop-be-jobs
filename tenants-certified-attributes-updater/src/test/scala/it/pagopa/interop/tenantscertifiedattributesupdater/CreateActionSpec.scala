@@ -1,5 +1,6 @@
 package it.pagopa.interop.tenantscertifiedattributesupdater
 
+import it.pagopa.interop.commons.utils.Digester
 import it.pagopa.interop.partyregistryproxy.client.model.Institution
 import it.pagopa.interop.tenantmanagement.model.tenant.{
   PersistentCertifiedAttribute,
@@ -13,7 +14,6 @@ import it.pagopa.interop.tenantscertifiedattributesupdater.util.Utils._
 import munit.FunSuite
 
 import java.util.UUID
-import it.pagopa.interop.commons.utils.Digester
 
 class CreateActionSpec extends FunSuite {
   test("Create new Tenant with attributes if Tenant does not exist") {
@@ -149,7 +149,12 @@ class CreateActionSpec extends FunSuite {
     )
     val expectedRevocations = Map.empty[PersistentExternalId, List[AttributeInfo]]
 
-    assertEquals(result.activations, expectedActivations)
+    assertEquals(result.activations.map(_.name), expectedActivations.map(_.name))
+    assertEquals(result.activations.map(_.externalId), expectedActivations.map(_.externalId))
+    assertEquals(
+      result.activations.map(_.certifiedAttributes.toSet),
+      expectedActivations.map(_.certifiedAttributes.toSet)
+    )
     assertEquals(result.revocations, expectedRevocations)
   }
 
@@ -199,12 +204,15 @@ class CreateActionSpec extends FunSuite {
 
   test("Revoke attributes if assigned to the Tenant") {
     val origin                 = "IPA"
-    val originId               = "001"
     val existingAttributeId1   = UUID.randomUUID()
-    val existingAttributeCode1 = "CAT1"
+    val originId               = "001"
     val existingAttributeId2   = UUID.randomUUID()
-    val existingAttributeCode2 = "CAT2"
+    val existingAttributeCode2 = "CAT1"
+    val existingAttributeId3   = UUID.randomUUID()
+    val existingAttributeCode3 = "CAT2"
+    val existingAttributeId4   = UUID.randomUUID()
     val kind                   = "KIND"
+    val existingAttributeCode4 = Digester.toSha256(kind.getBytes)
 
     val institutions: List[Institution]           = List(institution(origin, originId, existingAttributeCode2, kind))
     val tenants: List[PersistentTenant]           = List(
@@ -213,21 +221,25 @@ class CreateActionSpec extends FunSuite {
         originId,
         attributes = List(
           PersistentCertifiedAttribute(id = existingAttributeId1, assignmentTimestamp = timestamp, None),
-          PersistentCertifiedAttribute(id = existingAttributeId2, assignmentTimestamp = timestamp, None)
+          PersistentCertifiedAttribute(id = existingAttributeId2, assignmentTimestamp = timestamp, None),
+          PersistentCertifiedAttribute(id = existingAttributeId3, assignmentTimestamp = timestamp, None),
+          PersistentCertifiedAttribute(id = existingAttributeId4, assignmentTimestamp = timestamp, None)
         )
       )
     )
     val attributesIndex: Map[UUID, AttributeInfo] =
       Map(
-        existingAttributeId1 -> AttributeInfo(origin, existingAttributeCode1, None),
-        existingAttributeId2 -> AttributeInfo(origin, existingAttributeCode2, None)
+        existingAttributeId1 -> AttributeInfo(origin, originId, None),
+        existingAttributeId2 -> AttributeInfo(origin, existingAttributeCode2, None),
+        existingAttributeId3 -> AttributeInfo(origin, existingAttributeCode3, None),
+        existingAttributeId4 -> AttributeInfo(origin, existingAttributeCode4, None)
       )
 
     val result = createAction(institutions, tenants, attributesIndex)
 
     val expectedActivations = Nil
     val expectedRevocations =
-      Map(PersistentExternalId(origin, originId) -> List(AttributeInfo(origin, existingAttributeCode1, None)))
+      Map(PersistentExternalId(origin, originId) -> List(AttributeInfo(origin, existingAttributeCode3, None)))
 
     assertEquals(result.activations, expectedActivations)
     assertEquals(result.revocations, expectedRevocations)
