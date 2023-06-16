@@ -6,7 +6,6 @@ import it.pagopa.interop.commons.utils.service.UUIDSupplier
 import it.pagopa.interop.tenantmanagement.model.tenant.{
   PersistentTenant,
   PersistentTenantVerifier,
-  PersistentVerificationRenewal,
   PersistentVerifiedAttribute
 }
 import it.pagopa.interop.tenantsattributeschecker.ApplicationConfiguration.{blockingEc, context}
@@ -26,7 +25,6 @@ class Jobs(
   uuidSupplier: UUIDSupplier
 ) {
 
-  private case class Message(expiring: String, expired: String)
   private val (consumerExpiredTemplate, producerExpiredTemplate): (MailTemplate, MailTemplate)   = MailTemplate.expired
   private val (consumerExpiringTemplate, producerExpiringTemplate): (MailTemplate, MailTemplate) =
     MailTemplate.expiring
@@ -42,12 +40,7 @@ class Jobs(
     Future
       .traverseWithLatch(10)(data) { case (tenant, attribute, verifiedBy) =>
         for {
-          _ <- verifiedBy.renewal match {
-            case PersistentVerificationRenewal.AUTOMATIC_RENEWAL    =>
-              tenantProcess.updateVerifiedAttributeExtensionDate(tenant.id, attribute.id, verifiedBy.id)
-            case PersistentVerificationRenewal.REVOKE_ON_EXPIRATION =>
-              agreementProcess.computeAgreementsByAttribute(tenant.id, attribute.id)
-          }
+          _ <- agreementProcess.computeAgreementsByAttribute(tenant.id, attribute.id)
           _ <- sendEnvelope(attribute.id, tenant, verifiedBy, consumerExpiredTemplate, producerExpiredTemplate)
         } yield ()
       }
@@ -77,91 +70,49 @@ class Jobs(
     producerMailTemplate: MailTemplate
   ): Future[Unit] = {
 
-    def createRevokeMessage(expiring: String, expired: String): Message =
-      if (verifier.renewal == PersistentVerificationRenewal.REVOKE_ON_EXPIRATION) Message(expiring, expired)
-      else Message("", "")
+    def createBody(template: MailTemplate, attributeName: String, producerName: String, consumerName: String): String =
+      template.body.interpolate(
+        Map("attributeName" -> attributeName, "producerName" -> producerName, "consumerName" -> consumerName)
+      )
 
-    def createRenewalMessage(expiring: String, expired: String): Message =
-      if (verifier.renewal == PersistentVerificationRenewal.AUTOMATIC_RENEWAL) Message(expiring, expired)
-      else Message("", "")
-
-    def createBody(
+    def createEnvelope(
       template: MailTemplate,
-      revokeMsg: Message,
-      renewalMsg: Message,
+      recipient: String,
       attributeName: String,
       producerName: String,
       consumerName: String
-    ): String =
-      template.body.interpolate(
-        Map(
-          "ifRevokeExpiration"  -> revokeMsg.expiring,
-          "ifRenewalExpiration" -> renewalMsg.expiring,
-          "ifRevokeExpired"     -> revokeMsg.expired,
-          "ifRenewalExpired"    -> renewalMsg.expired,
-          "attributeName"       -> attributeName,
-          "producerName"        -> producerName,
-          "consumerName"        -> consumerName
-        )
+    ): InteropEnvelope =
+      InteropEnvelope(
+        id = uuidSupplier.get(),
+        recipients = List(recipient),
+        subject = template.subject,
+        body = createBody(template, attributeName, producerName, consumerName),
+        attachments = List.empty
       )
 
-    def createProducerBody(attributeName: String, producerName: String, consumerName: String): String = {
-      val ifRevoke = createRevokeMessage(
-        "L'attributo sarà revocato e questo potrebbe avere impatti sullo stato di alcune sue richieste di fruizione.",
-        "L'attributo è stato revocato al fruitore e questo potrebbe avere impatti sullo stato di alcune sue richieste di fruizione."
-      )
-
-      val ifRenewal = createRenewalMessage(
-        "Per tua scelta, l'attributo verrà rinnovato automaticamente; non ci sono quindi impatti sulle sue richieste di fruizione.",
-        "Per tua scelta, l'attributo è stato rinnovato automaticamente; non ci sono quindi impatti sulle sue richieste di fruizione."
-      )
-
-      createBody(producerMailTemplate, ifRevoke, ifRenewal, attributeName, producerName, consumerName)
-    }
-
-    def createConsumerBody(attributeName: String, producerName: String, consumerName: String): String = {
-      val ifRevoke = createRevokeMessage(
-        "L'attributo ti verrà revocato e questo potrebbe avere impatti sullo stato di alcune tue richieste di fruizione.",
-        "L'attributo ti è stato revocato e questo potrebbe avere impatti sullo stato di alcune tue richieste di fruizione."
-      )
-
-      val ifRenewal = createRenewalMessage(
-        "Per scelta del fruitore, l'attributo ti verrà rinnovato automaticamente; non ci sono quindi impatti sulle tue richieste di fruizione.",
-        "Per scelta del fruitore, l'attributo è stato rinnovato automaticamente; non ci sono quindi impatti sulle tue richieste di fruizione."
-      )
-
-      createBody(consumerMailTemplate, ifRevoke, ifRenewal, attributeName, producerName, consumerName)
-    }
-
-    val envelope: Future[(InteropEnvelope, InteropEnvelope)] = for {
+    for {
       producer           <- tenantProcess.getTenant(verifier.id)
       producerSelfcareId <- producer.selfcareId.toFuture(SelfcareIdNotFound(producer.id))
       consumerSelfcareId <- consumer.selfcareId.toFuture(SelfcareIdNotFound(consumer.id))
       producerSelfcare   <- selfcareClientService.getInstitution(producerSelfcareId)
       consumerSelfcare   <- selfcareClientService.getInstitution(consumerSelfcareId)
       attribute          <- attributeRegistryProcess.getAttributeById(attributeId)
-    } yield (
-      InteropEnvelope(
-        id = uuidSupplier.get(),
-        recipients = List(consumerSelfcare.digitalAddress),
-        subject = consumerMailTemplate.subject,
-        body = createConsumerBody(attribute.name, producer.name, consumer.name),
-        attachments = List.empty
-      ),
-      InteropEnvelope(
-        id = uuidSupplier.get(),
-        recipients = List(producerSelfcare.digitalAddress),
-        subject = producerMailTemplate.subject,
-        body = createProducerBody(attribute.name, producer.name, consumer.name),
-        attachments = List.empty
+      consumerEnvelope = createEnvelope(
+        consumerMailTemplate,
+        consumerSelfcare.digitalAddress,
+        attribute.name,
+        producer.name,
+        consumer.name
       )
-    )
-
-    envelope.flatMap { case (consumerEnvelope, producerEnvelope) =>
-      for {
-        _ <- queueService.send[InteropEnvelope](consumerEnvelope)
-        _ <- queueService.send[InteropEnvelope](producerEnvelope)
-      } yield ()
-    }
+      producerEnvelope = createEnvelope(
+        producerMailTemplate,
+        producerSelfcare.digitalAddress,
+        attribute.name,
+        producer.name,
+        consumer.name
+      )
+      _ <- queueService.send[InteropEnvelope](consumerEnvelope)
+      _ <- queueService.send[InteropEnvelope](producerEnvelope)
+    } yield ()
   }
 }

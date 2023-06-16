@@ -7,7 +7,6 @@ import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
 import it.pagopa.interop.tenantmanagement.model.tenant._
 import it.pagopa.interop.tenantprocess.client.model._
 import it.pagopa.interop.selfcare.v2.client.model.Institution
-import it.pagopa.interop.tenantmanagement.model.tenant.PersistentVerificationRenewal.REVOKE_ON_EXPIRATION
 import it.pagopa.interop.tenantsattributeschecker.service.impl.MailTemplate
 
 import java.time.{OffsetDateTime, ZoneOffset}
@@ -19,6 +18,15 @@ trait SpecData {
   val (consumerExpiredTemplate, producerExpiredTemplate): (MailTemplate, MailTemplate)   = MailTemplate.expired
   val (consumerExpiringTemplate, producerExpiringTemplate): (MailTemplate, MailTemplate) =
     MailTemplate.expiring
+
+  val tenantRevoker: TenantRevoker = TenantRevoker(
+    id = UUID.randomUUID(),
+    verificationDate = timestamp,
+    expirationDate = None,
+    renewal = VerificationRenewal.AUTOMATIC_RENEWAL,
+    extensionDate = None,
+    revocationDate = timestamp
+  )
 
   val mockAttribute: Attribute = Attribute(
     id = UUID.randomUUID,
@@ -98,7 +106,6 @@ trait SpecData {
   def persistentTenantVerifier(verifierId: UUID): PersistentTenantVerifier = PersistentTenantVerifier(
     id = verifierId,
     verificationDate = timestamp,
-    renewal = REVOKE_ON_EXPIRATION,
     expirationDate = timestamp.plusMonths(1).some,
     extensionDate = timestamp.some
   )
@@ -107,16 +114,6 @@ trait SpecData {
     id = UUID.randomUUID(),
     verificationDate = timestamp,
     expirationDate = None,
-    renewal = PersistentVerificationRenewal.AUTOMATIC_RENEWAL,
-    extensionDate = None,
-    revocationDate = timestamp
-  )
-
-  val tenantRevoker: TenantRevoker = TenantRevoker(
-    id = UUID.randomUUID(),
-    verificationDate = timestamp,
-    expirationDate = None,
-    renewal = VerificationRenewal.AUTOMATIC_RENEWAL,
     extensionDate = None,
     revocationDate = timestamp
   )
