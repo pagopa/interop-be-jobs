@@ -16,14 +16,12 @@ trait SpecData {
   final val timestamp = OffsetDateTime.of(2022, 12, 31, 11, 22, 33, 44, ZoneOffset.UTC)
 
   val (consumerExpiredTemplate, producerExpiredTemplate): (MailTemplate, MailTemplate)   = MailTemplate.expired
-  val (consumerExpiringTemplate, producerExpiringTemplate): (MailTemplate, MailTemplate) =
-    MailTemplate.expiring
+  val (consumerExpiringTemplate, producerExpiringTemplate): (MailTemplate, MailTemplate) = MailTemplate.expiring
 
   val tenantRevoker: TenantRevoker = TenantRevoker(
     id = UUID.randomUUID(),
     verificationDate = timestamp,
     expirationDate = None,
-    renewal = VerificationRenewal.AUTOMATIC_RENEWAL,
     extensionDate = None,
     revocationDate = timestamp
   )
@@ -52,7 +50,6 @@ trait SpecData {
             TenantVerifier(
               id = UUID.randomUUID(),
               verificationDate = timestamp,
-              renewal = VerificationRenewal.REVOKE_ON_EXPIRATION,
               expirationDate = timestamp.some,
               extensionDate = None
             )
