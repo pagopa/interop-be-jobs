@@ -196,9 +196,17 @@ object Utils {
       attributesFromTenant.exists { attributeFromTenant =>
         attributeFromTenant.code == attributeFromRegistry.code &&
         attributeFromTenant.origin == attributeFromRegistry.origin &&
-        attributeFromTenant.revocationTimestamp.isEmpty
+        attributeFromTenant.revocationTimestamp.isEmpty &&
+        !kindToBeExcluded.contains(attributeFromTenant.code)
       }
     )
+
+  private final val kindToBeExcluded: Set[String] = Set(
+    "Enti Nazionali di Previdenza ed Assistenza Sociale in Conto Economico Consolidato",
+    "Gestori di Pubblici Servizi",
+    "Societa' in Conto Economico Consolidato",
+    "Stazioni Appaltanti"
+  ).map(kind => Digester.toSha256(kind.getBytes))
 
   private def extractRevocable(
     fromRegistry: List[TenantSeed]
