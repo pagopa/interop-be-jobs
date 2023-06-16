@@ -197,7 +197,7 @@ object Utils {
         attributeFromTenant.code == attributeFromRegistry.code &&
         attributeFromTenant.origin == attributeFromRegistry.origin &&
         attributeFromTenant.revocationTimestamp.isEmpty &&
-        !kindToBeExcluded.contains(attributeFromTenant.code)
+        !kindToBeExcluded.contains(attributeFromRegistry.code)
       }
     )
 
