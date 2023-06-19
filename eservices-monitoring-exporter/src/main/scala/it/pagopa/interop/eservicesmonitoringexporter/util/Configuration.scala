@@ -20,9 +20,10 @@ final case class StorageBucketConfiguration(kind: String, bucket: String, filena
 final case class CollectionsConfiguration(eservices: String, tenants: String)
 
 object Configuration {
-  implicit val stringListReader: ConfigReader[List[UUID]] = ConfigReader.fromNonEmptyString { str =>
+  implicit val stringListReader: ConfigReader[List[UUID]] = ConfigReader.fromString { str =>
     str
       .split(",")
+      .filter(_.nonEmpty)
       .map(s => Try(UUID.fromString(s.trim)).toEither.leftMap(ex => CannotConvert(s, "UUID", ex.getMessage)))
       .toList
       .sequence
