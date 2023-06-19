@@ -13,6 +13,7 @@ import it.pagopa.interop.commons.utils.Digester
 import it.pagopa.interop.commons.utils.TypeConversions._
 import it.pagopa.interop.partyregistryproxy.client.model.{Institution, Institutions}
 import it.pagopa.interop.tenantmanagement.model.tenant.{PersistentExternalId, PersistentTenant}
+import it.pagopa.interop.attributeregistryprocess.Utils.kindToBeExcluded
 import it.pagopa.interop.tenantprocess.client.model.{ExternalId, InternalAttributeSeed, InternalTenantSeed}
 import it.pagopa.interop.tenantscertifiedattributesupdater.system.ApplicationConfiguration
 import org.mongodb.scala.MongoClient
@@ -196,7 +197,8 @@ object Utils {
       attributesFromTenant.exists { attributeFromTenant =>
         attributeFromTenant.code == attributeFromRegistry.code &&
         attributeFromTenant.origin == attributeFromRegistry.origin &&
-        attributeFromTenant.revocationTimestamp.isEmpty
+        attributeFromTenant.revocationTimestamp.isEmpty &&
+        !kindToBeExcluded.contains(attributeFromRegistry.code) // Including only Pubbliche Amministrazioni kind
       }
     )
 
