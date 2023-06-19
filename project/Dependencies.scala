@@ -50,6 +50,9 @@ object Dependencies {
     lazy val attributeRegistryProcess =
       namespace %% "interop-be-attribute-registry-process-client" % attributeRegistryProcessVersion
 
+    lazy val attributeRegistryProcessUtils =
+      namespace %% "interop-be-attribute-registry-process-utils" % attributeRegistryProcessVersion
+
     lazy val attributeModels =
       namespace %% "interop-be-attribute-registry-management-models" % attributeRegistryManagementVersion
 
@@ -64,7 +67,7 @@ object Dependencies {
 
     lazy val tenantManagement =
       namespace %% "interop-be-tenant-management-client" % tenantManagementVersion
-  
+
     lazy val tenantProcess =
       namespace %% "interop-be-tenant-process-client" % tenantProcessVersion
 
@@ -88,14 +91,14 @@ object Dependencies {
   }
 
   private[this] object scanamo {
-    lazy val scanamo = "org.scanamo" %% "scanamo" % scanamoVersion
+    lazy val scanamo = "org.scanamo" %% "scanamo"         % scanamoVersion
     lazy val testkit = "org.scanamo" %% "scanamo-testkit" % scanamoVersion
   }
 
   private[this] object sttp {
-    lazy val sttpClient = "com.softwaremill.sttp.client4" %% "core" % sttpVersion
-    lazy val sttpModel  = "com.softwaremill.sttp.model" %% "core" % sttpModelVersion
-    lazy val stpCirce   = "com.softwaremill.sttp.client4" %% "circe" % sttpVersion
+    lazy val sttpClient = "com.softwaremill.sttp.client4" %% "core"          % sttpVersion
+    lazy val sttpModel  = "com.softwaremill.sttp.model"   %% "core"          % sttpModelVersion
+    lazy val stpCirce   = "com.softwaremill.sttp.client4" %% "circe"         % sttpVersion
     lazy val stpLog     = "com.softwaremill.sttp.client4" %% "slf4j-backend" % sttpVersion
   }
 
@@ -139,18 +142,19 @@ object Dependencies {
 
     lazy val tenantsCertifiedAttributesUpdater: Seq[ModuleID] = Seq(
       // For making Java 12 happy
-      "javax.annotation"        % "javax.annotation-api" % "1.3.2" % "compile",
-      akka.actorTyped           % Compile,
-      cats.core                 % Compile,
-      logback.classic           % Compile,
-      mongodb.scalaDriver       % Compile,
-      pagopa.attributeModels    % Compile,
-      pagopa.partyRegistryProxy % Compile,
-      pagopa.tenantModels       % Compile,
-      pagopa.tenantProcess      % Compile,
-      pagopa.jwt                % Compile,
-      pagopa.signer             % Compile,
-      scalameta.munit           % Test
+      "javax.annotation"                   % "javax.annotation-api" % "1.3.2" % "compile",
+      akka.actorTyped                      % Compile,
+      cats.core                            % Compile,
+      logback.classic                      % Compile,
+      mongodb.scalaDriver                  % Compile,
+      pagopa.attributeModels               % Compile,
+      pagopa.attributeRegistryProcessUtils % Compile,
+      pagopa.partyRegistryProxy            % Compile,
+      pagopa.tenantModels                  % Compile,
+      pagopa.tenantProcess                 % Compile,
+      pagopa.jwt                           % Compile,
+      pagopa.signer                        % Compile,
+      scalameta.munit                      % Test
     ).map(_.withSources.withJavadoc)
 
     lazy val metricsReportGenerator: Seq[ModuleID] = Seq(
@@ -212,33 +216,33 @@ object Dependencies {
         pagopa.mail     % Compile,
         pagopa.queue    % Compile
       )
-    
-  lazy val eservicesMonitoringExporter: Seq[ModuleID] = Seq(
-      cats.core                 % Compile,
-      "com.github.pureconfig"   %% "pureconfig" % "0.17.2",
-      logback.classic           % Compile,
-      mongodb.scalaDriver       % Compile,
-      pagopa.catalogModels      % Compile,
-      pagopa.tenantModels       % Compile,
-      pagopa.commons            % Compile,
-      pagopa.cqrs               % Compile,
-      pagopa.file               % Compile,
-      circe.core                % Compile,
-      circe.generic             % Compile
+
+    lazy val eservicesMonitoringExporter: Seq[ModuleID] = Seq(
+      cats.core                % Compile,
+      "com.github.pureconfig" %% "pureconfig" % "0.17.2",
+      logback.classic          % Compile,
+      mongodb.scalaDriver      % Compile,
+      pagopa.catalogModels     % Compile,
+      pagopa.tenantModels      % Compile,
+      pagopa.commons           % Compile,
+      pagopa.cqrs              % Compile,
+      pagopa.file              % Compile,
+      circe.core               % Compile,
+      circe.generic            % Compile
     ).map(_.withSources.withJavadoc)
 
-  lazy val privacyNoticesUpdaterDependencies: Seq[ModuleID] =
+    lazy val privacyNoticesUpdaterDependencies: Seq[ModuleID] =
       Seq(
         "com.github.pureconfig" %% "pureconfig" % "0.17.2",
-        logback.classic % Compile,
-        cats.core       % Compile,
-        pagopa.commons  % Compile,
-        scanamo.scanamo % Compile,
-        sttp.sttpClient % Compile,
-        sttp.stpCirce   % Compile,
-        sttp.sttpModel  % Compile,
-        sttp.stpLog     % Compile,
-        circe.generic   % Compile
-    ).map(_.withSources.withJavadoc)
+        logback.classic          % Compile,
+        cats.core                % Compile,
+        pagopa.commons           % Compile,
+        scanamo.scanamo          % Compile,
+        sttp.sttpClient          % Compile,
+        sttp.stpCirce            % Compile,
+        sttp.sttpModel           % Compile,
+        sttp.stpLog              % Compile,
+        circe.generic            % Compile
+      ).map(_.withSources.withJavadoc)
   }
 }
