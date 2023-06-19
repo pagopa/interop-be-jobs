@@ -198,7 +198,9 @@ object Utils {
         attributeFromTenant.code == attributeFromRegistry.code &&
         attributeFromTenant.origin == attributeFromRegistry.origin &&
         attributeFromTenant.revocationTimestamp.isEmpty &&
-        !kindToBeExcluded.contains(attributeFromRegistry.code) // Including only Pubbliche Amministrazioni kind
+        !kindToBeExcluded
+          .map(kind => Digester.toSha256(kind.getBytes))
+          .contains(attributeFromRegistry.code) // Including only Pubbliche Amministrazioni kind
       }
     )
 
