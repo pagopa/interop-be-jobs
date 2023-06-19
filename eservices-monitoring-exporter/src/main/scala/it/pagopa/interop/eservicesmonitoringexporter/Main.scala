@@ -15,7 +15,6 @@ import java.util.concurrent.{ExecutorService, Executors}
 import scala.concurrent.duration.Duration
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Await, ExecutionContext, Future}
-
 import java.util.UUID
 import scala.util.Failure
 
@@ -53,7 +52,7 @@ object Main extends App {
   def execution(configuration: Configuration, fm: FileManager, rm: ReadModelService): Future[Unit] = {
     for {
       eServicesDB <- Jobs.getEservices()(global, rm, configuration.collections)
-      eServices = eServicesDB.flatMap(_.toPersistent)
+      eServices = eServicesDB.flatMap(_.toPersistent(configuration.producersAllowList))
       path <- Jobs.saveIntoBucket(fm)(eServices)(configuration, logger, context)
       _ = logger.info(s"Stored eservices json file at $path")
     } yield ()

@@ -11,6 +11,7 @@ final case class EServiceDB(
   id: UUID,
   name: String,
   technology: DependencyCatalog.CatalogItemTechnology,
+  producerId: UUID,
   producerName: String,
   descriptors: Seq[DescriptorDB]
 )
@@ -25,5 +26,5 @@ final case class DescriptorDB(
 
 object EServiceDB {
   implicit val descriptorDBFormat: RootJsonFormat[DescriptorDB] = jsonFormat5(DescriptorDB.apply)
-  implicit val eServiceDBFormat: RootJsonFormat[EServiceDB]     = jsonFormat5(EServiceDB.apply)
+  implicit val eServiceDBFormat: RootJsonFormat[EServiceDB]     = jsonFormat6(EServiceDB.apply)
 }

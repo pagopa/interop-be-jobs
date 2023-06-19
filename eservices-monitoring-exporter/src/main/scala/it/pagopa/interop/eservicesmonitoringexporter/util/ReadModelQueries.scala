@@ -3,8 +3,8 @@ package it.pagopa.interop.eservicesmonitoringexporter.util
 import it.pagopa.interop.commons.cqrs.service.ReadModelService
 import it.pagopa.interop.eservicesmonitoringexporter.model.EServiceDB
 import it.pagopa.interop.eservicesmonitoringexporter.model.EServiceDB._
-import org.mongodb.scala.model.Aggregates.{project, lookup, unwind}
 import org.mongodb.scala.Document
+import org.mongodb.scala.model.Aggregates.{lookup, project, unwind}
 import org.mongodb.scala.model.Projections._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -27,6 +27,7 @@ object ReadModelQueries {
             computed("id", "$data.id"),
             computed("name", "$data.name"),
             computed("technology", "$data.technology"),
+            computed("producerId", "$tenants.data.id"),
             computed("producerName", "$tenants.data.name"),
             computed(
               "descriptors",
