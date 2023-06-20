@@ -4,7 +4,7 @@ object Versions {
   lazy val circeVersion   = "0.14.5"
   lazy val jacksonVersion = "2.11.4" // This cannot be updated yet because akka-serialization use 2.11.x version
   lazy val logbackVersion = "1.4.8"
-  lazy val mongodbScalaDriverVersion = "4.7.2"
+  lazy val mongodbScalaDriverVersion = "4.9.1"
   lazy val munitVersion              = "0.7.29"
   lazy val scanamoVersion            = "1.0.0-M25"
   lazy val sttpVersion               = "4.0.0-M1"
