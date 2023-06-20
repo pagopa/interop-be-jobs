@@ -6,7 +6,7 @@ object Versions {
   lazy val logbackVersion = "1.4.8"
   lazy val mongodbScalaDriverVersion = "4.9.1"
   lazy val munitVersion              = "0.7.29"
-  lazy val scanamoVersion            = "1.0.0-M25"
+  lazy val scanamoVersion            = "1.0.0-M26"
   lazy val sttpVersion               = "4.0.0-M1"
   lazy val sttpModelVersion          = "1.5.5"
 }
