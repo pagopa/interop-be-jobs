@@ -60,7 +60,7 @@ final class OneTrustServiceImpl(config: OneTrustConfiguration)(implicit
         case Right(success)                             => Future.successful(Some(success))
         case Left(HttpError(body, StatusCode.NotFound)) => {
           logger.info(s"Receiving Not Found message")
-          if (body.map(_.path).isDefined)(Future.failed(OneTrustHttpError(StatusCode.NotFound)))
+          if (body.map(_.path).isDefined) (Future.failed(OneTrustHttpError(StatusCode.NotFound)))
           else (Future.successful(None))
         }
         case Left(HttpError(_, statusCode))             => Future.failed(OneTrustHttpError(statusCode))
