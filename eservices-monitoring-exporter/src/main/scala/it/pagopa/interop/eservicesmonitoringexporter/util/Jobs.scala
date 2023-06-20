@@ -1,12 +1,10 @@
 package it.pagopa.interop.eservicesmonitoringexporter.util
 
 import it.pagopa.interop.commons.cqrs.service.ReadModelService
-import it.pagopa.interop.eservicesmonitoringexporter.util._
 import it.pagopa.interop.commons.logging._
 import com.typesafe.scalalogging.LoggerTakingImplicit
 import it.pagopa.interop.commons.files.service.FileManager
 import io.circe.syntax._
-import it.pagopa.interop.eservicesmonitoringexporter.util.Configuration
 import it.pagopa.interop.eservicesmonitoringexporter.model.EServiceDB
 import it.pagopa.interop.eservicesmonitoringexporter.model.EService
 import it.pagopa.interop.eservicesmonitoringexporter.model.EService._
