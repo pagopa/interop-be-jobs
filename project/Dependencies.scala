@@ -161,7 +161,7 @@ object Dependencies {
       // For making Java 12 happy
       "javax.annotation"       % "javax.annotation-api" % "1.3.2" % "compile",
       cats.core                % Compile,
-      "com.github.pureconfig" %% "pureconfig"           % "0.17.2",
+      "com.github.pureconfig" %% "pureconfig"           % "0.17.4",
       circe.core               % Compile,
       circe.generic            % Compile,
       logback.classic          % Compile,
@@ -179,7 +179,7 @@ object Dependencies {
 
     lazy val dashboardMetricsReportGenerator: Seq[ModuleID] = Seq(
       cats.core                % Compile,
-      "com.github.pureconfig" %% "pureconfig" % "0.17.2",
+      "com.github.pureconfig" %% "pureconfig" % "0.17.4",
       logback.classic          % Compile,
       mongodb.scalaDriver      % Compile,
       pagopa.catalogModels     % Compile,
@@ -219,7 +219,7 @@ object Dependencies {
 
     lazy val eservicesMonitoringExporter: Seq[ModuleID] = Seq(
       cats.core                % Compile,
-      "com.github.pureconfig" %% "pureconfig" % "0.17.2",
+      "com.github.pureconfig" %% "pureconfig" % "0.17.4",
       logback.classic          % Compile,
       mongodb.scalaDriver      % Compile,
       pagopa.catalogModels     % Compile,
@@ -233,7 +233,7 @@ object Dependencies {
 
     lazy val privacyNoticesUpdaterDependencies: Seq[ModuleID] =
       Seq(
-        "com.github.pureconfig" %% "pureconfig" % "0.17.2",
+        "com.github.pureconfig" %% "pureconfig" % "0.17.4",
         logback.classic          % Compile,
         cats.core                % Compile,
         pagopa.commons           % Compile,
