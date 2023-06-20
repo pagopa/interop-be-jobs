@@ -5,6 +5,8 @@ import it.pagopa.interop.catalogmanagement.{model => DependencyCatalog}
 import it.pagopa.interop.eservicesmonitoringexporter.model.State.{ACTIVE, INACTIVE}
 import it.pagopa.interop.eservicesmonitoringexporter.model.Technology.{REST, SOAP}
 
+import java.util.UUID
+
 object Utils {
 
   implicit class TechnologyWrapper(private val tech: DependencyCatalog.CatalogItemTechnology) extends AnyVal {
@@ -23,14 +25,16 @@ object Utils {
   }
 
   implicit class EServiceDBWrapper(private val e: EServiceDB) extends AnyVal {
-    def toPersistent: Seq[EService] =
+    def toPersistent(allowedProducers: Option[List[UUID]]): Seq[EService] =
       e.descriptors.map(descriptor =>
         EService(
           name = e.name,
           eserviceId = e.id,
           versionId = descriptor.id,
           technology = e.technology.toApi.toString,
-          state = descriptor.state.toApi.toString,
+          state = allowedProducers.fold(descriptor.state.toApi.toString)(
+            _.find(_ == e.producerId).map(_ => descriptor.state.toApi.toString).getOrElse(INACTIVE.toString)
+          ),
           basePath = descriptor.serverUrls,
           producerName = e.producerName,
           versionNumber = descriptor.version.toInt,
