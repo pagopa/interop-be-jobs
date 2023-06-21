@@ -69,19 +69,7 @@ object Utils {
     val filteredAttributesIndex: Map[UUID, AttributeInfo] =
       attributesIndex.filter(a => originsFromPartyRegistry.contains(a._2.origin))
 
-    val fromRegistry: List[TenantSeed] =
-      institutions
-        .filter(_.id.nonEmpty)
-        .map(institution =>
-          TenantSeed(
-            TenantId(institution.origin, institution.originId, institution.description),
-            List(
-              AttributeInfo(institution.origin, institution.category, None),
-              AttributeInfo(institution.origin, institution.originId, None),
-              AttributeInfo(institution.origin, Digester.toSha256(institution.kind.getBytes), None)
-            )
-          )
-        )
+    val fromRegistry: List[TenantSeed] = institutions.filter(_.id.nonEmpty).map(createTenantSeed)
 
     val fromTenant: Map[PersistentExternalId, List[AttributeInfo]] =
       tenants
@@ -178,6 +166,23 @@ object Utils {
       }
       .map(_ => ())
 
+  private def createTenantSeed(institution: Institution): TenantSeed = {
+    val attributesWithoutKind: List[AttributeInfo] = List(
+      AttributeInfo(institution.origin, institution.category, None),
+      AttributeInfo(institution.origin, institution.originId, None)
+    )
+
+    // Including only Pubbliche Amministrazioni kind
+    val shouldKindBeExcluded: Boolean = kindToBeExcluded.contains(institution.kind)
+
+    val attributes: List[AttributeInfo] =
+      if (shouldKindBeExcluded) attributesWithoutKind
+      else
+        AttributeInfo(institution.origin, Digester.toSha256(institution.kind.getBytes), None) :: attributesWithoutKind
+
+    TenantSeed(TenantId(institution.origin, institution.originId, institution.description), attributes)
+  }
+
   private def extractActivable(fromTenant: Map[PersistentExternalId, List[AttributeInfo]]): TenantSeed => TenantSeed =
     tenantSeed =>
       tenantSeed.copy(attributesInfo = tenantSeed.attributesInfo.filter(canBeActivated(fromTenant, tenantSeed.id)))
@@ -197,10 +202,7 @@ object Utils {
       attributesFromTenant.exists { attributeFromTenant =>
         attributeFromTenant.code == attributeFromRegistry.code &&
         attributeFromTenant.origin == attributeFromRegistry.origin &&
-        attributeFromTenant.revocationTimestamp.isEmpty &&
-        !kindToBeExcluded
-          .map(kind => Digester.toSha256(kind.getBytes))
-          .contains(attributeFromRegistry.code) // Including only Pubbliche Amministrazioni kind
+        attributeFromTenant.revocationTimestamp.isEmpty
       }
     )
 

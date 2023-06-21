@@ -42,27 +42,27 @@ class CreateActionSpec extends FunSuite {
       InternalTenantSeed(
         externalId = ExternalId(origin2, originId1),
         certifiedAttributes = List(
+          InternalAttributeSeed(origin2, kindSha256),
           InternalAttributeSeed(origin2, attributeCode2),
-          InternalAttributeSeed(origin2, originId1),
-          InternalAttributeSeed(origin2, kindSha256)
+          InternalAttributeSeed(origin2, originId1)
         ),
         name = defaultName
       ),
       InternalTenantSeed(
         externalId = ExternalId(origin1, originId2),
         certifiedAttributes = List(
+          InternalAttributeSeed(origin1, kindSha256),
           InternalAttributeSeed(origin1, attributeCode2),
-          InternalAttributeSeed(origin1, originId2),
-          InternalAttributeSeed(origin1, kindSha256)
+          InternalAttributeSeed(origin1, originId2)
         ),
         name = defaultName
       ),
       InternalTenantSeed(
         externalId = ExternalId(origin1, originId1),
         certifiedAttributes = List(
+          InternalAttributeSeed(origin1, kindSha256),
           InternalAttributeSeed(origin1, attributeCode1),
           InternalAttributeSeed(origin1, originId1),
-          InternalAttributeSeed(origin1, kindSha256),
           InternalAttributeSeed(origin1, attributeCode2)
         ),
         name = defaultName
@@ -93,9 +93,9 @@ class CreateActionSpec extends FunSuite {
       InternalTenantSeed(
         externalId = ExternalId(origin, originId),
         certifiedAttributes = List(
+          InternalAttributeSeed(origin, kindSha256),
           InternalAttributeSeed(origin, attributeCode1),
           InternalAttributeSeed(origin, originId),
-          InternalAttributeSeed(origin, kindSha256),
           InternalAttributeSeed(origin, attributeCode2)
         ),
         name = defaultName
@@ -189,9 +189,9 @@ class CreateActionSpec extends FunSuite {
       InternalTenantSeed(
         externalId = ExternalId(origin, originId),
         certifiedAttributes = List(
+          InternalAttributeSeed(origin, kindSha256),
           InternalAttributeSeed(origin, attributeCode),
-          InternalAttributeSeed(origin, originId),
-          InternalAttributeSeed(origin, kindSha256)
+          InternalAttributeSeed(origin, originId)
         ),
         name = defaultName
       )
