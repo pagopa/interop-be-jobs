@@ -17,7 +17,7 @@ final case class Metric(
   fingerPrint: String,
   endpointsCount: Int,
   createdAt: Long,
-  publishedAt: Long,
+  activatedAt: Long,
   timestamp: Long
 )
 
@@ -47,7 +47,7 @@ object Metric {
         fingerPrint = seed.fileExtractedMetrics.fingerPrint,
         endpointsCount = seed.fileExtractedMetrics.endpointsCount,
         createdAt = seed.createdAt.toMillis,
-        publishedAt = seed.publishedAt.toMillis,
+        activatedAt = seed.publishedAt.toMillis,
         timestamp = timestamp.toMillis
       )
 
