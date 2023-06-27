@@ -59,6 +59,9 @@ object Dependencies {
     lazy val catalogModels =
       namespace %% "interop-be-catalog-management-models" % catalogManagementVersion
 
+    lazy val catalogManagement =
+      namespace %% "interop-be-catalog-management-client" % catalogManagementVersion
+
     lazy val partyRegistryProxy =
       namespace %% "interop-be-party-registry-proxy-client" % partyRegistryProxyVersion
 
@@ -71,6 +74,12 @@ object Dependencies {
     lazy val tenantProcess =
       namespace %% "interop-be-tenant-process-client" % tenantProcessVersion
 
+    lazy val agreementProcessClient =
+      namespace %% "interop-be-agreement-process-client" % agreementProcessVersion
+
+    lazy val agreementManagementClient =
+      namespace %% "interop-be-agreement-management-client" % agreementManagementVersion
+
     lazy val agreementsModels =
       namespace %% "interop-be-agreement-management-models" % agreementManagementVersion
 
@@ -79,6 +88,12 @@ object Dependencies {
 
     lazy val partyManagement =
       namespace %% "interop-selfcare-party-management-client" % partyManagementClientVersion
+
+    lazy val selfcareV2Client =
+      namespace %% "interop-selfcare-v2-client" % selfcareV2ClientVersion
+
+    lazy val certifiedMailSenderModels =
+      namespace %% "interop-be-certified-mail-sender-models" % certifiedMailSenderModelsVersion
 
     lazy val commons = namespace %% "interop-commons-utils"         % commonsVersion
     lazy val mail    = namespace %% "interop-commons-mail-manager"  % commonsVersion
@@ -105,6 +120,16 @@ object Dependencies {
   private[this] object scalameta {
     lazy val namespace = "org.scalameta"
     lazy val munit     = namespace %% "munit" % munitVersion
+  }
+
+  private[this] object scalamock {
+    lazy val namespace = "org.scalamock"
+    lazy val core = namespace %% "scalamock" % scalaMockVersion
+  }
+
+  private[this] object scalatest {
+    lazy val namespace = "org.scalatest"
+    lazy val core = namespace %% "scalatest" % scalatestVersion
   }
 
   object Jars {
@@ -244,5 +269,23 @@ object Dependencies {
         sttp.stpLog              % Compile,
         circe.generic            % Compile
       ).map(_.withSources.withJavadoc)
+
+    lazy val tenantsAttributesChecker: Seq[ModuleID] = Seq(
+      akka.actor                        % Compile,
+      akka.actorTyped                   % Compile,
+      cats.core                         % Compile,
+      logback.classic                   % Compile,
+      mongodb.scalaDriver               % Compile,
+      pagopa.tenantModels               % Compile,
+      pagopa.tenantProcess              % Compile,
+      pagopa.certifiedMailSenderModels  % Compile,
+      pagopa.agreementProcessClient     % Compile,
+      pagopa.selfcareV2Client           % Compile,
+      pagopa.attributeRegistryProcess   % Compile,
+      pagopa.commons                    % Compile,
+      pagopa.cqrs                       % Compile,
+      scalamock.core                    % Test,
+      scalatest.core                    % Test
+    ).map(_.withSources.withJavadoc)
   }
 }
