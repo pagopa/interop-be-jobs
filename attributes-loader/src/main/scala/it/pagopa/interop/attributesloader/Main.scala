@@ -4,6 +4,7 @@ import akka.actor.CoordinatedShutdown
 import akka.actor.typed.ActorSystem
 import akka.{actor => classic}
 import akka.actor.typed.scaladsl.Behaviors
+import it.pagopa.interop.commons.utils.TypeConversions._
 import akka.actor.typed.scaladsl.adapter.TypedActorSystemOps
 import com.typesafe.scalalogging.{Logger, LoggerTakingImplicit}
 import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
@@ -27,7 +28,7 @@ object Main extends App with Dependencies {
 
   val blockingEc: ExecutionContextExecutor = actorSystem.dispatchers.lookup(classic.typed.DispatcherSelector.blocking())
 
-  logger.info("Loading attributes data...")
+  logger.info("Move attributes to Descriptors...")
 
   val result: Future[Unit] = for {
     tokenGenerator <- interopTokenGenerator(blockingEc)
@@ -38,16 +39,22 @@ object Main extends App with Dependencies {
         tokenIssuer = jwtConfig.issuer,
         secondsDuration = jwtConfig.durationInSeconds
       )
-    _ = logger.info("M2M Token obtained")
-    _ <- attributeRegistryProcessService(blockingEc).loadCertifiedAttributes(m2mToken.serialized)
+    _           = logger.info("M2M Token obtained")
+    cm          = catalogManagementProcessService(blockingEc)
+    token       = m2mToken.serialized
+    admin_token = ""
+    eServicesIds <- cm.getAllEServices(admin_token).map(_.map(_.id.toString)).map(_.toList)
+    _ = logger.info(s"Got all eServices: ${eServicesIds.size}")
+    _ <- Future.traverseWithLatch(10)(eServicesIds)(cm.moveAttributesToDescriptors(_)(token))
+    _ = logger.info(s"Done!")
   } yield ()
 
   result.onComplete {
     case Success(_)  =>
-      logger.info("Attributes load completed")
+      logger.info("Attributes moved")
       CoordinatedShutdown(classicActorSystem).run(SuccessShutdown)
     case Failure(ex) =>
-      logger.error("Attributes load failed", ex)
+      logger.error("Attributes moving failed", ex)
       CoordinatedShutdown(classicActorSystem).run(ErrorShutdown)
   }
 

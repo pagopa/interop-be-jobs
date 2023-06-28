@@ -1,10 +1,10 @@
 package it.pagopa.interop.attributesloader
 
 import akka.actor.typed.ActorSystem
-import it.pagopa.interop.attributeregistryprocess.client.api.AttributeApi
-import it.pagopa.interop.attributesloader.service.AttributeRegistryProcessInvoker
-import it.pagopa.interop.attributesloader.service.impl.AttributeRegistryProcessServiceImpl
 import it.pagopa.interop.attributesloader.system.ApplicationConfiguration
+import it.pagopa.interop.attributesloader.service.impl.CatalogManagementServiceImpl
+import it.pagopa.interop.attributesloader.service.CatalogManagementInvoker
+import it.pagopa.interop.catalogmanagement.client.api.EServiceApi
 import it.pagopa.interop.commons.jwt.service.InteropTokenGenerator
 import it.pagopa.interop.commons.jwt.service.impl.DefaultInteropTokenGenerator
 import it.pagopa.interop.commons.jwt.{JWTConfiguration, JWTInternalTokenConfig, KID, PrivateKeysKidHolder}
@@ -24,13 +24,12 @@ trait Dependencies {
 
   val jwtConfig: JWTInternalTokenConfig = JWTConfiguration.jwtInternalTokenConfig
 
-  def attributeRegistryProcessService(
+  def catalogManagementProcessService(
     blockingEc: ExecutionContextExecutor
-  )(implicit actorSystem: ActorSystem[_]): AttributeRegistryProcessServiceImpl =
-    AttributeRegistryProcessServiceImpl(
-      AttributeRegistryProcessInvoker(blockingEc)(actorSystem.classicSystem),
-      AttributeApi(ApplicationConfiguration.attributeRegistryProcessURL)
-    )
+  )(implicit actorSystem: ActorSystem[_]): CatalogManagementServiceImpl = CatalogManagementServiceImpl(
+    CatalogManagementInvoker(blockingEc)(actorSystem.classicSystem),
+    EServiceApi(ApplicationConfiguration.catalogManagementURL)
+  )
 
   def signerService(implicit blockingEc: ExecutionContextExecutor): SignerService = new KMSSignerService(blockingEc)
 

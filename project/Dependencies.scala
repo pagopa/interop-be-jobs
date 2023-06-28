@@ -59,6 +59,9 @@ object Dependencies {
     lazy val catalogModels =
       namespace %% "interop-be-catalog-management-models" % catalogManagementVersion
 
+    lazy val catalogManagement =
+      namespace %% "interop-be-catalog-management-client" % catalogManagementVersion
+
     lazy val partyRegistryProxy =
       namespace %% "interop-be-party-registry-proxy-client" % partyRegistryProxyVersion
 
@@ -129,7 +132,8 @@ object Dependencies {
       pagopa.attributeRegistryProcess % Compile,
       pagopa.commons                  % Compile,
       pagopa.jwt                      % Compile,
-      pagopa.signer                   % Compile
+      pagopa.signer                   % Compile,
+      pagopa.catalogManagement        % Compile
     ).map(_.withSources.withJavadoc)
 
     lazy val tokenDetailsPersister: Seq[ModuleID] = Seq(

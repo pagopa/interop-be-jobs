@@ -26,9 +26,8 @@ final case class PartyManagementConfiguration(
 final case class Overrides(totalTenants: Option[Int])
 
 object Configuration {
-  def read(): Future[Configuration] =
-    ConfigSource.default
-      .load[Configuration]
-      .leftMap(new ConfigReaderException(_))
-      .fold(Future.failed, Future.successful)
+  def read(): Future[Configuration] = ConfigSource.default
+    .load[Configuration]
+    .leftMap(new ConfigReaderException(_))
+    .fold(Future.failed, Future.successful)
 }
