@@ -76,10 +76,11 @@ object Main extends App with Dependencies {
 //  } yield ()
 
   val result: Future[Unit] = for {
-    bearer  <- generateBearer(jwtConfig, signerService(blockingEc))
+    bearer <- generateBearer(jwtConfig, signerService(blockingEc))
     tenants <- tenantRepository.getTenants.flatMap(_.sequence.toFuture)
-    _       <- tenants
-      .filter(_.kind.isEmpty)
+    total = tenants.count(t => t.kind.isEmpty)
+    _ <- tenants
+      .filter(t => t.kind.isEmpty)
       .map(t =>
         InternalTenantSeed(
           externalId = ExternalId(origin = t.externalId.origin, value = t.externalId.value),
@@ -87,7 +88,10 @@ object Main extends App with Dependencies {
           name = t.name
         )
       )
-      .traverse(tenantProcessService.upsertTenant(bearer))
+      .zipWithIndex
+      .traverse { case (t, index) =>
+        tenantProcessService.upsertTenant(bearer)(t).map(_ => println(s"$index/$total"))
+      }
   } yield ()
 
   result.onComplete {
