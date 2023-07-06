@@ -37,9 +37,6 @@ object SpecHelper {
   def institution(origin: String, originId: String, category: String, kind: String): Institution = Institution(
     id = UUID.randomUUID().toString,
     originId = originId,
-    o = None,
-    ou = None,
-    aoo = None,
     taxCode = "taxCode",
     category = category,
     description = defaultName,
