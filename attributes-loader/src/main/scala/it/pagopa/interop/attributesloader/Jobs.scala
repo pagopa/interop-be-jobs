@@ -4,6 +4,7 @@ import com.typesafe.scalalogging.LoggerTakingImplicit
 import it.pagopa.interop.attributeregistrymanagement.model.persistence.JsonFormats._
 import it.pagopa.interop.attributeregistrymanagement.model.persistence.attribute.PersistentAttribute
 import it.pagopa.interop.attributeregistryprocess.client.model.{AttributeKind, AttributeSeed}
+import it.pagopa.interop.attributeregistryprocess.Utils.kindToBeExcluded
 import it.pagopa.interop.attributesloader.service.{AttributeRegistryProcessService, PartyRegistryService}
 import it.pagopa.interop.commons.cqrs.service.ReadModelService
 import it.pagopa.interop.commons.logging.ContextFieldsToLog
@@ -18,13 +19,6 @@ final class Jobs(
   partyRegistryService: PartyRegistryService,
   readModelService: ReadModelService
 ) {
-
-  val kindToBeExcluded: Set[String] = Set(
-    "Enti Nazionali di Previdenza ed Assistenza Sociale in Conto Economico Consolidato",
-    "Gestori di Pubblici Servizi",
-    "Societa' in Conto Economico Consolidato",
-    "Stazioni Appaltanti"
-  )
 
   def loadCertifiedAttributes(bearerToken: String)(implicit
     contexts: Seq[(String, String)],

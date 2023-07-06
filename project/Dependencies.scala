@@ -143,23 +143,24 @@ object Dependencies {
 
     lazy val attributesLoader: Seq[ModuleID] = Seq(
       // For making Java 12 happy
-      "javax.annotation"              % "javax.annotation-api" % "1.3.2" % "compile",
+      "javax.annotation"                   % "javax.annotation-api" % "1.3.2" % "compile",
       //
-      akka.actor                      % Compile,
-      akka.actorTyped                 % Compile,
-      akka.serialization              % Compile,
-      akka.slf4j                      % Compile,
-      akka.stream                     % Compile,
-      logback.classic                 % Compile,
-      pagopa.attributeRegistryProcess % Compile,
-      pagopa.attributeModels          % Compile,
-      pagopa.partyRegistryProxy       % Compile,
-      pagopa.cqrs                     % Compile,
-      pagopa.commons                  % Compile,
-      pagopa.jwt                      % Compile,
-      pagopa.signer                   % Compile,
-      scalatest.core                  % Test,
-      scalamock.core                  % Test
+      akka.actor                           % Compile,
+      akka.actorTyped                      % Compile,
+      akka.serialization                   % Compile,
+      akka.slf4j                           % Compile,
+      akka.stream                          % Compile,
+      logback.classic                      % Compile,
+      pagopa.attributeRegistryProcess      % Compile,
+      pagopa.attributeRegistryProcessUtils % Compile,
+      pagopa.attributeModels               % Compile,
+      pagopa.partyRegistryProxy            % Compile,
+      pagopa.cqrs                          % Compile,
+      pagopa.commons                       % Compile,
+      pagopa.jwt                           % Compile,
+      pagopa.signer                        % Compile,
+      scalatest.core                       % Test,
+      scalamock.core                       % Test
     ).map(_.withSources.withJavadoc)
 
     lazy val tokenDetailsPersister: Seq[ModuleID] = Seq(
