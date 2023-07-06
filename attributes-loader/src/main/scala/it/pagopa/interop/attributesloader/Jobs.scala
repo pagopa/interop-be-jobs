@@ -13,21 +13,20 @@ import org.mongodb.scala.model.Filters
 
 import scala.concurrent.{ExecutionContext, Future}
 
-object Jobs {
-// TODO Improve signatures and currying
+final class Jobs(
+  attributeRegistryProcessService: AttributeRegistryProcessService,
+  partyRegistryService: PartyRegistryService,
+  readModelService: ReadModelService
+) {
 
-  final val kindToBeExcluded: Set[String] = Set(
+  val kindToBeExcluded: Set[String] = Set(
     "Enti Nazionali di Previdenza ed Assistenza Sociale in Conto Economico Consolidato",
     "Gestori di Pubblici Servizi",
     "Societa' in Conto Economico Consolidato",
     "Stazioni Appaltanti"
   )
 
-  def loadCertifiedAttributes(bearerToken: String)(
-    partyRegistryService: PartyRegistryService,
-    attributeRegistryProcessService: AttributeRegistryProcessService,
-    readModelService: ReadModelService
-  )(implicit
+  def loadCertifiedAttributes(bearerToken: String)(implicit
     contexts: Seq[(String, String)],
     logger: LoggerTakingImplicit[ContextFieldsToLog],
     ec: ExecutionContext
@@ -79,19 +78,13 @@ object Jobs {
         )
       )
 
-      _ <- addNewAttributes(attributeSeedsCategories ++ attributeSeedsInstitutions)(bearerToken)(
-        attributeRegistryProcessService,
-        readModelService
-      )
+      _ <- addNewAttributes(attributeSeedsCategories ++ attributeSeedsInstitutions)(bearerToken)
     } yield ()
   }
 
-  private def addNewAttributes(attributesSeeds: Seq[AttributeSeed])(
-    bearerToken: String
-  )(attributeRegistryProcessService: AttributeRegistryProcessService, readModelService: ReadModelService)(implicit
-    contexts: Seq[(String, String)],
-    ec: ExecutionContext
-  ): Future[Unit] = {
+  private def addNewAttributes(
+    attributesSeeds: Seq[AttributeSeed]
+  )(bearerToken: String)(implicit contexts: Seq[(String, String)], ec: ExecutionContext): Future[Unit] = {
 
     // calculating the delta of attributes
     def delta(attrs: List[PersistentAttribute]): Set[AttributeSeed] =
