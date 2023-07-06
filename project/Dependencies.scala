@@ -124,12 +124,12 @@ object Dependencies {
 
   private[this] object scalamock {
     lazy val namespace = "org.scalamock"
-    lazy val core = namespace %% "scalamock" % scalaMockVersion
+    lazy val core      = namespace %% "scalamock" % scalaMockVersion
   }
 
   private[this] object scalatest {
     lazy val namespace = "org.scalatest"
-    lazy val core = namespace %% "scalatest" % scalatestVersion
+    lazy val core      = namespace %% "scalatest" % scalatestVersion
   }
 
   object Jars {
@@ -157,7 +157,9 @@ object Dependencies {
       pagopa.cqrs                     % Compile,
       pagopa.commons                  % Compile,
       pagopa.jwt                      % Compile,
-      pagopa.signer                   % Compile
+      pagopa.signer                   % Compile,
+      scalatest.core                  % Test,
+      scalamock.core                  % Test
     ).map(_.withSources.withJavadoc)
 
     lazy val tokenDetailsPersister: Seq[ModuleID] = Seq(
@@ -274,21 +276,21 @@ object Dependencies {
       ).map(_.withSources.withJavadoc)
 
     lazy val tenantsAttributesChecker: Seq[ModuleID] = Seq(
-      akka.actor                        % Compile,
-      akka.actorTyped                   % Compile,
-      cats.core                         % Compile,
-      logback.classic                   % Compile,
-      mongodb.scalaDriver               % Compile,
-      pagopa.tenantModels               % Compile,
-      pagopa.tenantProcess              % Compile,
-      pagopa.certifiedMailSenderModels  % Compile,
-      pagopa.agreementProcessClient     % Compile,
-      pagopa.selfcareV2Client           % Compile,
-      pagopa.attributeRegistryProcess   % Compile,
-      pagopa.commons                    % Compile,
-      pagopa.cqrs                       % Compile,
-      scalamock.core                    % Test,
-      scalatest.core                    % Test
+      akka.actor                       % Compile,
+      akka.actorTyped                  % Compile,
+      cats.core                        % Compile,
+      logback.classic                  % Compile,
+      mongodb.scalaDriver              % Compile,
+      pagopa.tenantModels              % Compile,
+      pagopa.tenantProcess             % Compile,
+      pagopa.certifiedMailSenderModels % Compile,
+      pagopa.agreementProcessClient    % Compile,
+      pagopa.selfcareV2Client          % Compile,
+      pagopa.attributeRegistryProcess  % Compile,
+      pagopa.commons                   % Compile,
+      pagopa.cqrs                      % Compile,
+      scalamock.core                   % Test,
+      scalatest.core                   % Test
     ).map(_.withSources.withJavadoc)
   }
 }
