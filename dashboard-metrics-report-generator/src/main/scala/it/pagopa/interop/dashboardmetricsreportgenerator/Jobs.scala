@@ -62,7 +62,7 @@ object Jobs {
       }
       .map { onBoardingDates =>
         TenantsData(
-          overrides.totalTenants.getOrElse(onBoardingDates.size),
+          overrides.totalTenants.map(_.max(onBoardingDates.size)).getOrElse(onBoardingDates.size),
           onBoardingDates.size,
           Graph.getGraphPoints(10)(onBoardingDates)
         )
