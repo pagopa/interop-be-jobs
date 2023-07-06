@@ -38,8 +38,10 @@ object Main extends App with Dependencies {
         tokenIssuer = jwtConfig.issuer,
         secondsDuration = jwtConfig.durationInSeconds
       )
-    _ = logger.info("M2M Token obtained")
-    _ <- attributeRegistryProcessService(blockingEc).loadCertifiedAttributes(m2mToken.serialized)
+    _                 = logger.info("M2M Token obtained")
+    attributeRegistry = attributeRegistryProcessService(blockingEc)
+    partyRegistry     = partyRegistryService(blockingEc)
+    _ <- Jobs.loadCertifiedAttributes(m2mToken.serialized)(partyRegistry, attributeRegistry, readModelService)
   } yield ()
 
   result.onComplete {

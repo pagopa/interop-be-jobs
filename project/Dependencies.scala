@@ -152,6 +152,9 @@ object Dependencies {
       akka.stream                     % Compile,
       logback.classic                 % Compile,
       pagopa.attributeRegistryProcess % Compile,
+      pagopa.attributeModels          % Compile,
+      pagopa.partyRegistryProxy       % Compile,
+      pagopa.cqrs                     % Compile,
       pagopa.commons                  % Compile,
       pagopa.jwt                      % Compile,
       pagopa.signer                   % Compile
