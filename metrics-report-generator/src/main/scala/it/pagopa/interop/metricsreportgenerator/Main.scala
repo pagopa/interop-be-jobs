@@ -55,20 +55,14 @@ object Main extends App {
       .flatMap(jobs.store(s"tokens-${env}.csv", _))
       .map(asAttachment(s"tokens-${env}.csv", _))
 
-    val jobD: Future[(List[String], List[String])] = jobs.getDescriptorsRecord
+    val jobD: Future[List[String]] = jobs.getDescriptorsRecord
 
-    val descriptorsJob: Future[MailAttachment] = jobD.flatMap { case (ds, _) =>
-      jobs.store(s"descriptors-${env}.csv", ds).map(_ => asAttachment(s"descriptors-${env}.csv", ds))
-    }
-
-    val activeDescriptorsJob: Future[MailAttachment] = jobD.flatMap { case (_, ads) =>
+    val activeDescriptorsJob: Future[MailAttachment] = jobD.flatMap(ads =>
       jobs.store(s"active-descriptors-${env}.csv", ads).map(_ => asAttachment(s"active-descriptors-${env}.csv", ads))
-    }
+    )
 
     val attachments: Future[List[MailAttachment]] =
-      Future.foldLeft(List(agreementsJob, tokensJob, descriptorsJob, activeDescriptorsJob))(List.empty[MailAttachment])(
-        _.prepended(_)
-      )
+      Future.foldLeft(List(agreementsJob, tokensJob, activeDescriptorsJob))(List.empty[MailAttachment])(_.prepended(_))
 
     attachments.flatMap(sendMail(config))
   }

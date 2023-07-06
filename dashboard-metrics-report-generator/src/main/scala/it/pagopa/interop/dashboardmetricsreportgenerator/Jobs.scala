@@ -62,7 +62,7 @@ object Jobs {
       }
       .map { onBoardingDates =>
         TenantsData(
-          overrides.totalTenants.getOrElse(onBoardingDates.size),
+          overrides.totalTenants.map(_.max(onBoardingDates.size)).getOrElse(onBoardingDates.size),
           onBoardingDates.size,
           Graph.getGraphPoints(10)(onBoardingDates)
         )
@@ -123,7 +123,7 @@ object Jobs {
     def getTokens(path: String): Future[List[String]] =
       fileManager.getFile(config.bucket)(path).map(bs => new String(bs).split('\n').toList)
 
-    val twoWeeksAgo: OffsetDateTime = OffsetDateTime.now(ZoneId.of("UTC")).minusDays(14)
+    val threeDaysAgo: OffsetDateTime = OffsetDateTime.now(ZoneId.of("UTC")).minusDays(3)
 
     allTokensPaths()
       .flatMap(paths =>
@@ -134,7 +134,7 @@ object Jobs {
       )
       .map { xs =>
         val issueTimes: List[OffsetDateTime] = xs.flatten
-        TokensData(issueTimes.size, issueTimes.count(_.isAfter(twoWeeksAgo)), Graph.getGraphPoints(10)(issueTimes))
+        TokensData(issueTimes.size, issueTimes.count(_.isAfter(threeDaysAgo)), Graph.getGraphPoints(10)(issueTimes))
       }
   }
 
