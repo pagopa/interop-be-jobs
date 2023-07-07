@@ -2,15 +2,14 @@ package it.pagopa.interop.attributesloader
 
 import akka.actor.CoordinatedShutdown
 import akka.actor.typed.ActorSystem
-import akka.{actor => classic}
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.scaladsl.adapter.TypedActorSystemOps
+import akka.{actor => classic}
 import com.typesafe.scalalogging.{Logger, LoggerTakingImplicit}
 import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 import scala.util.{Failure, Success}
-import scala.concurrent.ExecutionContextExecutor
 
 //shuts down the actor system in case of startup errors
 case object ErrorShutdown   extends CoordinatedShutdown.Reason
@@ -27,6 +26,9 @@ object Main extends App with Dependencies {
 
   val blockingEc: ExecutionContextExecutor = actorSystem.dispatchers.lookup(classic.typed.DispatcherSelector.blocking())
 
+  val jobs: Jobs =
+    new Jobs(attributeRegistryProcessService(blockingEc), partyRegistryService(blockingEc), readModelService)
+
   logger.info("Loading attributes data...")
 
   val result: Future[Unit] = for {
@@ -39,7 +41,7 @@ object Main extends App with Dependencies {
         secondsDuration = jwtConfig.durationInSeconds
       )
     _ = logger.info("M2M Token obtained")
-    _ <- attributeRegistryProcessService(blockingEc).loadCertifiedAttributes(m2mToken.serialized)
+    _ <- jobs.loadCertifiedAttributes(m2mToken.serialized)
   } yield ()
 
   result.onComplete {

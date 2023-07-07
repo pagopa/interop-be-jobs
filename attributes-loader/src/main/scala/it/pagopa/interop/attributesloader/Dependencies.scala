@@ -2,9 +2,10 @@ package it.pagopa.interop.attributesloader
 
 import akka.actor.typed.ActorSystem
 import it.pagopa.interop.attributeregistryprocess.client.api.AttributeApi
-import it.pagopa.interop.attributesloader.service.AttributeRegistryProcessInvoker
-import it.pagopa.interop.attributesloader.service.impl.AttributeRegistryProcessServiceImpl
+import it.pagopa.interop.attributesloader.service.{AttributeRegistryProcessInvoker, PartyRegistryInvoker}
+import it.pagopa.interop.attributesloader.service.impl.{AttributeRegistryProcessServiceImpl, PartyRegistryServiceImpl}
 import it.pagopa.interop.attributesloader.system.ApplicationConfiguration
+import it.pagopa.interop.commons.cqrs.service.{MongoDbReadModelService, ReadModelService}
 import it.pagopa.interop.commons.jwt.service.InteropTokenGenerator
 import it.pagopa.interop.commons.jwt.service.impl.DefaultInteropTokenGenerator
 import it.pagopa.interop.commons.jwt.{JWTConfiguration, JWTInternalTokenConfig, KID, PrivateKeysKidHolder}
@@ -16,11 +17,13 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 import scala.concurrent.ExecutionContextExecutor
 import it.pagopa.interop.commons.utils.CORRELATION_ID_HEADER
+import it.pagopa.interop.partyregistryproxy.client.api.{CategoryApi, InstitutionApi}
+
 import java.util.UUID
 
 trait Dependencies {
 
-  implicit val contexts: Seq[(String, String)] = (CORRELATION_ID_HEADER -> UUID.randomUUID().toString()) :: Nil
+  implicit val contexts: Seq[(String, String)] = (CORRELATION_ID_HEADER -> UUID.randomUUID().toString) :: Nil
 
   val jwtConfig: JWTInternalTokenConfig = JWTConfiguration.jwtInternalTokenConfig
 
@@ -31,6 +34,17 @@ trait Dependencies {
       AttributeRegistryProcessInvoker(blockingEc)(actorSystem.classicSystem),
       AttributeApi(ApplicationConfiguration.attributeRegistryProcessURL)
     )
+
+  def partyRegistryService(
+    blockingEc: ExecutionContextExecutor
+  )(implicit actorSystem: ActorSystem[_]): PartyRegistryServiceImpl =
+    PartyRegistryServiceImpl(
+      PartyRegistryInvoker(blockingEc)(actorSystem.classicSystem),
+      CategoryApi(ApplicationConfiguration.partyRegistryProxyURL),
+      InstitutionApi(ApplicationConfiguration.partyRegistryProxyURL)
+    )
+
+  def readModelService: ReadModelService = new MongoDbReadModelService(ApplicationConfiguration.readModelConfig)
 
   def signerService(implicit blockingEc: ExecutionContextExecutor): SignerService = new KMSSignerService(blockingEc)
 
