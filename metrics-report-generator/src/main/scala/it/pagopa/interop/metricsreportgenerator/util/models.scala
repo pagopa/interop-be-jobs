@@ -24,7 +24,7 @@ object Purpose {
 }
 
 final case class Descriptor(name: String, createdAt: String, producerId: String, descriptorId: String, state: String) {
-  def isActive: Boolean = state == "Suspended" || state == "Published"
+  def isActive: Boolean = state == "Suspended" || state == "Published" || state == "Deprecated"
 }
 
 object Descriptor {
