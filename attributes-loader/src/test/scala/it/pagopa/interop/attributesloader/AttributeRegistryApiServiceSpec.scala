@@ -5,14 +5,18 @@ import it.pagopa.interop.attributeregistrymanagement.model.persistence.{attribut
 import it.pagopa.interop.attributeregistryprocess.client.model.{Attribute, AttributeKind, AttributeSeed}
 import it.pagopa.interop.commons.utils.Digester
 import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
+import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers._
+import org.scalatest.time.{Second, Span}
 import org.scalatest.wordspec.AnyWordSpecLike
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class AttributeRegistryApiServiceSpec extends AnyWordSpecLike with SpecHelper with ScalaFutures {
+
+  private val testTimeout: Timeout = Timeout(Span(1, Second))
 
   "Attributes loading" must {
     "succeed with creation of all attributes retrieved from both Categories and Institutions if ReadModel is empty" in {
@@ -43,7 +47,8 @@ class AttributeRegistryApiServiceSpec extends AnyWordSpecLike with SpecHelper wi
           )
         )
       )
-      jobs.loadCertifiedAttributes(bearerToken).futureValue shouldEqual ()
+
+      jobs.loadCertifiedAttributes().futureValue(testTimeout) shouldEqual ()
     }
 
     "succeed with creation of delta of attributes retrieved from both Categories and Institutions if ReadModel is not empty" in {
@@ -120,7 +125,7 @@ class AttributeRegistryApiServiceSpec extends AnyWordSpecLike with SpecHelper wi
         )
       )
 
-      jobs.loadCertifiedAttributes(bearerToken).futureValue shouldEqual ()
+      jobs.loadCertifiedAttributes().futureValue(testTimeout) shouldEqual ()
     }
 
     "succeed if no attributes are created when ReadModel already contains them" in {
@@ -202,7 +207,7 @@ class AttributeRegistryApiServiceSpec extends AnyWordSpecLike with SpecHelper wi
         )
       )
 
-      jobs.loadCertifiedAttributes(bearerToken).futureValue shouldEqual ()
+      jobs.loadCertifiedAttributes().futureValue(testTimeout) shouldEqual ()
     }
   }
 

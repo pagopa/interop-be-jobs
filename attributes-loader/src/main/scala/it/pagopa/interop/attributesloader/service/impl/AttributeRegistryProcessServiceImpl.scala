@@ -6,7 +6,7 @@ import it.pagopa.interop.attributeregistryprocess.client.invoker.{ApiRequest, Be
 import it.pagopa.interop.attributeregistryprocess.client.model.{Attribute, AttributeSeed}
 import it.pagopa.interop.attributesloader.service.{AttributeRegistryProcessInvoker, AttributeRegistryProcessService}
 import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
-import it.pagopa.interop.commons.utils.CORRELATION_ID_HEADER
+import it.pagopa.interop.commons.utils.withHeaders
 
 import scala.concurrent.Future
 
@@ -18,13 +18,12 @@ final case class AttributeRegistryProcessServiceImpl(invoker: AttributeRegistryP
 
   override def createAttribute(
     attributeSeed: AttributeSeed
-  )(bearerToken: String)(implicit contexts: Seq[(String, String)]): Future[Attribute] = {
-    val request: ApiRequest[Attribute] = api
-      .createAttribute(
-        xCorrelationId =
-          contexts.toMap.getOrElse(CORRELATION_ID_HEADER, s"interop-be-jobs-${System.currentTimeMillis()}"),
-        attributeSeed = attributeSeed
-      )(BearerToken(bearerToken))
-    invoker.invoke(request, s"Creating attribute")
-  }
+  )(implicit contexts: Seq[(String, String)]): Future[Attribute] =
+    withHeaders { (bearerToken, correlationId, ip) =>
+      val request: ApiRequest[Attribute] = api
+        .createAttribute(xCorrelationId = correlationId, xForwardedFor = ip, attributeSeed = attributeSeed)(
+          BearerToken(bearerToken)
+        )
+      invoker.invoke(request, s"Creating attribute")
+    }
 }

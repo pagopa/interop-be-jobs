@@ -7,6 +7,7 @@ import akka.actor.typed.scaladsl.adapter.TypedActorSystemOps
 import akka.{actor => classic}
 import com.typesafe.scalalogging.{Logger, LoggerTakingImplicit}
 import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
+import it.pagopa.interop.commons.utils.BEARER
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 import scala.util.{Failure, Success}
@@ -40,8 +41,9 @@ object Main extends App with Dependencies {
         tokenIssuer = jwtConfig.issuer,
         secondsDuration = jwtConfig.durationInSeconds
       )
-    _ = logger.info("M2M Token obtained")
-    _ <- jobs.loadCertifiedAttributes(m2mToken.serialized)
+    _                 = logger.info("M2M Token obtained")
+    contextWithBearer = contexts :+ (BEARER -> m2mToken.serialized)
+    _ <- jobs.loadCertifiedAttributes()(contextWithBearer, logger, executionContext)
   } yield ()
 
   result.onComplete {

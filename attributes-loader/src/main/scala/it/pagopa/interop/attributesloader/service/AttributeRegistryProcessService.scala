@@ -6,8 +6,6 @@ import scala.concurrent.Future
 
 trait AttributeRegistryProcessService {
 
-  def createAttribute(attributeSeed: AttributeSeed)(bearerToken: String)(implicit
-    contexts: Seq[(String, String)]
-  ): Future[Attribute]
+  def createAttribute(attributeSeed: AttributeSeed)(implicit contexts: Seq[(String, String)]): Future[Attribute]
 
 }
