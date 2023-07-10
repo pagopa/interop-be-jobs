@@ -32,8 +32,6 @@
         <appender-ref ref="STDERR" />
     </appender>
 
-    <logger name="it.pagopa.interop" level="INFO" />
-
     <root name="application" level="OFF">
         <appender-ref ref="ASYNC_STDOUT" />
         <appender-ref ref="ASYNC_STDERR" />

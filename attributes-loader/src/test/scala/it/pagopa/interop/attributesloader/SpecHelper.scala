@@ -111,8 +111,8 @@ trait SpecHelper extends SprayJsonSupport with DefaultJsonProtocol with MockFact
   def mockCreateAttribute(attributeSeed: AttributeSeed, result: Attribute)(implicit
     contexts: Seq[(String, String)]
   ): Unit = (mockAttributeRegistryProcessService
-    .createAttribute(_: AttributeSeed)(_: String)(_: Seq[(String, String)]))
-    .expects(attributeSeed, *, contexts)
+    .createAttribute(_: AttributeSeed)(_: Seq[(String, String)]))
+    .expects(attributeSeed, contexts)
     .once()
     .returns(Future.successful(result)): Unit
 
