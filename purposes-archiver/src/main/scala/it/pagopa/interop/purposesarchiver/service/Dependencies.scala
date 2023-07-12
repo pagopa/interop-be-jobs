@@ -6,6 +6,7 @@ import it.pagopa.interop.purposesarchiver.service.impl.{AgreementProcessServiceI
 import it.pagopa.interop.purposesarchiver.system.ApplicationConfiguration
 import it.pagopa.interop.agreementprocess.client.api.AgreementApi
 import it.pagopa.interop.purposeprocess.client.api.PurposeApi
+import scala.util.control.NoStackTrace
 
 import scala.concurrent.ExecutionContextExecutor
 import it.pagopa.interop.commons.utils.CORRELATION_ID_HEADER
@@ -33,5 +34,7 @@ trait Dependencies {
       PurposeInvoker(blockingEc)(actorSystem.classicSystem),
       PurposeApi(ApplicationConfiguration.purposeProcessURL)
     )
-
+ case class EventNotComplaint(clazz: String)
+      extends Exception(s"Purposes archiver job failed because message is not compliant ${clazz}")
+      with NoStackTrace
 }

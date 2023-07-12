@@ -51,8 +51,8 @@ final case class PurposeProcessServiceImpl(invoker: PurposeProcessInvoker, api: 
         producersIds = Seq.empty,
         states = states,
         excludeDraft = None,
-        offset = 0,
-        limit = 50,
+        offset = offset,
+        limit = limit,
         xForwardedFor = ip
       )(BearerToken(bearerToken))
       invoker.invoke(request, s"Retrieving purposes with EServiceId $eServiceId and consumerId $consumerId")
