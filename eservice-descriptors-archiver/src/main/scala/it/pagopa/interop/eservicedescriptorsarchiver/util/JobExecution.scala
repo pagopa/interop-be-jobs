@@ -40,11 +40,9 @@ final case class JobExecution(readModelService: MongoDbReadModelService, catalog
         Filters.eq("data.eserviceId", eServiceId.toString)
       )
       relatingAgreements <- ReadModelQueries(readModelService).getAllAgreements(descriptorAndEserviceFilter)
-      _                  <- {
-        val allArchived = relatingAgreements.forall(_.state == Archived)
-        if (allArchived) archiveEserviceDescriptor(eServiceId, descriptorId)
+      allArchived = relatingAgreements.forall(_.state == Archived)
+      _                  <-        if (allArchived) archiveEserviceDescriptor(eServiceId, descriptorId)
         else Future.unit
-      }
     } yield ()
   }
 
