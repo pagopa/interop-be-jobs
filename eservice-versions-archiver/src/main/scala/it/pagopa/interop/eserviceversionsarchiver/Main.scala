@@ -39,7 +39,7 @@ object Main extends App {
 
   private val init: Future[Unit] = execution
     .andThen {
-      case Failure(e) => logger.info("Eservice version archiver job failed with exception", e)
+      case Failure(e) => logger.error("Eservice version archiver job failed with exception", e)
       case Success(_) => logger.info("Completed eservice version archiver job")
     }
     .andThen { _ =>

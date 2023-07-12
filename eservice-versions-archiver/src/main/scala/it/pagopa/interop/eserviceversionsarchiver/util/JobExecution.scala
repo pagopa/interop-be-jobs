@@ -34,8 +34,8 @@ final case class JobExecution(readModelService: MongoDbReadModelService, catalog
         .toFuture(AgreementNotFound(agreementId))
         .map(agreement => (agreement.eserviceId, agreement.descriptorId))
       descriptorAndEserviceFilter = Filters.and(
-        Filters.eq("data.descriptorId", descriptorId),
-        Filters.eq("data.eserviceId", eServiceId)
+        Filters.eq("data.descriptorId", descriptorId.toString),
+        Filters.eq("data.eserviceId", eServiceId.toString)
       )
       relatingAgreements <- getAllAgreements(readModelService, descriptorAndEserviceFilter)
       _                  <- {
@@ -43,7 +43,7 @@ final case class JobExecution(readModelService: MongoDbReadModelService, catalog
         if (allArchived) Future.unit
         else Future.failed(NonArchivableDescriptorException(eServiceId, descriptorId))
       }
-      maybeEservice <- readModelService.findOne[CatalogItem](eservicesCollection, Filters.eq("data.id", eServiceId))
+      maybeEservice <- readModelService.findOne[CatalogItem](eservicesCollection, Filters.eq("data.id", eServiceId.toString))
       eservice      <- maybeEservice.toFuture(EserviceNotFound(eServiceId))
       descriptor    <- eservice.descriptors.find(_.id == descriptorId).toFuture(DescriptorNotFound(descriptorId))
       _             <- {
