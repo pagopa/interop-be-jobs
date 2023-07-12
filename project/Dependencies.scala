@@ -299,8 +299,6 @@ object Dependencies {
 
     lazy val eserviceVersionsArchiver: Seq[ModuleID] = Seq(
       cats.core                         % Compile,
-//      circe.core                        % Compile,
-//      circe.generic                     % Compile,
       circe.parser                      % Compile,
       logback.classic                   % Compile,
       mongodb.scalaDriver               % Compile,
