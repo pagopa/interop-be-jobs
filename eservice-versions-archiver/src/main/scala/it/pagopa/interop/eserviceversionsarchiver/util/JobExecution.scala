@@ -41,7 +41,7 @@ final case class JobExecution(readModelService: MongoDbReadModelService, catalog
       _                  <- {
         val allArchived = relatingAgreements.forall(_.state == Archived)
         if (allArchived) Future.unit
-        else Future.failed(NonArchivableDescriptorException(eServiceId, descriptorId))
+        else Future.failed(NonArchiveableDescriptorException(eServiceId, descriptorId))
       }
       maybeEservice <- readModelService.findOne[CatalogItem](eservicesCollection, Filters.eq("data.id", eServiceId.toString))
       eservice      <- maybeEservice.toFuture(EserviceNotFound(eServiceId))
@@ -56,8 +56,8 @@ final case class JobExecution(readModelService: MongoDbReadModelService, catalog
                   && actualDescriptor.version.toInt > descriptor.version.toInt
               )
             if (newerDescriptorExists) Future.unit
-            else Future.failed(NonArchivableDescriptorException(eServiceId, descriptorId))
-          case _          => Future.failed(NonArchivableDescriptorException(eServiceId, descriptorId))
+            else Future.failed(NonArchiveableDescriptorException(eServiceId, descriptorId))
+          case _          => Future.failed(NonArchiveableDescriptorException(eServiceId, descriptorId))
         }
       }
       _             <- catalogProcess.archiveDescriptor(eServiceId, descriptorId)

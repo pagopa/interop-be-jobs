@@ -15,7 +15,7 @@ object errors {
   final case class DescriptorNotFound(descriptorId: UUID)
       extends ComponentError("0003", s"Descriptor not found for descriptorId ${descriptorId.toString}")
 
-  final case class NonArchivableDescriptorException(eserviceId: UUID, descriptorId: UUID)
+  final case class NonArchiveableDescriptorException(eserviceId: UUID, descriptorId: UUID)
       extends ComponentError(
         "0004",
         s"Descriptor with eserviceId/descriptorId $eserviceId/$descriptorId is not archivable"

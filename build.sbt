@@ -203,7 +203,7 @@ lazy val tenantsAttributesChecker = project
   .enablePlugins(DockerPlugin)
 
 lazy val eserviceVersionsArchiver = project
-  .in(file(eserviceVersionsArchiverModuleName))
+  .in(file(eserviceDescriptorsArchiverModuleName))
   .settings(
     name                 := "interop-be-eservice-versions-archiver",
     Docker / packageName := s"${name.value}",

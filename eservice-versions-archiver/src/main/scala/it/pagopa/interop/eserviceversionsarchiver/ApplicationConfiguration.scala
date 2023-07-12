@@ -2,19 +2,9 @@ package it.pagopa.interop.eserviceversionsarchiver
 
 import com.typesafe.config.{Config, ConfigFactory}
 import it.pagopa.interop.commons.cqrs.model.ReadModelConfig
-import it.pagopa.interop.commons.utils.CORRELATION_ID_HEADER
-
-import java.util.UUID
-import java.util.concurrent.{ExecutorService, Executors}
-import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 
 object ApplicationConfiguration {
 
-  implicit val context: List[(String, String)]    = (CORRELATION_ID_HEADER -> UUID.randomUUID().toString) :: Nil
-  private val blockingThreadPool: ExecutorService =
-    Executors.newFixedThreadPool(Runtime.getRuntime.availableProcessors())
-  val blockingEC: ExecutionContextExecutor        = ExecutionContext.fromExecutor(blockingThreadPool)
-  implicit val ec: ExecutionContext               = blockingEC
   private val config: Config                      = ConfigFactory.load()
 
   val archivingPurposesQueueUrl: String =
