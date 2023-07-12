@@ -34,7 +34,7 @@ trait Dependencies {
       PurposeInvoker(blockingEc)(actorSystem.classicSystem),
       PurposeApi(ApplicationConfiguration.purposeProcessURL)
     )
- case class EventNotComplaint(clazz: String)
+  case class EventNotComplaint(clazz: String)
       extends Exception(s"Purposes archiver job failed because message is not compliant ${clazz}")
       with NoStackTrace
 }

@@ -54,13 +54,15 @@ object Main extends App with Dependencies {
 
   private def execution: Future[Unit] = queueService.processMessages { message =>
     for {
-      agreement <- agreementProcessService.getAgreementById{ message.payload match {
-        case m: ArchiveEvent => m.agreementId
-        case other => {
-          logger.error("Purposes archiver job failed because message is not compliant")
-          throw EventNotComplaint(other.getClass().toString)
+      agreement <- agreementProcessService.getAgreementById {
+        message.payload match {
+          case m: ArchiveEvent => m.agreementId
+          case other           => {
+            logger.error("Purposes archiver job failed because message is not compliant")
+            throw EventNotComplaint(other.getClass().toString)
+          }
         }
-      }}
+      }
       purposes  <- purposeProcessService.getAllPurposes(agreement.eserviceId, agreement.consumerId, ARCHIVABLE_STATES)
       _         <- Future.traverse(purposes)(processVersion)
     } yield ()
