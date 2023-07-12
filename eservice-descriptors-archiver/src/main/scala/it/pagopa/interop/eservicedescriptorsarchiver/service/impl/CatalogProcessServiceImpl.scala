@@ -1,4 +1,4 @@
-package it.pagopa.interop.eserviceversionsarchiver.service.impl
+package it.pagopa.interop.eservicedescriptorsarchiver.service.impl
 
 import akka.actor.ActorSystem
 import com.typesafe.scalalogging.{Logger, LoggerTakingImplicit}
@@ -7,9 +7,9 @@ import it.pagopa.interop.catalogprocess.client.invoker.{ApiInvoker, BearerToken}
 import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
 import it.pagopa.interop.commons.utils.TypeConversions.EitherOps
 import it.pagopa.interop.commons.utils.extractHeaders
-import it.pagopa.interop.eserviceversionsarchiver.ApplicationConfiguration
-import it.pagopa.interop.eserviceversionsarchiver.ApplicationConfiguration.ec
-import it.pagopa.interop.eserviceversionsarchiver.service.CatalogProcessService
+import it.pagopa.interop.eservicedescriptorsarchiver.ApplicationConfiguration
+import it.pagopa.interop.eservicedescriptorsarchiver.Main.ec
+import it.pagopa.interop.eservicedescriptorsarchiver.service.CatalogProcessService
 
 import java.util.UUID
 import scala.concurrent.{ExecutionContextExecutor, Future}

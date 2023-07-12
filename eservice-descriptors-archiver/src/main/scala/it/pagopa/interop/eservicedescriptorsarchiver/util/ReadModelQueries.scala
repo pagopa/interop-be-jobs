@@ -1,9 +1,10 @@
-package it.pagopa.interop.eserviceversionsarchiver.util
+package it.pagopa.interop.eservicedescriptorsarchiver.util
 
 import it.pagopa.interop.agreementmanagement.model.agreement.PersistentAgreement
 import it.pagopa.interop.agreementmanagement.model.persistence.JsonFormats.paFormat
 import it.pagopa.interop.commons.cqrs.service.MongoDbReadModelService
-import it.pagopa.interop.eserviceversionsarchiver.ApplicationConfiguration._
+import it.pagopa.interop.eservicedescriptorsarchiver.ApplicationConfiguration.agreementsCollection
+import it.pagopa.interop.eservicedescriptorsarchiver.Main.ec
 import org.mongodb.scala.bson.conversions.Bson
 
 import scala.concurrent.Future

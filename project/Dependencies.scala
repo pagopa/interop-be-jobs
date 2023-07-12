@@ -297,7 +297,7 @@ object Dependencies {
       scalatest.core                   % Test
     ).map(_.withSources.withJavadoc)
 
-    lazy val eserviceVersionsArchiver: Seq[ModuleID] = Seq(
+    lazy val eserviceDescriptorsArchiver: Seq[ModuleID] = Seq(
       cats.core                         % Compile,
       circe.parser                      % Compile,
       logback.classic                   % Compile,

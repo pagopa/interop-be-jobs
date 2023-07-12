@@ -1,4 +1,4 @@
-package it.pagopa.interop.eserviceversionsarchiver.util
+package it.pagopa.interop.eservicedescriptorsarchiver.util
 
 import io.circe.parser._
 import it.pagopa.interop.agreementmanagement.model.agreement.{Archived, PersistentAgreement}
@@ -7,13 +7,15 @@ import it.pagopa.interop.catalogmanagement.model.persistence.JsonFormats.ciForma
 import it.pagopa.interop.catalogmanagement.model.{CatalogItem, Deprecated, Published, Suspended}
 import it.pagopa.interop.commons.cqrs.service.MongoDbReadModelService
 import it.pagopa.interop.commons.utils.TypeConversions._
-import it.pagopa.interop.eserviceversionsarchiver.ApplicationConfiguration._
-import it.pagopa.interop.eserviceversionsarchiver.service.CatalogProcessService
-import it.pagopa.interop.eserviceversionsarchiver.util.ReadModelQueries.getAllAgreements
-import it.pagopa.interop.eserviceversionsarchiver.util.errors._
+import it.pagopa.interop.eservicedescriptorsarchiver.Main.{context, ec}
+import it.pagopa.interop.eservicedescriptorsarchiver.ApplicationConfiguration._
+import it.pagopa.interop.eservicedescriptorsarchiver.service.CatalogProcessService
+import it.pagopa.interop.eservicedescriptorsarchiver.util.ReadModelQueries.getAllAgreements
+import it.pagopa.interop.eservicedescriptorsarchiver.util.errors._
 import org.mongodb.scala.model.Filters
 import spray.json.BasicFormats
 
+import java.util.UUID
 import scala.concurrent.Future
 
 final case class JobExecution(readModelService: MongoDbReadModelService, catalogProcess: CatalogProcessService)
@@ -40,27 +42,31 @@ final case class JobExecution(readModelService: MongoDbReadModelService, catalog
       relatingAgreements <- getAllAgreements(readModelService, descriptorAndEserviceFilter)
       _                  <- {
         val allArchived = relatingAgreements.forall(_.state == Archived)
-        if (allArchived) Future.unit
-        else Future.failed(NonArchiveableDescriptorException(eServiceId, descriptorId))
+        if (allArchived) archiveEserviceDescriptor(eServiceId, descriptorId)
+        else Future.unit
       }
-      maybeEservice <- readModelService.findOne[CatalogItem](eservicesCollection, Filters.eq("data.id", eServiceId.toString))
+    } yield ()
+  }
+
+  private def archiveEserviceDescriptor(eServiceId: UUID, descriptorId: UUID): Future[Unit] =
+    for {
+      maybeEservice <- readModelService
+        .findOne[CatalogItem](eservicesCollection, Filters.eq("data.id", eServiceId.toString))
       eservice      <- maybeEservice.toFuture(EserviceNotFound(eServiceId))
       descriptor    <- eservice.descriptors.find(_.id == descriptorId).toFuture(DescriptorNotFound(descriptorId))
       _             <- {
         descriptor.state match {
-          case Deprecated => Future.unit
+          case Deprecated => catalogProcess.archiveDescriptor(eServiceId, descriptorId)
           case Suspended  =>
             val newerDescriptorExists = eservice.descriptors
               .exists(actualDescriptor =>
                 (actualDescriptor.state == Published || actualDescriptor.state == Suspended)
                   && actualDescriptor.version.toInt > descriptor.version.toInt
               )
-            if (newerDescriptorExists) Future.unit
-            else Future.failed(NonArchiveableDescriptorException(eServiceId, descriptorId))
-          case _          => Future.failed(NonArchiveableDescriptorException(eServiceId, descriptorId))
+            if (newerDescriptorExists) catalogProcess.archiveDescriptor(eServiceId, descriptorId)
+            else Future.unit
+          case _          => Future.unit
         }
       }
-      _             <- catalogProcess.archiveDescriptor(eServiceId, descriptorId)
     } yield ()
-  }
 }

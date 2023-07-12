@@ -202,13 +202,13 @@ lazy val tenantsAttributesChecker = project
   .enablePlugins(JavaAppPackaging)
   .enablePlugins(DockerPlugin)
 
-lazy val eserviceVersionsArchiver = project
+lazy val eserviceDescriptorsArchiver = project
   .in(file(eserviceDescriptorsArchiverModuleName))
   .settings(
     name                 := "interop-be-eservice-versions-archiver",
     Docker / packageName := s"${name.value}",
     sharedSettings,
-    libraryDependencies ++= Dependencies.Jars.eserviceVersionsArchiver,
+    libraryDependencies ++= Dependencies.Jars.eserviceDescriptorsArchiver,
     publish / skip       := true,
     publish              := (()),
     publishLocal         := (()),
@@ -230,6 +230,7 @@ lazy val jobs = project
     certifiedMailSenderModels,
     eservicesMonitoringExporter,
     privacyNoticesUpdater,
-    tenantsAttributesChecker
+    tenantsAttributesChecker,
+    eserviceDescriptorsArchiver
   )
   .settings(Docker / publish := {})

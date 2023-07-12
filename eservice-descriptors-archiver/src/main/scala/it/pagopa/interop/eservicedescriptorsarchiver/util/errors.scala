@@ -1,4 +1,4 @@
-package it.pagopa.interop.eserviceversionsarchiver.util
+package it.pagopa.interop.eservicedescriptorsarchiver.util
 
 import it.pagopa.interop.commons.utils.errors.ComponentError
 
@@ -14,10 +14,4 @@ object errors {
 
   final case class DescriptorNotFound(descriptorId: UUID)
       extends ComponentError("0003", s"Descriptor not found for descriptorId ${descriptorId.toString}")
-
-  final case class NonArchiveableDescriptorException(eserviceId: UUID, descriptorId: UUID)
-      extends ComponentError(
-        "0004",
-        s"Descriptor with eserviceId/descriptorId $eserviceId/$descriptorId is not archivable"
-      )
 }

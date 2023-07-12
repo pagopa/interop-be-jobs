@@ -1,11 +1,11 @@
-package it.pagopa.interop.eserviceversionsarchiver
+package it.pagopa.interop.eservicedescriptorsarchiver
 
 import com.typesafe.config.{Config, ConfigFactory}
 import it.pagopa.interop.commons.cqrs.model.ReadModelConfig
 
 object ApplicationConfiguration {
 
-  private val config: Config                      = ConfigFactory.load()
+  private val config: Config = ConfigFactory.load()
 
   val archivingPurposesQueueUrl: String =
     config.getString("eservice-versions-archiver.queue.archiving-purposes-queue-url")

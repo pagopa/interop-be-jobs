@@ -1,12 +1,12 @@
-package it.pagopa.interop.eserviceversionsarchiver
+package it.pagopa.interop.eservicedescriptorsarchiver
 
 import com.typesafe.scalalogging.{Logger, LoggerTakingImplicit}
 import it.pagopa.interop.commons.cqrs.service.MongoDbReadModelService
 import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
 import it.pagopa.interop.commons.queue.impl.SQSHandler
 import it.pagopa.interop.commons.utils.CORRELATION_ID_HEADER
-import it.pagopa.interop.eserviceversionsarchiver.service.impl.CatalogProcessServiceImpl
-import it.pagopa.interop.eserviceversionsarchiver.util.JobExecution
+import it.pagopa.interop.eservicedescriptorsarchiver.service.impl.CatalogProcessServiceImpl
+import it.pagopa.interop.eservicedescriptorsarchiver.util.JobExecution
 
 import java.util.UUID
 import java.util.concurrent.{ExecutorService, Executors}
@@ -16,11 +16,12 @@ import scala.util.{Failure, Success}
 
 object Main extends App {
 
-  implicit val context: List[(String, String)] = (CORRELATION_ID_HEADER -> UUID.randomUUID().toString) :: Nil
+  implicit val context: List[(String, String)]    = (CORRELATION_ID_HEADER -> UUID.randomUUID().toString) :: Nil
   private val blockingThreadPool: ExecutorService =
     Executors.newFixedThreadPool(Runtime.getRuntime.availableProcessors())
-  private val blockingEC: ExecutionContextExecutor = ExecutionContext.fromExecutor(blockingThreadPool)
-  implicit val ec: ExecutionContext = blockingEC
+  val blockingEC: ExecutionContextExecutor        = ExecutionContext.fromExecutor(blockingThreadPool)
+  implicit val ec: ExecutionContext               = blockingEC
+
   implicit val logger: LoggerTakingImplicit[ContextFieldsToLog] =
     Logger.takingImplicit[ContextFieldsToLog](this.getClass.getCanonicalName)
 

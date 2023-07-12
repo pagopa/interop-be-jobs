@@ -1,4 +1,4 @@
-package it.pagopa.interop.eserviceversionsarchiver.service
+package it.pagopa.interop.eservicedescriptorsarchiver.service
 
 import java.util.UUID
 import scala.concurrent.Future
