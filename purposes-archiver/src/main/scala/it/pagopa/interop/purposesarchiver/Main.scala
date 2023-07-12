@@ -41,7 +41,7 @@ object Main extends App with Dependencies {
 
   val ARCHIVABLE_STATES = Seq(ACTIVE, SUSPENDED, WAITING_FOR_APPROVAL, DRAFT)
 
-  def processVersion(purpose: Purpose): Future[Unit] =
+  private def processVersion(purpose: Purpose): Future[Unit] =
     purpose.versions.maxByOption(_.createdAt) match {
       case Some(x) =>
         x.state match {
