@@ -8,10 +8,10 @@ object ApplicationConfiguration {
   private val config: Config = ConfigFactory.load()
 
   val archivingPurposesQueueUrl: String =
-    config.getString("eservice-versions-archiver.queue.archiving-purposes-queue-url")
+    config.getString("eservice-descriptors-archiver.queue.archiving-purposes-queue-url")
   val maxNumberOfMessagesPerFile: Int   =
-    config.getInt("eservice-versions-archiver.queue.max-number-of-messages-per-file")
-  val visibilityTimeout: Int = config.getInt("eservice-versions-archiver.queue.visibility-timeout-in-seconds")
+    config.getInt("eservice-descriptors-archiver.queue.max-number-of-messages-per-file")
+  val visibilityTimeout: Int = config.getInt("eservice-descriptors-archiver.queue.visibility-timeout-in-seconds")
 
   val agreementsCollection: String = config.getString("read-model.collections.agreements")
   val eservicesCollection: String  = config.getString("read-model.collections.eservices")
