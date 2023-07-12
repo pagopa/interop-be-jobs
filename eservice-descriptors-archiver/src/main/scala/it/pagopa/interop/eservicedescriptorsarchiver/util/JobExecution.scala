@@ -41,7 +41,8 @@ final case class JobExecution(readModelService: MongoDbReadModelService, catalog
       )
       relatingAgreements <- ReadModelQueries(readModelService).getAllAgreements(descriptorAndEserviceFilter)
       allArchived = relatingAgreements.forall(_.state == Archived)
-      _                  <-        if (allArchived) archiveEserviceDescriptor(eServiceId, descriptorId)
+      _ <-
+        if (allArchived) archiveEserviceDescriptor(eServiceId, descriptorId)
         else Future.unit
     } yield ()
   }
