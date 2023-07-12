@@ -16,11 +16,11 @@ import scala.util.{Failure, Success}
 
 object Main extends App {
 
-  implicit val context: List[(String, String)]    = (CORRELATION_ID_HEADER -> UUID.randomUUID().toString) :: Nil
-  private val blockingThreadPool: ExecutorService =
+  implicit val context: List[(String, String)]     = (CORRELATION_ID_HEADER -> UUID.randomUUID().toString) :: Nil
+  private val blockingThreadPool: ExecutorService  =
     Executors.newFixedThreadPool(Runtime.getRuntime.availableProcessors())
-  val blockingEC: ExecutionContextExecutor        = ExecutionContext.fromExecutor(blockingThreadPool)
-  implicit val ec: ExecutionContext               = blockingEC
+  private val blockingEC: ExecutionContextExecutor = ExecutionContext.fromExecutor(blockingThreadPool)
+  implicit val ec: ExecutionContext                = blockingEC
 
   implicit val logger: LoggerTakingImplicit[ContextFieldsToLog] =
     Logger.takingImplicit[ContextFieldsToLog](this.getClass.getCanonicalName)
