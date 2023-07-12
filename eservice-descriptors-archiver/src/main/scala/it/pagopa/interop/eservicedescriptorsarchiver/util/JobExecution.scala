@@ -7,19 +7,19 @@ import it.pagopa.interop.catalogmanagement.model.persistence.JsonFormats.ciForma
 import it.pagopa.interop.catalogmanagement.model.{CatalogItem, Deprecated, Published, Suspended}
 import it.pagopa.interop.commons.cqrs.service.MongoDbReadModelService
 import it.pagopa.interop.commons.utils.TypeConversions._
-import it.pagopa.interop.eservicedescriptorsarchiver.Main.{context, ec}
 import it.pagopa.interop.eservicedescriptorsarchiver.ApplicationConfiguration._
 import it.pagopa.interop.eservicedescriptorsarchiver.service.CatalogProcessService
-import it.pagopa.interop.eservicedescriptorsarchiver.util.ReadModelQueries.getAllAgreements
 import it.pagopa.interop.eservicedescriptorsarchiver.util.errors._
 import org.mongodb.scala.model.Filters
 import spray.json.BasicFormats
 
 import java.util.UUID
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
-final case class JobExecution(readModelService: MongoDbReadModelService, catalogProcess: CatalogProcessService)
-    extends BasicFormats {
+final case class JobExecution(readModelService: MongoDbReadModelService, catalogProcess: CatalogProcessService)(implicit
+  ec: ExecutionContext,
+  context: List[(String, String)]
+) extends BasicFormats {
 
   def archiveEservice(message: String): Future[Unit] =
     for {
@@ -39,7 +39,7 @@ final case class JobExecution(readModelService: MongoDbReadModelService, catalog
         Filters.eq("data.descriptorId", descriptorId.toString),
         Filters.eq("data.eserviceId", eServiceId.toString)
       )
-      relatingAgreements <- getAllAgreements(readModelService, descriptorAndEserviceFilter)
+      relatingAgreements <- ReadModelQueries(readModelService).getAllAgreements(descriptorAndEserviceFilter)
       _                  <- {
         val allArchived = relatingAgreements.forall(_.state == Archived)
         if (allArchived) archiveEserviceDescriptor(eServiceId, descriptorId)

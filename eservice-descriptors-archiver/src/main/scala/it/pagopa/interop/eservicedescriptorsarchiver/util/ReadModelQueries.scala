@@ -4,17 +4,13 @@ import it.pagopa.interop.agreementmanagement.model.agreement.PersistentAgreement
 import it.pagopa.interop.agreementmanagement.model.persistence.JsonFormats.paFormat
 import it.pagopa.interop.commons.cqrs.service.MongoDbReadModelService
 import it.pagopa.interop.eservicedescriptorsarchiver.ApplicationConfiguration.agreementsCollection
-import it.pagopa.interop.eservicedescriptorsarchiver.Main.ec
 import org.mongodb.scala.bson.conversions.Bson
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
-object ReadModelQueries {
+case class ReadModelQueries(rm: MongoDbReadModelService)(implicit ec: ExecutionContext) {
 
-  def getAllAgreements(
-    rm: MongoDbReadModelService,
-    descriptorAndEserviceFilter: Bson
-  ): Future[Seq[PersistentAgreement]] =
+  def getAllAgreements(descriptorAndEserviceFilter: Bson): Future[Seq[PersistentAgreement]] =
     getAll(100)(rm.find[PersistentAgreement](agreementsCollection, descriptorAndEserviceFilter, _, _))
 
   private def getAll[T](limit: Int)(get: (Int, Int) => Future[Seq[T]]): Future[Seq[T]] = {

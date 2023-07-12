@@ -8,13 +8,13 @@ import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLo
 import it.pagopa.interop.commons.utils.TypeConversions.EitherOps
 import it.pagopa.interop.commons.utils.extractHeaders
 import it.pagopa.interop.eservicedescriptorsarchiver.ApplicationConfiguration
-import it.pagopa.interop.eservicedescriptorsarchiver.Main.ec
 import it.pagopa.interop.eservicedescriptorsarchiver.service.CatalogProcessService
 
 import java.util.UUID
-import scala.concurrent.{ExecutionContextExecutor, Future}
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
-final case class CatalogProcessServiceImpl(blockingEc: ExecutionContextExecutor) extends CatalogProcessService {
+final case class CatalogProcessServiceImpl(blockingEc: ExecutionContextExecutor)(implicit ec: ExecutionContext)
+    extends CatalogProcessService {
 
   private val actorSystem: ActorSystem = ActorSystem("catalogProcessActorSystem")
   private val invoker: ApiInvoker      = ApiInvoker(EnumsSerializers.all, blockingEc)(actorSystem.classicSystem)
