@@ -92,8 +92,14 @@ final class Jobs(
       deltaAttributes = delta(attributesfromRM.toList)
       _               = logger.info(s"New attributes to create: ${deltaAttributes.size}")
       // The client must log in case of errors
-      _ <- Future.parCollectWithLatch(100)(deltaAttributes.toList)(attributeSeed =>
-        attributeRegistryProcessService.createAttribute(attributeSeed)
+      _ <- Future.parCollectWithLatch(100)(deltaAttributes.toList)(seed =>
+        attributeRegistryProcessService
+          .createAttribute(seed)
+          .map(_ => ())
+          .recover(ex =>
+            logger
+              .error(s"Error creating attribute. Origin: ${seed.origin}, Code: ${seed.code}, Name: ${seed.name}", ex)
+          )
       )
     } yield ()
 
