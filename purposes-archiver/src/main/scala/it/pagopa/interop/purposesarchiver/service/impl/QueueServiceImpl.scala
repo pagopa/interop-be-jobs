@@ -1,6 +1,5 @@
 package it.pagopa.interop.purposesarchiver.service.impl
 
-import cats.syntax.all._
 import it.pagopa.interop.purposesarchiver.service.QueueService
 import it.pagopa.interop.commons.queue.message.Message
 
@@ -16,5 +15,5 @@ final class QueueServiceImpl(queueName: String, visibilityTimeoutInSeconds: Int)
   val sQSReader: SQSReader = new SQSReader(queueName, visibilityTimeoutInSeconds)(f => _.convertTo[ArchiveEvent])
 
   override def processMessages(fn: Message => Future[Unit]): Future[Unit] =
-    sQSReader.handleN(10)(fn).void
+    sQSReader.handleN(10)(fn).map(_ => ())
 }

@@ -42,14 +42,12 @@ object Main extends App with Dependencies {
   val ARCHIVABLE_STATES = Seq(ACTIVE, SUSPENDED, WAITING_FOR_APPROVAL, DRAFT)
 
   private def processVersion(purpose: Purpose)(implicit contexts: Seq[(String, String)]): Future[Unit] =
-    purpose.versions.maxByOption(_.createdAt) match {
-      case Some(x) =>
-        x.state match {
-          case ACTIVE | SUSPENDED           => purposeProcessService.archive(purpose.id, x.id).map(_ => ())
-          case DRAFT | WAITING_FOR_APPROVAL => purposeProcessService.delete(purpose.id, x.id)
-          case _                            => Future.unit
-        }
-      case None    => Future.unit
+    purpose.versions.maxByOption(_.createdAt).fold(Future.unit) { v =>
+      v.state match {
+        case ACTIVE | SUSPENDED           => purposeProcessService.archive(purpose.id, v.id).map(_ => ())
+        case DRAFT | WAITING_FOR_APPROVAL => purposeProcessService.delete(purpose.id, v.id)
+        case _                            => Future.unit
+      }
     }
 
   private def execution: Future[Unit] = queueService.processMessages { message =>
@@ -57,20 +55,18 @@ object Main extends App with Dependencies {
       bearer <- generateBearer
       _                 = logger.info("Internal Token obtained")
       contextWithBearer = contexts :+ (BEARER -> bearer)
-      agreement <- agreementProcessService.getAgreementById {
-        message.payload match {
-          case m: ArchiveEvent => m.agreementId
-          case other           => {
-            logger.error("Purposes archiver job failed because message is not compliant")
-            throw EventNotComplaint(other.getClass().toString)
-          }
-        }
-      }(contextWithBearer)
-      purposes  <- purposeProcessService.getAllPurposes(agreement.eserviceId, agreement.consumerId, ARCHIVABLE_STATES)(
+      agreementId <- message.payload match {
+        case m: ArchiveEvent => Future.successful(m.agreementId)
+        case other           =>
+          logger.error("Purposes archiver job failed because message is not compliant")
+          Future.failed(EventNotComplaint(other.getClass().toString))
+      }
+      agreement   <- agreementProcessService.getAgreementById(agreementId)(contextWithBearer)
+      purposes <- purposeProcessService.getAllPurposes(agreement.eserviceId, agreement.consumerId, ARCHIVABLE_STATES)(
         contextWithBearer,
         executionContext
       )
-      _         <- Future.traverse(purposes)(processVersion(_)(contextWithBearer))
+      _        <- Future.traverse(purposes)(processVersion(_)(contextWithBearer))
     } yield ()
   }
 
