@@ -23,10 +23,17 @@ object Purpose {
   implicit val format: RootJsonFormat[Purpose] = jsonFormat4(Purpose.apply)
 }
 
-final case class Descriptor(name: String, createdAt: String, producerId: String, descriptorId: String, state: String) {
+final case class Descriptor(
+  name: String,
+  createdAt: String,
+  producerId: String,
+  producer: String,
+  descriptorId: String,
+  state: String
+) {
   def isActive: Boolean = state == "Suspended" || state == "Published" || state == "Deprecated"
 }
 
 object Descriptor {
-  implicit val format: RootJsonFormat[Descriptor] = jsonFormat5(Descriptor.apply)
+  implicit val format: RootJsonFormat[Descriptor] = jsonFormat6(Descriptor.apply)
 }
