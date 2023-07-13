@@ -313,6 +313,8 @@ object Dependencies {
       pagopa.agreementsEvents          % Compile,
       pagopa.commons                   % Compile,
       pagopa.queue                     % Compile,
+      pagopa.jwt                       % Compile,
+      pagopa.signer                    % Compile,
       scalamock.core                   % Test,
       scalatest.core                   % Test
     ).map(_.withSources.withJavadoc)

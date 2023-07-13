@@ -13,7 +13,7 @@ import it.pagopa.interop.purposesarchiver.service.impl.QueueServiceImpl
 import it.pagopa.interop.purposeprocess.client.model.PurposeVersionState._
 import it.pagopa.interop.agreementprocess.events.ArchiveEvent
 import it.pagopa.interop.purposeprocess.client.model.Purpose
-
+import it.pagopa.interop.commons.utils.BEARER
 import scala.concurrent.{ExecutionContext, Future, Await, ExecutionContextExecutor}
 import scala.concurrent.duration.Duration
 import scala.util.{Failure, Success}
@@ -41,7 +41,7 @@ object Main extends App with Dependencies {
 
   val ARCHIVABLE_STATES = Seq(ACTIVE, SUSPENDED, WAITING_FOR_APPROVAL, DRAFT)
 
-  private def processVersion(purpose: Purpose): Future[Unit] =
+  private def processVersion(purpose: Purpose)(implicit contexts: Seq[(String, String)]): Future[Unit] =
     purpose.versions.maxByOption(_.createdAt) match {
       case Some(x) =>
         x.state match {
@@ -54,6 +54,9 @@ object Main extends App with Dependencies {
 
   private def execution: Future[Unit] = queueService.processMessages { message =>
     for {
+      bearer <- generateBearer
+      _                 = logger.info("Internal Token obtained")
+      contextWithBearer = contexts :+ (BEARER -> bearer)
       agreement <- agreementProcessService.getAgreementById {
         message.payload match {
           case m: ArchiveEvent => m.agreementId
@@ -62,9 +65,12 @@ object Main extends App with Dependencies {
             throw EventNotComplaint(other.getClass().toString)
           }
         }
-      }
-      purposes  <- purposeProcessService.getAllPurposes(agreement.eserviceId, agreement.consumerId, ARCHIVABLE_STATES)
-      _         <- Future.traverse(purposes)(processVersion)
+      }(contextWithBearer)
+      purposes  <- purposeProcessService.getAllPurposes(agreement.eserviceId, agreement.consumerId, ARCHIVABLE_STATES)(
+        contextWithBearer,
+        executionContext
+      )
+      _         <- Future.traverse(purposes)(processVersion(_)(contextWithBearer))
     } yield ()
   }
 
