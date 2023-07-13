@@ -119,16 +119,26 @@ object ReadModelQueries {
 
     val unwindStep: Document = Document("""{$unwind:"$descriptors"}""")
 
+    val zipProducer =
+      lookup("tenants", localField = "producerId", foreignField = "data.id", as = "producerTenant")
+
+    val unwindStep2: Document = Document("""{$unwind:"$producerTenant"}""")
+
     val projection2: Bson = project(
       fields(
         include("name", "createdAt", "producerId"),
         computed("descriptorId", "$descriptors.id"),
-        computed("state", "$descriptors.state")
+        computed("state", "$descriptors.state"),
+        computed("producer", "$producerTenant.data.name")
       )
     )
 
-    readModelService
-      .aggregateRaw[Descriptor](collections.eservices, Seq(projection1, unwindStep, projection2), offset, limit)
+    readModelService.aggregateRaw[Descriptor](
+      collections.eservices,
+      Seq(projection1, unwindStep, zipProducer, unwindStep2, projection2),
+      offset,
+      limit
+    )
   }
 
   private def getAll[T](
