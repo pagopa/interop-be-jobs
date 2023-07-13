@@ -3,6 +3,8 @@ package it.pagopa.interop.tenantsattributeschecker
 import com.typesafe.scalalogging.{Logger, LoggerTakingImplicit}
 import it.pagopa.interop.commons.cqrs.service.MongoDbReadModelService
 import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
+import it.pagopa.interop.commons.queue.config.SQSHandlerConfig
+import it.pagopa.interop.commons.queue.impl.SQSHandler
 import it.pagopa.interop.commons.utils.service.UUIDSupplier
 import it.pagopa.interop.tenantsattributeschecker.ApplicationConfiguration.{
   actorSystem,
@@ -12,6 +14,7 @@ import it.pagopa.interop.tenantsattributeschecker.ApplicationConfiguration.{
   selfcareV2ApiKey,
   selfcareV2URL
 }
+import it.pagopa.interop.tenantsattributeschecker.service.QueueService
 import it.pagopa.interop.tenantsattributeschecker.service.impl.{TenantProcessServiceImpl, _}
 import it.pagopa.interop.tenantsattributeschecker.util.Jobs
 import it.pagopa.interop.tenantsattributeschecker.util.ReadModelQueries._
@@ -29,11 +32,17 @@ object Main extends App {
     ApplicationConfiguration.readModelConfig
   )
 
+  private val queueService: QueueService = {
+    val sqsHandlerConfig: SQSHandlerConfig = SQSHandlerConfig(queueUrl = certifiedMailQueueName)
+    val sqsHandler: SQSHandler             = SQSHandler(sqsHandlerConfig)(blockingEc)
+    new QueueServiceImpl(sqsHandler)
+  }
+
   val jobs = new Jobs(
     agreementProcess = AgreementProcessServiceImpl(blockingEc),
     tenantProcess = TenantProcessServiceImpl(blockingEc),
     attributeRegistryProcess = AttributeRegistryProcessServiceImpl(blockingEc),
-    queueService = new QueueServiceImpl(certifiedMailQueueName),
+    queueService = queueService,
     selfcareClientService = new SelfcareClientServiceImpl(selfcareV2URL, selfcareV2ApiKey),
     uuidSupplier = UUIDSupplier
   )

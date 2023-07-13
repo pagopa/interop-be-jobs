@@ -5,6 +5,7 @@ import com.typesafe.scalalogging.Logger
 import io.circe.generic.auto._
 import io.circe.jawn.parse
 import it.pagopa.interop.commons.mail.{InteropMailer, Mail, TextMail}
+import it.pagopa.interop.commons.queue.config.SQSHandlerConfig
 import it.pagopa.interop.commons.queue.impl.SQSHandler
 import it.pagopa.interop.commons.utils.TypeConversions.EitherOps
 import software.amazon.awssdk.services.sqs.model.Message
@@ -15,11 +16,13 @@ final class JobExecution private (config: Configuration)(implicit blockingEC: Ex
 
   private val logger: Logger = Logger(this.getClass)
 
-  private val sqsHandler: SQSHandler = SQSHandler(config.queue.url)(blockingEC)
-  private val mailer: InteropMailer  = InteropMailer.from(config.mail)
+  private val sqsHandlerConfig: SQSHandlerConfig =
+    SQSHandlerConfig(queueUrl = config.queue.url, visibilityTimeout = config.queue.visibilityTimeoutInSeconds)
+  private val sqsHandler: SQSHandler             = SQSHandler(sqsHandlerConfig)(blockingEC)
+  private val mailer: InteropMailer              = InteropMailer.from(config.mail)
 
   def run(): Future[Unit] = sqsHandler
-    .rawReceive(config.queue.visibilityTimeoutInSeconds)
+    .rawReceive()
     .flatMap {
       case None          => Future.unit
       case Some(message) => processMessage(message)
