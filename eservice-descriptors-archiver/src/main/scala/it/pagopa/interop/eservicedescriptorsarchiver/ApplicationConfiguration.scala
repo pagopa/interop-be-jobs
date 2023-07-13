@@ -7,9 +7,9 @@ object ApplicationConfiguration {
 
   private val config: Config = ConfigFactory.load()
 
-  val archivingPurposesQueueUrl: String =
-    config.getString("eservice-descriptors-archiver.queue.archiving-purposes-queue-url")
-  val maxNumberOfMessagesPerFile: Int   =
+  val archivingEservicesQueueUrl: String =
+    config.getString("eservice-descriptors-archiver.queue.archiving-eservices-queue-url")
+  val maxNumberOfMessagesPerFile: Int    =
     config.getInt("eservice-descriptors-archiver.queue.max-number-of-messages-per-file")
   val visibilityTimeout: Int = config.getInt("eservice-descriptors-archiver.queue.visibility-timeout-in-seconds")
 
