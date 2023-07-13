@@ -94,9 +94,9 @@ class Jobs(config: Configuration, fileManager: FileManager, readModel: ReadModel
   def getDescriptorsRecord(implicit ec: ExecutionContext): Future[List[String]] = {
     logger.info("Gathering Descriptors Information")
 
-    val header: String                              = "name,createdAt,producerId,descriptorId,state"
+    val header: String                              = "name,createdAt,producerId,producer,descriptorId,state"
     val asCsvRow: Descriptor => String              = (d: Descriptor) =>
-      s""""${d.name}","${d.createdAt}","${d.producerId}","${d.descriptorId}","${d.state}""""
+      s""""${d.name}","${d.createdAt}","${d.producerId}","${d.producer}","${d.descriptorId}","${d.state}""""
     val asCsvRows: List[Descriptor] => List[String] = Functor[List].lift(asCsvRow)
     val addHeader: List[String] => List[String]     = header :: _
 
