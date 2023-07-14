@@ -67,6 +67,7 @@ object Main extends App with Dependencies {
     tenantUpserter            = tenantProcessService.upsertTenant(bearer)(_)
     revokerCertifiedAttribute = tenantProcessService.revokeCertifiedAttribute(bearer)(_, _)
     institutions <- retrieveAllInstitutions(institutionsRetriever, initPage, List.empty)
+    _            <- verifyInstitutionsCount(institutions)
     action = createAction(institutions, tenants.toList, attributesIndex)
     _ <- processActivations(tenantUpserter, action.activations.grouped(groupDimension).toList)
     _ = logger.info(s"Activated tenants/attributes")
