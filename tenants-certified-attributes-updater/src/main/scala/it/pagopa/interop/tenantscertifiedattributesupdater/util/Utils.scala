@@ -16,6 +16,7 @@ import it.pagopa.interop.tenantmanagement.model.tenant.{PersistentExternalId, Pe
 import it.pagopa.interop.attributeregistryprocess.Utils.kindToBeExcluded
 import it.pagopa.interop.tenantprocess.client.model.{ExternalId, InternalAttributeSeed, InternalTenantSeed}
 import it.pagopa.interop.tenantscertifiedattributesupdater.system.ApplicationConfiguration
+import it.pagopa.interop.tenantscertifiedattributesupdater.util.Errors.InvalidInstitutionsCount
 import org.mongodb.scala.MongoClient
 
 import java.util.UUID
@@ -114,9 +115,10 @@ object Utils {
       )
       .toMap
 
-  final val initPage: Int       = 1
-  final val maxLimit: Int       = 100
-  final val groupDimension: Int = 1000
+  final val initPage: Int                     = 1
+  final val maxLimit: Int                     = 100
+  final val groupDimension: Int               = 1000
+  final val minimumInstitutionsThreshold: Int = 174000
 
   def retrieveAllInstitutions(
     institutionsRetriever: (Int, Int) => Future[Institutions],
@@ -133,6 +135,10 @@ object Utils {
       Future.successful(acc)
     } else retrieveAllInstitutions(institutionsRetriever, page + 1, acc ++ institutions.items)
   )
+
+  def verifyInstitutionsCount(institutions: List[Institution]): Future[Unit] =
+    if (institutions.size < minimumInstitutionsThreshold) Future.failed(InvalidInstitutionsCount(institutions.size))
+    else Future.unit
 
   def processActivations(tenantUpserter: InternalTenantSeed => Future[Unit], list: List[List[InternalTenantSeed]])(
     implicit
