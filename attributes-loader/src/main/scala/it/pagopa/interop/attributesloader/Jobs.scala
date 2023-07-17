@@ -58,7 +58,7 @@ final class Jobs(
     institutions <- getAllPages(100)((page, limit) =>
       partyRegistryService.getInstitutions(Some(page), Some(limit)).map(_.items)
     )
-    _                          = logger.info(s"Institutions retrieved: ${categories.size}")
+    _                          = logger.info(s"Institutions retrieved: ${institutions.size}")
     attributeSeedsInstitutions = institutions.map(i =>
       AttributeSeed(
         code = Option(i.originId),
