@@ -22,7 +22,7 @@ class AttributeRegistryApiServiceSpec extends AnyWordSpecLike with SpecHelper wi
     "succeed with creation of all attributes retrieved from both Categories and Institutions if ReadModel is empty" in {
 
       mockGetCategories(Some(1), Some(50), result = categories)
-      mockGetInstitutions(Some(1), Some(50), result = institutions)
+      mockGetInstitutions(Some(1), Some(1000), result = institutions)
       mockFind[PersistentAttributeDependency.PersistentAttribute](
         "attributes",
         Filters.empty(),
@@ -54,7 +54,7 @@ class AttributeRegistryApiServiceSpec extends AnyWordSpecLike with SpecHelper wi
     "succeed with creation of delta of attributes retrieved from both Categories and Institutions if ReadModel is not empty" in {
 
       mockGetCategories(Some(1), Some(50), result = categories)
-      mockGetInstitutions(Some(1), Some(50), result = institutions)
+      mockGetInstitutions(Some(1), Some(1000), result = institutions)
 
       val attributesfromRM: Seq[PersistentAttributeDependency.PersistentAttribute] =
         Seq[PersistentAttributeDependency.PersistentAttribute](
@@ -131,7 +131,7 @@ class AttributeRegistryApiServiceSpec extends AnyWordSpecLike with SpecHelper wi
     "succeed if no attributes are created when ReadModel already contains them" in {
 
       mockGetCategories(Some(1), Some(50), result = categories)
-      mockGetInstitutions(Some(1), Some(50), result = institutions)
+      mockGetInstitutions(Some(1), Some(1000), result = institutions)
 
       val attributesfromRM: Seq[PersistentAttributeDependency.PersistentAttribute] =
         Seq[PersistentAttributeDependency.PersistentAttribute](

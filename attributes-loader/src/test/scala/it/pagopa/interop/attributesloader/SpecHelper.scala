@@ -7,7 +7,13 @@ import it.pagopa.interop.attributesloader.service.{AttributeRegistryProcessServi
 import it.pagopa.interop.commons.cqrs.service.ReadModelService
 import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
 import it.pagopa.interop.commons.utils.{Digester, ORGANIZATION_ID_CLAIM, USER_ROLES}
-import it.pagopa.interop.partyregistryproxy.client.model.{Categories, Category, Institution, Institutions}
+import it.pagopa.interop.partyregistryproxy.client.model.{
+  Categories,
+  Category,
+  Classification,
+  Institution,
+  Institutions
+}
 import org.mongodb.scala.bson.conversions.Bson
 import org.scalamock.scalatest.MockFactory
 import spray.json._
@@ -52,7 +58,8 @@ trait SpecHelper extends SprayJsonSupport with DefaultJsonProtocol with MockFact
         address = "test",
         zipCode = "49300",
         origin = "IPA",
-        kind = admittedAttributeKind
+        kind = admittedAttributeKind,
+        classification = Classification.AGENCY
       ),
       Institution(
         id = "2222",
@@ -64,7 +71,8 @@ trait SpecHelper extends SprayJsonSupport with DefaultJsonProtocol with MockFact
         address = "test",
         zipCode = "90142",
         origin = "IPA",
-        kind = admittedAttributeKind
+        kind = admittedAttributeKind,
+        classification = Classification.AGENCY
       )
     ),
     2

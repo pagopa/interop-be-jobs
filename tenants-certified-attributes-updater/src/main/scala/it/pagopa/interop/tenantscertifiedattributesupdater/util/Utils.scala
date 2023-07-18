@@ -11,7 +11,7 @@ import it.pagopa.interop.commons.logging.ContextFieldsToLog
 import it.pagopa.interop.commons.signer.service.SignerService
 import it.pagopa.interop.commons.utils.Digester
 import it.pagopa.interop.commons.utils.TypeConversions._
-import it.pagopa.interop.partyregistryproxy.client.model.{Institution, Institutions}
+import it.pagopa.interop.partyregistryproxy.client.model.{Classification, Institution, Institutions}
 import it.pagopa.interop.tenantmanagement.model.tenant.{PersistentExternalId, PersistentTenant}
 import it.pagopa.interop.attributeregistryprocess.Utils.kindToBeExcluded
 import it.pagopa.interop.tenantprocess.client.model.{ExternalId, InternalAttributeSeed, InternalTenantSeed}
@@ -173,10 +173,14 @@ object Utils {
       .map(_ => ())
 
   private def createTenantSeed(institution: Institution): TenantSeed = {
-    val attributesWithoutKind: List[AttributeInfo] = List(
-      AttributeInfo(institution.origin, institution.category, None),
-      AttributeInfo(institution.origin, institution.originId, None)
-    )
+    val attributesWithoutKind: List[AttributeInfo] = institution.classification match {
+      case Classification.AGENCY                  =>
+        List(
+          AttributeInfo(institution.origin, institution.category, None),
+          AttributeInfo(institution.origin, institution.originId, None)
+        )
+      case Classification.AOO | Classification.UO => List(AttributeInfo(institution.origin, institution.category, None))
+    }
 
     // Including only Pubbliche Amministrazioni kind
     val shouldKindBeExcluded: Boolean = kindToBeExcluded.contains(institution.kind)

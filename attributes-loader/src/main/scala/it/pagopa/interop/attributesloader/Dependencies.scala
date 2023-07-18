@@ -2,8 +2,8 @@ package it.pagopa.interop.attributesloader
 
 import akka.actor.typed.ActorSystem
 import it.pagopa.interop.attributeregistryprocess.client.api.AttributeApi
-import it.pagopa.interop.attributesloader.service.{AttributeRegistryProcessInvoker, PartyRegistryInvoker}
 import it.pagopa.interop.attributesloader.service.impl.{AttributeRegistryProcessServiceImpl, PartyRegistryServiceImpl}
+import it.pagopa.interop.attributesloader.service.{AttributeRegistryProcessInvoker, PartyRegistryInvoker}
 import it.pagopa.interop.attributesloader.system.ApplicationConfiguration
 import it.pagopa.interop.commons.cqrs.service.{MongoDbReadModelService, ReadModelService}
 import it.pagopa.interop.commons.jwt.service.InteropTokenGenerator
@@ -11,15 +11,13 @@ import it.pagopa.interop.commons.jwt.service.impl.DefaultInteropTokenGenerator
 import it.pagopa.interop.commons.jwt.{JWTConfiguration, JWTInternalTokenConfig, KID, PrivateKeysKidHolder}
 import it.pagopa.interop.commons.signer.service.SignerService
 import it.pagopa.interop.commons.signer.service.impl.KMSSignerService
-import it.pagopa.interop.commons.utils.TypeConversions.TryOps
-
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Try
-import scala.concurrent.ExecutionContextExecutor
 import it.pagopa.interop.commons.utils.CORRELATION_ID_HEADER
+import it.pagopa.interop.commons.utils.TypeConversions.TryOps
 import it.pagopa.interop.partyregistryproxy.client.api.{CategoryApi, InstitutionApi}
 
 import java.util.UUID
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
+import scala.util.Try
 
 trait Dependencies {
 
