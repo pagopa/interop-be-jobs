@@ -1,6 +1,6 @@
 package it.pagopa.interop.tenantscertifiedattributesupdater
 
-import it.pagopa.interop.partyregistryproxy.client.model.Institution
+import it.pagopa.interop.partyregistryproxy.client.model.{Classification, Institution}
 import it.pagopa.interop.tenantmanagement.model.tenant.{
   PersistentExternalId,
   PersistentTenant,
@@ -44,7 +44,8 @@ object SpecHelper {
     address = "",
     zipCode = "",
     origin = origin,
-    kind = kind
+    kind = kind,
+    classification = Classification.AGENCY
   )
 
 }
