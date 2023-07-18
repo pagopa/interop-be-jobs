@@ -64,11 +64,16 @@ object Main extends App with Dependencies {
     (attributes, tenants) <- getAttributesAndTenants
     attributesIndex           = createAttributesIndex(attributes)
     institutionsRetriever     = partyRegistryProxyService.getInstitutions(bearer)(_, _)
+    aooRetriever              = partyRegistryProxyService.getAOO(bearer)(_, _)
+    uoRetriever               = partyRegistryProxyService.getUO(bearer)(_, _)
     tenantUpserter            = tenantProcessService.upsertTenant(bearer)(_)
     revokerCertifiedAttribute = tenantProcessService.revokeCertifiedAttribute(bearer)(_, _)
     institutions <- retrieveAllInstitutions(institutionsRetriever, initPage, List.empty)
-    _            <- verifyInstitutionsCount(institutions)
-    action = createAction(institutions, tenants.toList, attributesIndex)
+    aoo          <- retrieveAllInstitutions(aooRetriever, initPage, List.empty)
+    uo           <- retrieveAllInstitutions(uoRetriever, initPage, List.empty)
+    allInstitutions = institutions ++ aoo ++ uo
+    _ <- verifyInstitutionsCount(allInstitutions)
+    action = createAction(allInstitutions, tenants.toList, attributesIndex)
     _ <- processActivations(tenantUpserter, action.activations.grouped(groupDimension).toList)
     _ = logger.info(s"Activated tenants/attributes")
     _ <- processRevocations(revokerCertifiedAttribute, action.revocations.toList)
