@@ -8,4 +8,8 @@ trait PartyRegistryProxyService {
   def getInstitutions(bearerToken: String)(page: Int, limit: Int)(implicit
     contexts: Seq[(String, String)]
   ): Future[Institutions]
+
+  def getAOO(bearerToken: String)(page: Int, limit: Int)(implicit contexts: Seq[(String, String)]): Future[Institutions]
+
+  def getUO(bearerToken: String)(page: Int, limit: Int)(implicit contexts: Seq[(String, String)]): Future[Institutions]
 }
