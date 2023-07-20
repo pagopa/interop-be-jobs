@@ -60,9 +60,7 @@ object Main extends App {
       case Failure(e) => logger.error("Eservice version archiver job failed with exception", e)
       case Success(_) => logger.info("Completed eservice version archiver job")
     }
-    .andThen { _ =>
-      readModelService.close()
-    }
+    .andThen(_ => blockingThreadPool.shutdown())
 
   Await.ready(init, Duration.Inf)
 }
