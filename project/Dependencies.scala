@@ -86,8 +86,14 @@ object Dependencies {
     lazy val agreementsModels =
       namespace %% "interop-be-agreement-management-models" % agreementManagementVersion
 
+    lazy val agreementsEvents =
+      namespace %% "interop-be-agreement-process-events" % agreementProcessVersion  
+
     lazy val purposeModels =
       namespace %% "interop-be-purpose-management-models" % purposeManagementVersion
+
+    lazy val purposeProcessClient =
+      namespace %% "interop-be-purpose-process-client" % purposeProcessVersion
 
     lazy val partyManagement =
       namespace %% "interop-selfcare-party-management-client" % partyManagementClientVersion
@@ -309,6 +315,25 @@ object Dependencies {
       pagopa.cqrs                       % Compile,
       scalamock.core                    % Test,
       scalatest.core                    % Test
+    ).map(_.withSources.withJavadoc)
+    
+    lazy val purposesArchiver: Seq[ModuleID] = Seq(
+      akka.actor                       % Compile,
+      akka.actorTyped                  % Compile,
+      cats.core                        % Compile,
+      circe.core                       % Compile,
+      circe.generic                    % Compile,
+      circe.parser                     % Compile,
+      logback.classic                  % Compile,
+      pagopa.agreementProcessClient    % Compile,
+      pagopa.purposeProcessClient      % Compile,
+      pagopa.agreementsEvents          % Compile,
+      pagopa.commons                   % Compile,
+      pagopa.queue                     % Compile,
+      pagopa.jwt                       % Compile,
+      pagopa.signer                    % Compile,
+      scalamock.core                   % Test,
+      scalatest.core                   % Test
     ).map(_.withSources.withJavadoc)
   }
 }

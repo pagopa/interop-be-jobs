@@ -24,6 +24,7 @@ lazy val certifiedMailSenderModelsModuleName         = "certified-mail-sender-mo
 lazy val eservicesMonitoringExporterModuleName       = "eservices-monitoring-exporter"
 lazy val privacyNoticesUpdaterModuleName             = "privacy-notices-updater"
 lazy val eserviceDescriptorsArchiverModuleName       = "eservice-descriptors-archiver"
+lazy val purposesArchiverModuleName                  = "purposes-archiver"
 
 cleanFiles += baseDirectory.value / certifiedMailSenderModuleName / "target"
 cleanFiles += baseDirectory.value / certifiedMailSenderModelsModuleName / "target"
@@ -33,6 +34,8 @@ cleanFiles += baseDirectory.value / tokenDetailsPersisterModuleName / "target"
 
 cleanFiles += baseDirectory.value / certifiedMailSenderModuleName / "target"
 cleanFiles += baseDirectory.value / certifiedMailSenderModelsModuleName / "target"
+
+cleanFiles += baseDirectory.value / purposesArchiverModuleName / "target"
 
 lazy val sharedSettings: SettingsDefinition = Seq(
   scalafmtOnCompile        := true,
@@ -54,6 +57,21 @@ lazy val attributesLoader = project
     Docker / packageName := s"${name.value}",
     sharedSettings,
     libraryDependencies ++= Dependencies.Jars.attributesLoader,
+    publish / skip       := true,
+    publish              := (()),
+    publishLocal         := (()),
+    publishTo            := None
+  )
+  .enablePlugins(JavaAppPackaging)
+  .enablePlugins(DockerPlugin)
+
+lazy val purposesArchiver = project
+  .in(file(purposesArchiverModuleName))
+  .settings(
+    name                 := "interop-be-purposes-archiver",
+    Docker / packageName := s"${name.value}",
+    sharedSettings,
+    libraryDependencies ++= Dependencies.Jars.purposesArchiver,
     publish / skip       := true,
     publish              := (()),
     publishLocal         := (()),
@@ -231,6 +249,7 @@ lazy val jobs = project
     eservicesMonitoringExporter,
     privacyNoticesUpdater,
     tenantsAttributesChecker,
-    eserviceDescriptorsArchiver
+    eserviceDescriptorsArchiver,
+    purposesArchiver
   )
   .settings(Docker / publish := {})
