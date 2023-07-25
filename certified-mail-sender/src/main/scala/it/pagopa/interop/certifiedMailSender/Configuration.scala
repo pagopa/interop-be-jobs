@@ -10,7 +10,7 @@ import pureconfig.generic.auto._
 
 import scala.concurrent.Future
 
-final case class QueueConfiguration(url: String, maxConsumeBatchSize: Int, visibilityTimeoutInSeconds: Int)
+final case class QueueConfiguration(url: String, visibilityTimeoutInSeconds: Int)
 
 final case class Configuration(queue: QueueConfiguration, mail: MailConfiguration)
 object Configuration {
