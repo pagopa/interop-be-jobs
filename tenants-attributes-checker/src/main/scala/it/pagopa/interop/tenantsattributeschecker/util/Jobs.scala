@@ -1,5 +1,6 @@
 package it.pagopa.interop.tenantsattributeschecker.util
 
+import it.pagopa.interop.agreementprocess.client.model.CompactTenant
 import it.pagopa.interop.certifiedMailSender.InteropEnvelope
 import it.pagopa.interop.commons.utils.TypeConversions._
 import it.pagopa.interop.commons.utils.service.UUIDSupplier
@@ -11,6 +12,7 @@ import it.pagopa.interop.tenantmanagement.model.tenant.{
 import it.pagopa.interop.tenantsattributeschecker.ApplicationConfiguration.{blockingEc, context}
 import it.pagopa.interop.tenantsattributeschecker.service._
 import it.pagopa.interop.tenantsattributeschecker.service.impl._
+import it.pagopa.interop.tenantsattributeschecker.util.Adapters.DependencyTenantAttributeWrapper
 import it.pagopa.interop.tenantsattributeschecker.util.errors._
 
 import java.util.UUID
@@ -40,7 +42,10 @@ class Jobs(
     Future
       .traverseWithLatch(10)(data) { case (tenant, attribute, verifiedBy) =>
         for {
-          _ <- agreementProcess.computeAgreementsByAttribute(tenant.id, attribute.id)
+          _ <- agreementProcess.computeAgreementsByAttribute(
+            attribute.id,
+            CompactTenant(tenant.id, tenant.attributes.map(_.toAgreementApi))
+          )
           _ <- sendEnvelope(attribute.id, tenant, verifiedBy, consumerExpiredTemplate, producerExpiredTemplate)
         } yield ()
       }
