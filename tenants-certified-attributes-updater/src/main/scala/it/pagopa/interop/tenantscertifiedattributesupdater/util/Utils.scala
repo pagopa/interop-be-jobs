@@ -96,7 +96,9 @@ object Utils {
         }
 
     val revocations: Map[PersistentExternalId, List[AttributeInfo]] =
-      fromTenant.toList
+      fromTenant
+        .filter(_._2.exists(_.revocationTimestamp.isEmpty))
+        .toList
         .flatMap { case (externalId, attrs) => attrs.tupleLeft(externalId) }
         .flatMap(extractRevocable(fromRegistry).tupled)
         .groupMap[PersistentExternalId, AttributeInfo](_._1)(_._2)
