@@ -1,10 +1,11 @@
 package it.pagopa.interop.eservicesmonitoringexporter.model
 
-import spray.json.DefaultJsonProtocol._
-import it.pagopa.interop.catalogmanagement.{model => DependencyCatalog}
 import it.pagopa.interop.catalogmanagement.model.persistence.JsonFormats._
+import it.pagopa.interop.catalogmanagement.{model => DependencyCatalog}
 import it.pagopa.interop.commons.utils.SprayCommonFormats.uuidFormat
+import spray.json.DefaultJsonProtocol._
 import spray.json._
+
 import java.util.UUID
 
 final case class EServiceDB(
@@ -13,7 +14,7 @@ final case class EServiceDB(
   technology: DependencyCatalog.CatalogItemTechnology,
   producerId: UUID,
   producerName: String,
-  descriptors: Seq[DescriptorDB]
+  descriptor: DescriptorDB
 )
 
 final case class DescriptorDB(
