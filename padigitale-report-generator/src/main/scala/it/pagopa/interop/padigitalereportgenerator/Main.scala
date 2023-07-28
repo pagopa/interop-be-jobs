@@ -1,6 +1,5 @@
 package it.pagopa.interop.padigitalereportgenerator
 
-import cats.implicits._
 import com.typesafe.scalalogging.Logger
 import it.pagopa.interop.commons.cqrs.service.{MongoDbReadModelService, ReadModelService}
 import it.pagopa.interop.commons.files.service.FileManager
@@ -16,6 +15,10 @@ import java.util.UUID
 import it.pagopa.interop.commons.logging._
 import com.typesafe.scalalogging.LoggerTakingImplicit
 import it.pagopa.interop.commons.utils.CORRELATION_ID_HEADER
+import it.pagopa.interop.commons.utils.TypeConversions._
+import scala.util.Success
+import scala.util.Failure
+import it.pagopa.interop.catalogmanagement.model.Draft
 
 object Main extends App {
 
@@ -41,8 +44,24 @@ object Main extends App {
   def execution(): Future[Unit] = for {
     eServices <- Utils.retrieveAllEServices(ReadModelQueries.getEServices, 0, Seq.empty)
     measurableEServices = eServices.filter(hasMeasurableEServices)
-    metrics <- measurableEServices.flatTraverse(Utils.createMetrics)
-    _       <- fileWriters.paDigitaleWriter(metrics)
+    toParse             = measurableEServices.toList
+    _ <- Future
+      .sequentially(toParse)(eservice => {
+        val f = Utils.createMetrics
+        f(eservice).transform {
+          case Failure(e) =>
+            logger.error(
+              s"[${e.getMessage()}] Parsing failed ${eservice.id} - ${eservice.name} - ${eservice.technology} - ${eservice.descriptors
+                  .filterNot(_.state == Draft)
+                  .map(_.interface.fold("No interface!")(_.path))
+                  .mkString("\n", "\n", "\n")}"
+            )
+            Success(Nil)
+          case Success(x) => Success(x)
+        }
+      })
+      .map(_.flatten)
+    // _       <- fileWriters.paDigitaleWriter(metrics)
   } yield ()
 
   def run(): Future[Unit] = execution()

@@ -32,6 +32,8 @@
         <appender-ref ref="STDERR" />
     </appender>
 
+    
+    <logger name="org.mongodb.driver" level="OFF" />
     <logger name="it.pagopa.interop" level="INFO" />
 
     <root name="application" level="INFO">
