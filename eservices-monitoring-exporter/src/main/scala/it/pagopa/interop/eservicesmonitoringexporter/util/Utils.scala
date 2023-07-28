@@ -25,21 +25,19 @@ object Utils {
   }
 
   implicit class EServiceDBWrapper(private val e: EServiceDB) extends AnyVal {
-    def toPersistent(allowedProducers: Option[List[UUID]]): Seq[EService] =
-      e.descriptors.map(descriptor =>
-        EService(
-          name = e.name,
-          eserviceId = e.id,
-          versionId = descriptor.id,
-          technology = e.technology.toApi.toString,
-          state = allowedProducers.fold(descriptor.state.toApi.toString)(
-            _.find(_ == e.producerId).map(_ => descriptor.state.toApi.toString).getOrElse(INACTIVE.toString)
-          ),
-          basePath = descriptor.serverUrls,
-          producerName = e.producerName,
-          versionNumber = descriptor.version.toInt,
-          audience = descriptor.audience
-        )
+    def toPersistent(allowedProducers: Option[List[UUID]]): EService =
+      EService(
+        name = e.name,
+        eserviceId = e.id,
+        versionId = e.descriptor.id,
+        technology = e.technology.toApi.toString,
+        state = allowedProducers.fold(e.descriptor.state.toApi.toString)(
+          _.find(_ == e.producerId).map(_ => e.descriptor.state.toApi.toString).getOrElse(INACTIVE.toString)
+        ),
+        basePath = e.descriptor.serverUrls,
+        producerName = e.producerName,
+        versionNumber = e.descriptor.version.toInt,
+        audience = e.descriptor.audience
       )
   }
 }
