@@ -1,7 +1,7 @@
 package it.pagopa.interop.tenantscertifiedattributesupdater.util
 
 import akka.actor.typed.ActorSystem
-import cats.implicits._
+import cats.syntax.all._
 import com.typesafe.scalalogging.LoggerTakingImplicit
 import it.pagopa.interop.attributeregistrymanagement.model.persistence.attribute.{Certified, PersistentAttribute}
 import it.pagopa.interop.commons.jwt.service.InteropTokenGenerator
@@ -96,12 +96,9 @@ object Utils {
         }
 
     val revocations: Map[PersistentExternalId, List[AttributeInfo]] =
-      fromTenant
-        .filter { case (_, attrs) =>
-          attrs.exists(_.revocationTimestamp.isEmpty)
-        }
-        .toList
+      fromTenant.toList
         .flatMap { case (externalId, attrs) => attrs.tupleLeft(externalId) }
+        .filter { case (_, attr) => attr.revocationTimestamp.isEmpty }
         .flatMap(extractRevocable(fromRegistry).tupled)
         .groupMap[PersistentExternalId, AttributeInfo](_._1)(_._2)
 
