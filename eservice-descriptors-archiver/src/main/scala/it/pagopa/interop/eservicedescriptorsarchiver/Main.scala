@@ -41,16 +41,17 @@ object Main extends App {
 
   private val job: JobExecution = JobExecution(readModelService, CatalogProcessServiceImpl(blockingEC))
 
+  private final val chunkSize: Int = 10
+
   logger.info("Starting eservice versions archiver job")
 
   private val execution: Future[Unit] =
-    sqsHandler.processAllRawMessages(ApplicationConfiguration.maxNumberOfMessagesPerFile) {
-      (messages: List[String], receipts: List[String]) =>
-        logger.info(s"Saving ${messages.size} messages")
-        for {
-          _ <- Future.traverse(messages)(job.archiveEservice)
-          _ <- Future.traverse(receipts)(sqsHandler.deleteMessage)
-        } yield ()
+    sqsHandler.processAllRawMessages(chunkSize) { (messages: List[String], receipts: List[String]) =>
+      logger.info(s"Saving ${messages.size} messages")
+      for {
+        _ <- Future.traverse(messages)(job.archiveEservice)
+        _ <- Future.traverse(receipts)(sqsHandler.deleteMessage)
+      } yield ()
     }
 
   private def executionLoop(): Future[Unit] = execution.flatMap(_ => executionLoop())

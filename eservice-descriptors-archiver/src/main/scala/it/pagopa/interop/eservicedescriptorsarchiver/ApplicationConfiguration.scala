@@ -9,8 +9,6 @@ object ApplicationConfiguration {
 
   val archivingEservicesQueueUrl: String =
     config.getString("eservice-descriptors-archiver.queue.archiving-eservices-queue-url")
-  val maxNumberOfMessagesPerFile: Int    =
-    config.getInt("eservice-descriptors-archiver.queue.max-number-of-messages-per-file")
   val visibilityTimeout: Int = config.getInt("eservice-descriptors-archiver.queue.visibility-timeout-in-seconds")
 
   val agreementsCollection: String = config.getString("read-model.collections.agreements")
