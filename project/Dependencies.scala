@@ -59,6 +59,9 @@ object Dependencies {
     lazy val catalogModels =
       namespace %% "interop-be-catalog-management-models" % catalogManagementVersion
 
+    lazy val catalogProcess =
+      namespace %% "interop-be-catalog-process-client" % catalogProcessVersion
+
     lazy val catalogManagement =
       namespace %% "interop-be-catalog-management-client" % catalogManagementVersion
 
@@ -300,6 +303,20 @@ object Dependencies {
       scalatest.core                   % Test
     ).map(_.withSources.withJavadoc)
 
+    lazy val eserviceDescriptorsArchiver: Seq[ModuleID] = Seq(
+      cats.core                         % Compile,
+      circe.parser                      % Compile,
+      logback.classic                   % Compile,
+      mongodb.scalaDriver               % Compile,
+      pagopa.catalogProcess             % Compile,
+      pagopa.catalogModels              % Compile,
+      pagopa.agreementsModels           % Compile,
+      pagopa.commons                    % Compile,
+      pagopa.cqrs                       % Compile,
+      scalamock.core                    % Test,
+      scalatest.core                    % Test
+    ).map(_.withSources.withJavadoc)
+    
     lazy val purposesArchiver: Seq[ModuleID] = Seq(
       akka.actor                       % Compile,
       akka.actorTyped                  % Compile,

@@ -23,6 +23,7 @@ lazy val certifiedMailSenderModuleName               = "certified-mail-sender"
 lazy val certifiedMailSenderModelsModuleName         = "certified-mail-sender-models"
 lazy val eservicesMonitoringExporterModuleName       = "eservices-monitoring-exporter"
 lazy val privacyNoticesUpdaterModuleName             = "privacy-notices-updater"
+lazy val eserviceDescriptorsArchiverModuleName       = "eservice-descriptors-archiver"
 lazy val purposesArchiverModuleName                  = "purposes-archiver"
 
 cleanFiles += baseDirectory.value / certifiedMailSenderModuleName / "target"
@@ -219,6 +220,21 @@ lazy val tenantsAttributesChecker = project
   .enablePlugins(JavaAppPackaging)
   .enablePlugins(DockerPlugin)
 
+lazy val eserviceDescriptorsArchiver = project
+  .in(file(eserviceDescriptorsArchiverModuleName))
+  .settings(
+    name                 := "interop-be-eservice-descriptors-archiver",
+    Docker / packageName := s"${name.value}",
+    sharedSettings,
+    libraryDependencies ++= Dependencies.Jars.eserviceDescriptorsArchiver,
+    publish / skip       := true,
+    publish              := (()),
+    publishLocal         := (()),
+    publishTo            := None
+  )
+  .enablePlugins(JavaAppPackaging)
+  .enablePlugins(DockerPlugin)
+
 lazy val jobs = project
   .in(file("."))
   .aggregate(
@@ -233,6 +249,7 @@ lazy val jobs = project
     eservicesMonitoringExporter,
     privacyNoticesUpdater,
     tenantsAttributesChecker,
+    eserviceDescriptorsArchiver,
     purposesArchiver
   )
   .settings(Docker / publish := {})
