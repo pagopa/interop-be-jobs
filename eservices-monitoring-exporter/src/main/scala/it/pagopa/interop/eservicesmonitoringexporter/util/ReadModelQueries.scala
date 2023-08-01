@@ -5,6 +5,7 @@ import it.pagopa.interop.commons.cqrs.service.ReadModelService
 import it.pagopa.interop.eservicesmonitoringexporter.model.EServiceDB
 import it.pagopa.interop.eservicesmonitoringexporter.model.EServiceDB._
 import org.mongodb.scala.Document
+import org.mongodb.scala.bson.BsonArray
 import org.mongodb.scala.model.Aggregates.{`match`, lookup, project, unwind}
 import org.mongodb.scala.model.Filters
 import org.mongodb.scala.model.Projections._
@@ -22,6 +23,9 @@ object ReadModelQueries {
       collectionsConfiguration.eservices,
       Seq(
         `match`(Filters.ne("data.descriptors.state", Draft.toString)),
+        unwind("$data.descriptors"),
+        // This should never occur, but dirty data exists in test env
+        `match`(Filters.ne("data.descriptors.serverUrls", BsonArray.fromIterable(Nil))),
         lookup(collectionsConfiguration.tenants, "data.producerId", "data.id", "tenants"),
         unwind("$tenants"),
         project(
@@ -33,9 +37,9 @@ object ReadModelQueries {
             computed("producerId", "$tenants.data.id"),
             computed("producerName", "$tenants.data.name"),
             computed(
-              "descriptors",
+              "descriptor",
               Document(
-                """{$map:{"input":"$data.descriptors","as":"descriptor","in":{"id":"$$descriptor.id","state":"$$descriptor.state","serverUrls":"$$descriptor.serverUrls","audience":"$$descriptor.audience","version":"$$descriptor.version"}}}"""
+                """{"id":"$data.descriptors.id","state":"$data.descriptors.state","serverUrls":"$data.descriptors.serverUrls","audience":"$data.descriptors.audience","version":"$data.descriptors.version"}"""
               )
             )
           )
