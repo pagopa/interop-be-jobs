@@ -13,6 +13,8 @@ import it.pagopa.interop.metricsreportgenerator.util.models.Descriptor
 import cats.Functor
 import com.typesafe.scalalogging.LoggerTakingImplicit
 import it.pagopa.interop.commons.logging._
+import scala.util.{Try, Failure, Success}
+import scala.collection.immutable.SortedMap
 
 class Jobs(config: Configuration, fileManager: FileManager, readModel: ReadModelService)(implicit
   logger: LoggerTakingImplicit[ContextFieldsToLog],
@@ -25,44 +27,55 @@ class Jobs(config: Configuration, fileManager: FileManager, readModel: ReadModel
 
     def allTokensPaths(): Future[List[String]] = fileManager.listFiles(config.tokens.bucket)(config.tokens.basePath)
 
-    def getTokens(path: String): Future[List[String]] = fileManager
+    // There's no point in doing this operation in a Future stack as it isn't I/O nor CPU bound
+    def extractDataFromToken(token: String): Try[String] = Try {
+      val fields: Map[String, JsValue] = token.parseJson.asJsObject.fields
+      val aId: String                  = fields
+        .get("agreementId")
+        .collect { case JsString(x) => x }
+        .getOrElse(throw GenericError("Missing agreementId field in token"))
+      val pId: String                  = fields
+        .get("purposeId")
+        .collect { case JsString(x) => x }
+        .getOrElse(throw GenericError("Missing purposeId field in token"))
+      val dateL: Long                  = fields
+        .get("issuedAt")
+        .collect { case JsNumber(x) => x.toLong }
+        .getOrElse(throw GenericError("Missing issuedAt field in token"))
+      val time: OffsetDateTime         = dateL.toOffsetDateTime.get
+
+      s""""$aId","$pId","${time.getYear}","${time.getMonthValue}","${time.getDayOfMonth}""""
+    }
+
+    // UGLY but performance and memory efficient
+    def createReport(tokens: List[String]): Try[Map[String, Int]] = {
+      val map = new scala.collection.mutable.HashMap[String, Int]
+      for (token <- tokens) {
+        extractDataFromToken(token) match {
+          case Success(rh) =>
+            map.updateWith(rh) {
+              case Some(x) => Some(x + 1)
+              case None    => Some(1)
+            }
+          case Failure(ex) => return Failure(ex)
+        }
+      }
+      Success(map.toMap)
+    }
+
+    def getTokensFromFile(path: String): Future[List[String]] = fileManager
       .getFile(config.tokens.bucket)(path)
       .map(bs => new String(bs).split('\n').toList)
 
-    def getTokenInfo(token: String): Future[(String, String, OffsetDateTime)] = for {
-      fields <- Future(token.parseJson.asJsObject.fields)
-      aId    <- fields
-        .get("agreementId")
-        .collect { case JsString(x) => x }
-        .toFuture(GenericError("Missing agreementId field in token"))
-      pId    <- fields
-        .get("purposeId")
-        .collect { case JsString(x) => x }
-        .toFuture(GenericError("Missing purposeId field in token"))
-      dateL  <- fields
-        .get("issuedAt")
-        .collect { case JsNumber(x) => x.toLong }
-        .toFuture(GenericError("Missing issuedAt field in token"))
-      date   <- dateL.toOffsetDateTime.toFuture
-    } yield (aId, pId, date)
+    def createSingleReportFromFile(path: String): Future[Map[String, Int]] =
+      getTokensFromFile(path).flatMap(createReport(_).toFuture)
 
-    def allTokenInfo(): Future[List[(String, String, OffsetDateTime)]] = allTokensPaths().flatMap(paths =>
-      Future
-        .traverseWithLatch(config.collections.maxParallelism)(paths)(path =>
-          getTokens(path).flatMap(Future.traverse(_)(getTokenInfo))
-        )
-        .map(_.flatten)
-    )
-
-    allTokenInfo().map(
-      _.map { case (aId, pId, time) => (aId, pId, time.getYear, time.getMonthValue, time.getDayOfMonth) }
-        .groupMapReduce(identity)(_ => 1)(_ + _) // count occurrences
-        .toList
-        .sortBy { case ((aId, pId, y, m, d), _) => (aId, pId, y, m, d) }
-        // to make it prettier you should let me use Shapeless or Scala 3
-        .map { case ((aId, pId, y, m, d), c) => s""""$aId","$pId","$y","$m","$d","$c"""" }
-        .prepended("agreementId,purposeId,year,month,day,tokencount")
-    )
+    for {
+      paths   <- allTokensPaths()
+      reports <- Future.traverseWithLatch(10)(paths)(createSingleReportFromFile)
+      reportAsMap = reports.foldLeft(SortedMap.empty[String, Int])(_.concat(_))
+      report      = reportAsMap.map { case (k, v) => s"""$k,"$v"""" }.toList
+    } yield "agreementId,purposeId,year,month,day,tokencount" :: report
   }
 
   def getAgreementRecord(implicit ec: ExecutionContext): Future[List[String]] = {
