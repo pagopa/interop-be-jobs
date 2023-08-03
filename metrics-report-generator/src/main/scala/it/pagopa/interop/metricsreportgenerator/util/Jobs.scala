@@ -67,12 +67,15 @@ class Jobs(config: Configuration, fileManager: FileManager, readModel: ReadModel
       .getFile(config.tokens.bucket)(path)
       .map(bs => new String(bs).split('\n').toList)
 
-    def createSingleReportFromFile(path: String): Future[Map[String, Int]] =
+    def createSingleReportFromFile(path: String): Future[Map[String, Int]] = {
+      println(".")
       getTokensFromFile(path).flatMap(createReport(_).toFuture)
+    }
 
     for {
-      paths   <- allTokensPaths()
-      reports <- Future.traverseWithLatch(10)(paths)(createSingleReportFromFile)
+      paths <- allTokensPaths()
+      _ = println(paths.size)
+      reports <- Future.traverseWithLatch(50)(paths)(createSingleReportFromFile)
       reportAsMap = reports.foldLeft(SortedMap.empty[String, Int])(_.concat(_))
       report      = reportAsMap.map { case (k, v) => s"""$k,"$v"""" }.toList
     } yield "agreementId,purposeId,year,month,day,tokencount" :: report
