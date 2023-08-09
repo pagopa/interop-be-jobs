@@ -1,11 +1,13 @@
 package it.pagopa.interop.attributesloader.service
 
-import it.pagopa.interop.attributeregistryprocess.client.model.{Attribute, AttributeSeed}
+import it.pagopa.interop.attributeregistryprocess.client.model.{Attribute, CertifiedAttributeSeed}
 
 import scala.concurrent.Future
 
 trait AttributeRegistryProcessService {
 
-  def createAttribute(attributeSeed: AttributeSeed)(implicit contexts: Seq[(String, String)]): Future[Attribute]
+  def createInternalCertifiedAttribute(attributeSeed: CertifiedAttributeSeed)(implicit
+    contexts: Seq[(String, String)]
+  ): Future[Attribute]
 
 }
