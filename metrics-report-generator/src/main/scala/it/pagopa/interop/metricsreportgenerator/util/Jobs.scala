@@ -2,86 +2,19 @@ package it.pagopa.interop.metricsreportgenerator.util
 
 import cats.syntax.all._
 import scala.concurrent.Future
-import java.time.OffsetDateTime
-import it.pagopa.interop.commons.files.service.FileManager
-import spray.json._
-import it.pagopa.interop.commons.utils.TypeConversions._
-import it.pagopa.interop.commons.utils.errors.GenericComponentErrors.GenericError
 import it.pagopa.interop.commons.cqrs.service.ReadModelService
 import scala.concurrent.ExecutionContext
 import it.pagopa.interop.metricsreportgenerator.util.models.Descriptor
 import cats.Functor
 import com.typesafe.scalalogging.LoggerTakingImplicit
 import it.pagopa.interop.commons.logging._
-import scala.util.{Try, Failure, Success}
-import scala.collection.immutable.SortedMap
 
-class Jobs(config: Configuration, fileManager: FileManager, readModel: ReadModelService)(implicit
+class Jobs(config: Configuration, readModel: ReadModelService)(implicit
   logger: LoggerTakingImplicit[ContextFieldsToLog],
   context: ContextFieldsToLog
 ) {
 
-  def getTokensData(implicit ec: ExecutionContext): Future[List[String]] = {
-
-    logger.info("Gathering tokens information")
-
-    def allTokensPaths(): Future[List[String]] = fileManager.listFiles(config.tokens.bucket)(config.tokens.basePath)
-
-    // There's no point in doing this operation in a Future stack as it isn't I/O nor CPU bound
-    def extractDataFromToken(token: String): Try[String] = Try {
-      val fields: Map[String, JsValue] = token.parseJson.asJsObject.fields
-      val aId: String                  = fields
-        .get("agreementId")
-        .collect { case JsString(x) => x }
-        .getOrElse(throw GenericError("Missing agreementId field in token"))
-      val pId: String                  = fields
-        .get("purposeId")
-        .collect { case JsString(x) => x }
-        .getOrElse(throw GenericError("Missing purposeId field in token"))
-      val dateL: Long                  = fields
-        .get("issuedAt")
-        .collect { case JsNumber(x) => x.toLong }
-        .getOrElse(throw GenericError("Missing issuedAt field in token"))
-      val time: OffsetDateTime         = dateL.toOffsetDateTime.get
-
-      s""""$aId","$pId","${time.getYear}","${time.getMonthValue}","${time.getDayOfMonth}""""
-    }
-
-    // UGLY but performance and memory efficient
-    def createReport(tokens: List[String]): Try[Map[String, Int]] = {
-      val map = new scala.collection.mutable.HashMap[String, Int]
-      for (token <- tokens) {
-        extractDataFromToken(token) match {
-          case Success(rh) =>
-            map.updateWith(rh) {
-              case Some(x) => Some(x + 1)
-              case None    => Some(1)
-            }
-          case Failure(ex) => return Failure(ex)
-        }
-      }
-      Success(map.toMap)
-    }
-
-    def getTokensFromFile(path: String): Future[List[String]] = fileManager
-      .getFile(config.tokens.bucket)(path)
-      .map(bs => new String(bs).split('\n').toList)
-
-    def createSingleReportFromFile(path: String): Future[Map[String, Int]] = {
-      println(".")
-      getTokensFromFile(path).flatMap(createReport(_).toFuture)
-    }
-
-    for {
-      paths <- allTokensPaths()
-      _ = println(paths.size)
-      reports <- Future.traverseWithLatch(50)(paths)(createSingleReportFromFile)
-      reportAsMap = reports.foldLeft(SortedMap.empty[String, Int])(_.concat(_))
-      report      = reportAsMap.map { case (k, v) => s"""$k,"$v"""" }.toList
-    } yield "agreementId,purposeId,year,month,day,tokencount" :: report
-  }
-
-  def getAgreementRecord(implicit ec: ExecutionContext): Future[List[String]] = {
+  def getAgreementRecord(implicit ec: ExecutionContext): Future[String] = {
     logger.info("Gathering Agreements Information")
 
     ReadModelQueries
@@ -89,7 +22,7 @@ class Jobs(config: Configuration, fileManager: FileManager, readModel: ReadModel
       .zip(ReadModelQueries.getAllPurposes(config.collections, readModel))
       .map { case (agreements, purposes) =>
         val header = "eserviceId,eservice,producer,consumer,agreementId,purposes,purposeIds"
-        header :: agreements.toList.map { a =>
+        (header :: agreements.toList.map { a =>
           val (purposeIds, purposeNames): (Seq[String], Seq[String]) = purposes
             .filter(p => p.consumerId == a.consumerId && p.eserviceId == a.eserviceId)
             .map(p => (p.purposeId, p.name))
@@ -103,11 +36,11 @@ class Jobs(config: Configuration, fileManager: FileManager, readModel: ReadModel
             purposeNames.mkString("§"),
             purposeIds.mkString("§")
           ).map(s => s"\"$s\"").mkString(",")
-        }
+        }).mkString("\n")
       }
   }
 
-  def getDescriptorsRecord(implicit ec: ExecutionContext): Future[List[String]] = {
+  def getDescriptorsRecord(implicit ec: ExecutionContext): Future[String] = {
     logger.info("Gathering Descriptors Information")
 
     val header: String                              = "name,createdAt,producerId,producer,descriptorId,state"
@@ -122,20 +55,7 @@ class Jobs(config: Configuration, fileManager: FileManager, readModel: ReadModel
       .getAllDescriptors(config.collections, readModel)
       .map(_.filter(_.isActive).toList)
       .map(asCsv)
-  }
-
-  def store(fileName: String, lines: List[String])(implicit ec: ExecutionContext): Future[List[String]] = {
-    val path: String = List(config.storage.bucket, config.storage.basePath, fileName)
-      .map(_.stripMargin('/'))
-      .mkString("/")
-      .replaceAll("/+", "/")
-
-    logger.info(s"Storing ${lines.size} lines at $path")
-    fileManager
-      .storeBytes(config.storage.bucket, config.storage.basePath.stripPrefix("/"), fileName)(
-        lines.mkString("\n").getBytes()
-      )
-      .map(_ => lines)
+      .map(_.mkString("\n"))
   }
 
 }

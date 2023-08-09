@@ -87,7 +87,7 @@ object Dependencies {
       namespace %% "interop-be-agreement-management-models" % agreementManagementVersion
 
     lazy val agreementsEvents =
-      namespace %% "interop-be-agreement-process-events" % agreementProcessVersion  
+      namespace %% "interop-be-agreement-process-events" % agreementProcessVersion
 
     lazy val purposeModels =
       namespace %% "interop-be-purpose-management-models" % purposeManagementVersion
@@ -104,7 +104,7 @@ object Dependencies {
     lazy val certifiedMailSenderModels =
       namespace %% "interop-be-certified-mail-sender-models" % certifiedMailSenderModelsVersion
 
-    lazy val commons = namespace %% "interop-commons-utils"         % commonsVersion
+    lazy val commons = namespace %% "interop-commons-utils"         % "add_future_combiner-SNAPSHOT"
     lazy val mail    = namespace %% "interop-commons-mail-manager"  % commonsVersion
     lazy val jwt     = namespace %% "interop-commons-jwt"           % commonsVersion
     lazy val signer  = namespace %% "interop-commons-signer"        % commonsVersion
@@ -304,36 +304,36 @@ object Dependencies {
     ).map(_.withSources.withJavadoc)
 
     lazy val eserviceDescriptorsArchiver: Seq[ModuleID] = Seq(
-      cats.core                         % Compile,
-      circe.parser                      % Compile,
-      logback.classic                   % Compile,
-      mongodb.scalaDriver               % Compile,
-      pagopa.catalogProcess             % Compile,
-      pagopa.catalogModels              % Compile,
-      pagopa.agreementsModels           % Compile,
-      pagopa.commons                    % Compile,
-      pagopa.cqrs                       % Compile,
-      scalamock.core                    % Test,
-      scalatest.core                    % Test
+      cats.core               % Compile,
+      circe.parser            % Compile,
+      logback.classic         % Compile,
+      mongodb.scalaDriver     % Compile,
+      pagopa.catalogProcess   % Compile,
+      pagopa.catalogModels    % Compile,
+      pagopa.agreementsModels % Compile,
+      pagopa.commons          % Compile,
+      pagopa.cqrs             % Compile,
+      scalamock.core          % Test,
+      scalatest.core          % Test
     ).map(_.withSources.withJavadoc)
-    
+
     lazy val purposesArchiver: Seq[ModuleID] = Seq(
-      akka.actor                       % Compile,
-      akka.actorTyped                  % Compile,
-      cats.core                        % Compile,
-      circe.core                       % Compile,
-      circe.generic                    % Compile,
-      circe.parser                     % Compile,
-      logback.classic                  % Compile,
-      pagopa.agreementProcessClient    % Compile,
-      pagopa.purposeProcessClient      % Compile,
-      pagopa.agreementsEvents          % Compile,
-      pagopa.commons                   % Compile,
-      pagopa.queue                     % Compile,
-      pagopa.jwt                       % Compile,
-      pagopa.signer                    % Compile,
-      scalamock.core                   % Test,
-      scalatest.core                   % Test
+      akka.actor                    % Compile,
+      akka.actorTyped               % Compile,
+      cats.core                     % Compile,
+      circe.core                    % Compile,
+      circe.generic                 % Compile,
+      circe.parser                  % Compile,
+      logback.classic               % Compile,
+      pagopa.agreementProcessClient % Compile,
+      pagopa.purposeProcessClient   % Compile,
+      pagopa.agreementsEvents       % Compile,
+      pagopa.commons                % Compile,
+      pagopa.queue                  % Compile,
+      pagopa.jwt                    % Compile,
+      pagopa.signer                 % Compile,
+      scalamock.core                % Test,
+      scalatest.core                % Test
     ).map(_.withSources.withJavadoc)
   }
 }
