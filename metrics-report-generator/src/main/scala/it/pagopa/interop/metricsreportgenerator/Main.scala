@@ -24,16 +24,18 @@ object Main extends App {
 
   logger.info("Starting metrics report generator job")
 
-  def resources(implicit
-    ec: ExecutionContext
-  ): Future[(ExecutorService, ExecutionContextExecutor, FileManager, ReadModelService, Jobs, Configuration)] = for {
+  def resources(implicit ec: ExecutionContext): Future[
+    (ExecutorService, ExecutionContextExecutor, FileManager, S3, ReadModelService, Jobs, TokensJobs, Configuration)
+  ] = for {
     config <- Configuration.read()
     es     <- Future(Executors.newFixedThreadPool(1.max(Runtime.getRuntime.availableProcessors() - 1)))
     blockingEC = ExecutionContext.fromExecutor(es)
-    fm   <- Future(FileManager.get(FileManager.S3)(blockingEC))
-    rm   <- Future(new MongoDbReadModelService(config.readModel))
-    jobs <- Future(new Jobs(config, fm, rm))
-  } yield (es, blockingEC, fm, rm, jobs, config)
+    fm        <- Future(FileManager.get(FileManager.S3)(blockingEC))
+    s3        <- Future(new S3(fm, config))
+    rm        <- Future(new MongoDbReadModelService(config.readModel))
+    jobs      <- Future(new Jobs(config, rm))
+    tokensJob <- Future(new TokensJobs(s3))
+  } yield (es, blockingEC, fm, s3, rm, jobs, tokensJob, config)
 
   def sendMail(config: Configuration): List[MailAttachment] => Future[Unit] = ats => {
     val mail: TextMail =
@@ -41,35 +43,34 @@ object Main extends App {
     InteropMailer.from(config.mailer).send(mail)
   }
 
-  def asAttachment(fileName: String, lines: List[String]): MailAttachment =
-    MailAttachment(fileName, lines.mkString("\n").getBytes(), "text/csv")
+  def asAttachment(fileName: String, content: Array[Byte]): MailAttachment =
+    MailAttachment(fileName, content, "text/csv")
 
-  def execution(jobs: Jobs, config: Configuration)(implicit blockingEC: ExecutionContextExecutor): Future[Unit] = {
+  def execution(jobs: Jobs, tokensJob: TokensJobs, s3: S3, config: Configuration)(implicit
+    blockingEC: ExecutionContextExecutor
+  ): Future[Unit] = {
     val env: String = config.environment
 
-    val agreementsJob: Future[MailAttachment] = jobs.getAgreementRecord
-      .flatMap(jobs.store(s"agreements-${env}.csv", _))
-      .map(asAttachment(s"agreements-${env}.csv", _))
+    val agreementsJobResult: Future[MailAttachment] = jobs.getAgreementRecord
+      .map(_.getBytes)
+      .flatMap(bs => s3.saveAgreementsReport(bs).map(_ => asAttachment(s"agreements-${env}.csv", bs)))
 
-    val tokensJob: Future[MailAttachment] = jobs.getTokensData
-      .flatMap(jobs.store(s"tokens-${env}.csv", _))
-      .map(asAttachment(s"tokens-${env}.csv", _))
+    val activeDescriptorsJobResult: Future[MailAttachment] = jobs.getDescriptorsRecord
+      .map(_.getBytes)
+      .flatMap(bs => s3.saveActiveDescriptorsReport(bs).map(_ => asAttachment(s"active-descriptors-${env}.csv", bs)))
 
-    val jobD: Future[List[String]] = jobs.getDescriptorsRecord
+    val tokensJobResult: Future[MailAttachment] = tokensJob.getTokensData
+      .map(_.getBytes)
+      .flatMap(bs => s3.saveTokensReport(bs).map(_ => asAttachment(s"tokens-${env}.csv", bs)))
 
-    val activeDescriptorsJob: Future[MailAttachment] = jobD.flatMap(ads =>
-      jobs.store(s"active-descriptors-${env}.csv", ads).map(_ => asAttachment(s"active-descriptors-${env}.csv", ads))
-    )
-
-    val attachments: Future[List[MailAttachment]] =
-      Future.foldLeft(List(agreementsJob, tokensJob, activeDescriptorsJob))(List.empty[MailAttachment])(_.prepended(_))
-
-    attachments.flatMap(sendMail(config))
+    Future
+      .sequence(List(agreementsJobResult, tokensJobResult, activeDescriptorsJobResult))
+      .flatMap(sendMail(config))
   }
 
   def job(implicit ec: ExecutionContext): Future[Unit] = resources.flatMap {
-    case (es, blockingEC, fm, rm, jobs, config) =>
-      execution(jobs, config)(blockingEC)
+    case (es, blockingEC, fm, s3, rm, jobs, tokensJob, config) =>
+      execution(jobs, tokensJob, s3, config)(blockingEC)
         .andThen { case Failure(ex) => logger.error("Metrics job got an error", ex) }
         .andThen { _ =>
           es.shutdown()
