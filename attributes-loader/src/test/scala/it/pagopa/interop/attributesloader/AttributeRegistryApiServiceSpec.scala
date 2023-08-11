@@ -3,7 +3,7 @@ package it.pagopa.interop.attributesloader
 import cats.syntax.all._
 import com.mongodb.client.model.Filters
 import it.pagopa.interop.attributeregistrymanagement.model.persistence.{attribute => PersistentAttributeDependency}
-import it.pagopa.interop.attributeregistryprocess.client.model.{Attribute, CertifiedAttributeSeed}
+import it.pagopa.interop.attributeregistryprocess.client.model.{Attribute, InternalCertifiedAttributeSeed}
 import it.pagopa.interop.commons.utils.Digester
 import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
@@ -33,7 +33,7 @@ class AttributeRegistryApiServiceSpec extends AnyWordSpecLike with SpecHelper wi
         result = Seq[PersistentAttributeDependency.PersistentAttribute]()
       )
 
-      val expectedDelta: Set[CertifiedAttributeSeed] = certifiedAttributeSeeds.toSet
+      val expectedDelta: Set[InternalCertifiedAttributeSeed] = certifiedAttributeSeeds.toSet
 
       expectedDelta.foreach(expectedCertifiedAttributeSeed =>
         mockCreateCertifiedAttribute(
@@ -88,15 +88,15 @@ class AttributeRegistryApiServiceSpec extends AnyWordSpecLike with SpecHelper wi
         result = attributesfromRM
       )
 
-      val expectedDelta: Set[CertifiedAttributeSeed] = Set[CertifiedAttributeSeed](
-        CertifiedAttributeSeed(code = "OPA", description = "OPA", origin = "IPA", name = "OPA"),
-        CertifiedAttributeSeed(
+      val expectedDelta: Set[InternalCertifiedAttributeSeed] = Set[InternalCertifiedAttributeSeed](
+        InternalCertifiedAttributeSeed(code = "OPA", description = "OPA", origin = "IPA", name = "OPA"),
+        InternalCertifiedAttributeSeed(
           code = Digester.toSha256(admittedAttributeKind.getBytes()),
           description = admittedAttributeKind,
           origin = "IPA",
           name = admittedAttributeKind
         ),
-        CertifiedAttributeSeed(code = "205942", description = "205942", origin = "IPA", name = "205942")
+        InternalCertifiedAttributeSeed(code = "205942", description = "205942", origin = "IPA", name = "205942")
       )
 
       expectedDelta.foreach(expectedCertifiedAttributeSeed =>
@@ -179,7 +179,7 @@ class AttributeRegistryApiServiceSpec extends AnyWordSpecLike with SpecHelper wi
         result = attributesfromRM
       )
 
-      val expectedDelta: Set[CertifiedAttributeSeed] = Set[CertifiedAttributeSeed]()
+      val expectedDelta: Set[InternalCertifiedAttributeSeed] = Set[InternalCertifiedAttributeSeed]()
 
       expectedDelta.foreach(expectedCertifiedAttributeSeed =>
         mockCreateCertifiedAttribute(

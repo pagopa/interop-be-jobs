@@ -2,7 +2,7 @@ package it.pagopa.interop.attributesloader
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import com.typesafe.scalalogging.{Logger, LoggerTakingImplicit}
-import it.pagopa.interop.attributeregistryprocess.client.model.{Attribute, CertifiedAttributeSeed}
+import it.pagopa.interop.attributeregistryprocess.client.model.{Attribute, InternalCertifiedAttributeSeed}
 import it.pagopa.interop.attributesloader.service.{AttributeRegistryProcessService, PartyRegistryService}
 import it.pagopa.interop.commons.cqrs.service.ReadModelService
 import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
@@ -78,23 +78,23 @@ trait SpecHelper extends SprayJsonSupport with DefaultJsonProtocol with MockFact
     2
   )
 
-  val certifiedAttributeSeeds: Seq[CertifiedAttributeSeed] = Seq(
-    CertifiedAttributeSeed(code = "YADA", description = "YADA", origin = "IPA", name = "YADA"),
-    CertifiedAttributeSeed(code = "OPA", description = "OPA", origin = "IPA", name = "OPA"),
-    CertifiedAttributeSeed(
+  val certifiedAttributeSeeds: Seq[InternalCertifiedAttributeSeed] = Seq(
+    InternalCertifiedAttributeSeed(code = "YADA", description = "YADA", origin = "IPA", name = "YADA"),
+    InternalCertifiedAttributeSeed(code = "OPA", description = "OPA", origin = "IPA", name = "OPA"),
+    InternalCertifiedAttributeSeed(
       code = Digester.toSha256(admittedAttributeKind.getBytes()),
       description = admittedAttributeKind,
       origin = "IPA",
       name = admittedAttributeKind
     ),
-    CertifiedAttributeSeed(code = "104532", description = "104532", origin = "IPA", name = "104532"),
-    CertifiedAttributeSeed(code = "205942", description = "205942", origin = "IPA", name = "205942")
+    InternalCertifiedAttributeSeed(code = "104532", description = "104532", origin = "IPA", name = "104532"),
+    InternalCertifiedAttributeSeed(code = "205942", description = "205942", origin = "IPA", name = "205942")
   )
 
-  def mockCreateCertifiedAttribute(attributeSeed: CertifiedAttributeSeed, result: Attribute)(implicit
+  def mockCreateCertifiedAttribute(attributeSeed: InternalCertifiedAttributeSeed, result: Attribute)(implicit
     contexts: Seq[(String, String)]
   ): Unit = (mockAttributeRegistryProcessService
-    .createInternalCertifiedAttribute(_: CertifiedAttributeSeed)(_: Seq[(String, String)]))
+    .createInternalCertifiedAttribute(_: InternalCertifiedAttributeSeed)(_: Seq[(String, String)]))
     .expects(attributeSeed, contexts)
     .once()
     .returns(Future.successful(result)): Unit

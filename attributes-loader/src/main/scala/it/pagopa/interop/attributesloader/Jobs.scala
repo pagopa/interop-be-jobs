@@ -5,7 +5,7 @@ import com.typesafe.scalalogging.LoggerTakingImplicit
 import it.pagopa.interop.attributeregistrymanagement.model.persistence.JsonFormats._
 import it.pagopa.interop.attributeregistrymanagement.model.persistence.attribute.PersistentAttribute
 import it.pagopa.interop.attributeregistryprocess.Utils.kindToBeExcluded
-import it.pagopa.interop.attributeregistryprocess.client.model.CertifiedAttributeSeed
+import it.pagopa.interop.attributeregistryprocess.client.model.InternalCertifiedAttributeSeed
 import it.pagopa.interop.attributesloader.service.{AttributeRegistryProcessService, PartyRegistryService}
 import it.pagopa.interop.commons.cqrs.service.ReadModelService
 import it.pagopa.interop.commons.logging.ContextFieldsToLog
@@ -32,7 +32,7 @@ final class Jobs(
     _                             = logger.info(s"Categories retrieved: ${categories.size}")
     attributeSeedsCategoriesNames = categories
       .map(c =>
-        CertifiedAttributeSeed(
+        InternalCertifiedAttributeSeed(
           code = c.code,
           description = c.name, // passing the name since no description exists at party-registry-proxy
           origin = c.origin,
@@ -44,7 +44,7 @@ final class Jobs(
       .distinctBy(_.kind)
       .filterNot(c => kindToBeExcluded.contains(c.kind)) // Including only Pubbliche Amministrazioni
       .map(c =>
-        CertifiedAttributeSeed(
+        InternalCertifiedAttributeSeed(
           code = Digester.toSha256(c.kind.getBytes),
           description = c.kind,
           origin = c.origin,
@@ -59,21 +59,26 @@ final class Jobs(
     )
     _                          = logger.info(s"Institutions retrieved: ${institutions.size}")
     attributeSeedsInstitutions = institutions.map(i =>
-      CertifiedAttributeSeed(code = i.originId, description = i.description, origin = i.origin, name = i.description)
+      InternalCertifiedAttributeSeed(
+        code = i.originId,
+        description = i.description,
+        origin = i.origin,
+        name = i.description
+      )
     )
 
     _ <- addNewAttributes(attributeSeedsCategories ++ attributeSeedsInstitutions)
   } yield ()
 
-  private def addNewAttributes(attributesSeeds: Seq[CertifiedAttributeSeed])(implicit
+  private def addNewAttributes(attributesSeeds: Seq[InternalCertifiedAttributeSeed])(implicit
     contexts: Seq[(String, String)],
     logger: LoggerTakingImplicit[ContextFieldsToLog],
     ec: ExecutionContext
   ): Future[Unit] = {
 
     // calculating the delta of attributes
-    def delta(attrs: List[PersistentAttribute]): Set[CertifiedAttributeSeed] =
-      attributesSeeds.foldLeft[Set[CertifiedAttributeSeed]](Set.empty)((attributesDelta, seed) =>
+    def delta(attrs: List[PersistentAttribute]): Set[InternalCertifiedAttributeSeed] =
+      attributesSeeds.foldLeft[Set[InternalCertifiedAttributeSeed]](Set.empty)((attributesDelta, seed) =>
         attrs
           .find(persisted => seed.origin.some == persisted.origin && seed.code.some == persisted.code)
           .fold(attributesDelta + seed)(_ => attributesDelta)
