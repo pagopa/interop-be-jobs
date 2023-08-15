@@ -2,11 +2,13 @@ package it.pagopa.interop.metricsreportgenerator.util.models
 
 import java.time.LocalDate
 import it.pagopa.interop.commons.utils.errors.GenericComponentErrors.GenericError
-import it.pagopa.interop.commons.utils.TypeConversions._
 import scala.util._
 import spray.json.DefaultJsonProtocol._
 import spray.json._
 import cats.syntax.all._
+import java.time.Instant
+import java.util.TimeZone
+import java.time.ZoneId
 
 final case class Agreement(
   activationDate: Option[String],
@@ -44,35 +46,36 @@ object Descriptor {
 }
 
 final case class Report private (map: Map[Report.RecordValue, Int]) {
-  def add(record: String): Try[Report] = Report
+  def addIfInRange(after: Instant, before: Instant)(record: String): Try[Report] = Report
     .extractDataFromToken(record)
-    .map(key =>
-      Report(map.updatedWith(key) {
-        case Some(x) => Option(x + 1)
-        case None    => Option(1)
-      })
-    )
-
-  def addMany(records: List[String]): Try[Report] = {
-    def loop(report: Report)(rest: List[String]): Try[Report] = rest match {
-      case head :: next => report.add(head).flatMap(loop(_)(next))
-      case Nil          => Success(report)
+    .map { case (aid, pid, instant) =>
+      if (instant.isAfter(after) && instant.isBefore(before)) {
+        Report(map.updatedWith((aid, pid, instant.atZone(Report.utc).toLocalDate())) {
+          case Some(x) => Option(x + 1)
+          case None    => Option(1)
+        })
+      } else this
     }
 
-    loop(this)(records)
-  }
+  def addAllTokensIssuedInRange(after: Instant, before: Instant)(records: List[String]): Try[Report] =
+    records.foldLeft(Try(this)) { case (report, record) =>
+      report.flatMap(_.addIfInRange(after, before)(record))
+    }
 
   def lastDate: LocalDate = map.keySet.map { case (_, _, date) => date }.max
 
   def allButLastDate: Report = Report(map.filterNot { case ((_, _, date), _) => date.isEqual(lastDate) })
 
-  def render: String = (Report.header :: map.map(Report.renderLine).toList).mkString("\n")
+  def render: String = (Report.header :: map.map(Report.renderLine).toList.sorted).mkString("\n")
 }
 
 object Report {
-  type RecordValue = (String, String, LocalDate)
+  type RecordValue    = (String, String, LocalDate)
+  type RawRecordValue = (String, String, Instant)
 
-  private def extractDataFromToken(token: String): Try[RecordValue] = Try {
+  val utc: ZoneId = TimeZone.getTimeZone("UTC").toZoneId()
+
+  private def extractDataFromToken(token: String): Try[RawRecordValue] = Try {
     val fields: Map[String, JsValue] = token.parseJson.asJsObject.fields
     val aId: String                  = fields
       .get("agreementId")
@@ -86,7 +89,7 @@ object Report {
       .get("issuedAt")
       .collect { case JsNumber(x) => x.toLong }
       .getOrElse(throw GenericError("Missing or broken issuedAt field in token"))
-    val time: LocalDate              = dateL.toOffsetDateTime.get.toLocalDate()
+    val time: Instant                = Instant.ofEpochMilli(dateL)
     (aId, pId, time)
   }
 
