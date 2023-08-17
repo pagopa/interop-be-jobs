@@ -42,7 +42,7 @@ class S3(fileManager: FileManager, config: Configuration)(implicit
       .concat("/")
       .concat(date.format(DateTimeFormatter.BASIC_ISO_DATE))
 
-    logger.info(s"Getting tokens at ${config.tokens.bucket} ${path}")
+    logger.debug(s"Getting tokens in ${config.tokens.bucket}/${path}")
 
     fileManager.listFiles(config.tokens.bucket)(path)
   }

@@ -31,11 +31,14 @@ class TokensJobs(s3: S3)(implicit
   private def updateReport(afterThan: Instant, beforeThan: Instant)(
     report: Report
   )(tokenFilesPath: List[String]): Future[Report] = {
-    val getTokenLines: String => Future[List[String]] =
-      path => s3.getToken(path).map(bs => new String(bs).split('\n').toList)
 
-    Future // TODO configure parallelism from conf
-      .accumulateLeft(10)(tokenFilesPath)(getTokenLines)(Try(report)) { case (tryReport, records) =>
+    val getTokenLines: String => Future[List[String]] = path => {
+      logger.info(s"Reading tokens in $path")
+      s3.getToken(path).map(bs => new String(bs).split('\n').toList)
+    }
+
+    Future
+      .accumulateLeft(16)(tokenFilesPath.sorted)(getTokenLines)(Try(report)) { case (tryReport, records) =>
         tryReport.flatMap(_.addAllTokensIssuedInRange(afterThan, beforeThan)(records))
       }
       .flatMap(_.toFuture)
