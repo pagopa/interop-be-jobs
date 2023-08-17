@@ -104,7 +104,7 @@ object Dependencies {
     lazy val certifiedMailSenderModels =
       namespace %% "interop-be-certified-mail-sender-models" % certifiedMailSenderModelsVersion
 
-    lazy val commons = namespace %% "interop-commons-utils"         % "add_future_combiner-SNAPSHOT"
+    lazy val commons = namespace %% "interop-commons-utils"         % commonsVersion
     lazy val mail    = namespace %% "interop-commons-mail-manager"  % commonsVersion
     lazy val jwt     = namespace %% "interop-commons-jwt"           % commonsVersion
     lazy val signer  = namespace %% "interop-commons-signer"        % commonsVersion

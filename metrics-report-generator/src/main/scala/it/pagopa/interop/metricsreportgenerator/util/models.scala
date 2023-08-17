@@ -7,7 +7,6 @@ import spray.json.DefaultJsonProtocol._
 import spray.json._
 import cats.syntax.all._
 import java.time.Instant
-import java.util.TimeZone
 import java.time.ZoneId
 
 final case class Agreement(
@@ -50,7 +49,7 @@ final case class Report private (map: Map[Report.RecordValue, Int]) {
     .extractDataFromToken(record)
     .map { case (aid, pid, instant) =>
       if (instant.isAfter(after) && instant.isBefore(before)) {
-        Report(map.updatedWith((aid, pid, instant.atZone(Report.utc).toLocalDate())) {
+        Report(map.updatedWith((aid, pid, instant.atZone(Report.europeRome).toLocalDate())) {
           case Some(x) => Option(x + 1)
           case None    => Option(1)
         })
@@ -73,7 +72,7 @@ object Report {
   type RecordValue    = (String, String, LocalDate)
   type RawRecordValue = (String, String, Instant)
 
-  val utc: ZoneId = TimeZone.getTimeZone("UTC").toZoneId()
+  val europeRome: ZoneId = ZoneId.of("Europe/Rome")
 
   private def extractDataFromToken(token: String): Try[RawRecordValue] = Try {
     val fields: Map[String, JsValue] = token.parseJson.asJsObject.fields

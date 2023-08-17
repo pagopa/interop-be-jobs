@@ -12,6 +12,8 @@ import scala.jdk.CollectionConverters._
 import java.util.stream.Collectors
 import it.pagopa.interop.metricsreportgenerator.util.models.Report
 import java.time.Instant
+import java.time.OffsetDateTime
+import java.time.temporal.ChronoUnit
 
 class TokensJobs(s3: S3)(implicit
   logger: LoggerTakingImplicit[ContextFieldsToLog],
@@ -49,7 +51,8 @@ class TokensJobs(s3: S3)(implicit
     // * INCLUDED, but we list them one by one using today's midnight.
     // * In this way this job should theoretically be idempotent.
 
-    val beforeThan: Instant = Instant.from(LocalDate.now().atStartOfDay(Report.utc))
+    val beforeThan: Instant =
+      Instant.from(OffsetDateTime.now(Report.europeRome).truncatedTo(ChronoUnit.DAYS))
 
     s3.readTokensReport()
       .flatMap {
@@ -59,7 +62,7 @@ class TokensJobs(s3: S3)(implicit
         case Some(report) =>
           logger.info("Tokens report found, calculating delta")
           val lastDate                     = report.lastDate
-          val afterThan                    = Instant.from(lastDate.atStartOfDay(Report.utc))
+          val afterThan                    = Instant.from(lastDate.atStartOfDay(Report.europeRome))
           val missingDays: List[LocalDate] = datesUntilToday(lastDate)
           val prunedReport: Report         = report.allButLastDate
 
