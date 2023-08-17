@@ -19,8 +19,16 @@ import java.time.OffsetDateTime
 import spray.json._
 import it.pagopa.interop.commons.utils.errors.GenericComponentErrors.GenericError
 import java.time.ZoneId
+import scala.util.Try
+import cats.syntax.all._
+import scala.util.Failure
+import scala.util.Success
+import java.time._
+import java.util.stream.Collectors
+import scala.jdk.CollectionConverters._
+import java.time.format.DateTimeFormatter
 
-object Jobs {
+object Jobs extends DefaultJsonProtocol {
 
   private val maxParallelism: Int = 1.max(Runtime.getRuntime().availableProcessors() - 1)
 
@@ -107,35 +115,102 @@ object Jobs {
         PurposesData(publishedPurposes.size, differentConsumers, publishedPurposesOverTime)
     }
 
-  def getTokensData(fileManager: FileManager, config: TokensBucketConfiguration): Future[TokensData] = {
+  def getTokensData(
+    fileManager: FileManager,
+    config: TokensBucketConfiguration,
+    storageConfiguration: StorageBucketConfiguration
+  ): Future[TokensData] = {
 
-    def getIssueDate(token: String): Future[OffsetDateTime] =
-      Future(token.parseJson.asJsObject)
-        .flatMap(_.fields.get("issuedAt").toFuture(GenericError("Missing issuedAt field in token")))
-        .flatMap {
-          case JsNumber(value) => value.toLong.toOffsetDateTime.toFuture
-          case _               => Future.failed(GenericError("issuedAt should be a number"))
+    def getTokensReport(): Future[Option[TokensReport]] =
+      fileManager
+        .getFile(storageConfiguration.bucket)(storageConfiguration.tokensPartialReportFilename)
+        .transform {
+          case Failure(_) => Success(Option.empty[TokensReport])
+          case Success(s) => TokensReport.from(new String(s)).map(_.some)
         }
+
+    def datesUntilToday(startDate: LocalDate): List[LocalDate] = startDate
+      .datesUntil(LocalDate.now())
+      .collect(Collectors.toList[LocalDate]())
+      .asScala
+      .toList
+      .appended(LocalDate.now())
+
+    def getIssueDate(token: String): Try[OffsetDateTime] = Try {
+      token.parseJson.asJsObject.fields.get("issuedAt").fold(throw GenericError("Missing issuedAt field in token")) {
+        case JsNumber(value) => value.toLong.toOffsetDateTime.get
+        case _               => throw GenericError("issuedAt should be a number")
+      }
+    }
 
     def allTokensPaths(): Future[List[fileManager.StorageFilePath]] =
       fileManager.listFiles(config.bucket)(config.basePath)
 
-    def getTokens(path: String): Future[List[String]] =
+    def getTokenLines(path: String): Future[List[String]] =
       fileManager.getFile(config.bucket)(path).map(bs => new String(bs).split('\n').toList)
 
     val threeDaysAgo: OffsetDateTime = OffsetDateTime.now(ZoneId.of("UTC")).minusDays(3)
 
-    allTokensPaths()
-      .flatMap(paths =>
-        Future.traverseWithLatch(maxParallelism)(paths)(path =>
-          // * This is safe to do w/o max parallelism as it's not blocking
-          getTokens(path).flatMap(tokens => Future.traverse(tokens)(getIssueDate))
-        )
+    def updateReport(afterThan: Instant, beforeThan: Instant)(
+      report: TokensReport
+    )(tokenFilesPath: List[String]): Future[TokensReport] = {
+
+      Future
+        .accumulateLeft(10)(tokenFilesPath)(getTokenLines)(Try(report)) { case (tryReport, records) =>
+          for {
+            r     <- tryReport
+            times <- records.traverse(getIssueDate)
+            timesToAdd = times.filter(i => i.toInstant.isAfter(afterThan) && i.toInstant.isBefore(beforeThan))
+          } yield timesToAdd.foldLeft(r)(_.addDate(_))
+        }
+        .flatMap(_.toFuture)
+    }
+
+    def listTokensForDay(date: LocalDate): Future[List[String]] = {
+      val path = config.basePath
+        .stripPrefix("/")
+        .stripSuffix("/")
+        .concat("/")
+        .concat(date.format(DateTimeFormatter.BASIC_ISO_DATE))
+
+      println(s"Getting tokens at ${config.bucket} ${path}")
+
+      fileManager.listFiles(config.bucket)(path)
+    }
+
+    val beforeThan: Instant = Instant.from(LocalDate.now().atStartOfDay(ZoneId.of("Europe/Rome")))
+
+    def newReport(): Future[TokensReport] = getTokensReport().flatMap {
+      case None         =>
+        println("Tokens report not found, calculating from scratch")
+        allTokensPaths().flatMap(updateReport(Instant.MIN, beforeThan)(TokensReport.empty))
+      case Some(report) =>
+        println("Tokens report found, calculating delta")
+        val lastDate                     = report.lastDate()
+        val afterThan                    = Instant.from(lastDate.atStartOfDay(ZoneId.of("Europe/Rome")))
+        val missingDays: List[LocalDate] = datesUntilToday(lastDate)
+        val prunedReport: TokensReport   = report.allButLastDate
+
+        Future
+          .traverseWithLatch(10)(missingDays)(listTokensForDay)
+          .map(_.flatten)
+          .flatMap(updateReport(afterThan, beforeThan)(prunedReport))
+    }
+
+    def store(data: Array[Byte]): Future[Unit] = {
+      println(s"Storing report")
+      fileManager
+        .storeBytes(storageConfiguration.bucket, "/", storageConfiguration.tokensPartialReportFilename)(data)
+        .map(_ => ())
+    }
+
+    newReport()
+      .flatMap(report =>
+        store(report.saveFormat.getBytes).map { _ =>
+          val issueTimes: List[OffsetDateTime] = report.toList
+          TokensData(issueTimes.size, issueTimes.count(_.isAfter(threeDaysAgo)), Graph.getGraphPoints(10)(issueTimes))
+        }
       )
-      .map { xs =>
-        val issueTimes: List[OffsetDateTime] = xs.flatten
-        TokensData(issueTimes.size, issueTimes.count(_.isAfter(threeDaysAgo)), Graph.getGraphPoints(10)(issueTimes))
-      }
   }
 
   private def getAll[T](limit: Int)(get: (Int, Int) => Future[Seq[T]]): Future[Seq[T]] = {

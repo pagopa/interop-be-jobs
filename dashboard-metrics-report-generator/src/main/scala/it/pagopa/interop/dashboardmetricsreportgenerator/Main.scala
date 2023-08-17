@@ -61,7 +61,7 @@ object Main extends App {
     val tenantsF: Future[TenantsData]         = Jobs.getTenantsData(rm, pm, config.collections, config.overrides)
     val agreementsF: Future[AgreementsData]   = Jobs.getAgreementsData(rm, config.collections)
     val purposesF: Future[PurposesData]       = Jobs.getPurposesData(rm, config.collections)
-    val tokensF: Future[TokensData]           = Jobs.getTokensData(fm, config.tokensStorage)
+    val tokensF: Future[TokensData]           = Jobs.getTokensData(fm, config.tokensStorage, config.storage)
 
     for {
       descriptors <- descriptorsF
