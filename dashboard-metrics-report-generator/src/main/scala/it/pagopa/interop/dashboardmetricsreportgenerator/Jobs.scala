@@ -27,6 +27,7 @@ import java.time._
 import java.util.stream.Collectors
 import scala.jdk.CollectionConverters._
 import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 
 object Jobs extends DefaultJsonProtocol {
 
@@ -121,13 +122,12 @@ object Jobs extends DefaultJsonProtocol {
     storageConfiguration: StorageBucketConfiguration
   ): Future[TokensData] = {
 
-    def getTokensReport(): Future[Option[TokensReport]] =
-      fileManager
-        .getFile(storageConfiguration.bucket)(storageConfiguration.tokensPartialReportFilename)
-        .transform {
-          case Failure(_) => Success(Option.empty[TokensReport])
-          case Success(s) => TokensReport.from(new String(s)).map(_.some)
-        }
+    def getTokensReport(): Future[Option[TokensReport]] = fileManager
+      .getFile(storageConfiguration.bucket)(storageConfiguration.tokensPartialReportFilename)
+      .transform {
+        case Failure(_) => Success(Option.empty[TokensReport])
+        case Success(s) => TokensReport.from(new String(s)).map(_.some)
+      }
 
     def datesUntilToday(startDate: LocalDate): List[LocalDate] = startDate
       .datesUntil(LocalDate.now())
@@ -138,7 +138,7 @@ object Jobs extends DefaultJsonProtocol {
 
     def getIssueDate(token: String): Try[OffsetDateTime] = Try {
       token.parseJson.asJsObject.fields.get("issuedAt").fold(throw GenericError("Missing issuedAt field in token")) {
-        case JsNumber(value) => value.toLong.toOffsetDateTime.get
+        case JsNumber(value) => value.toLong.toEuropeRomeOffsetDateTime.get
         case _               => throw GenericError("issuedAt should be a number")
       }
     }
@@ -149,7 +149,8 @@ object Jobs extends DefaultJsonProtocol {
     def getTokenLines(path: String): Future[List[String]] =
       fileManager.getFile(config.bucket)(path).map(bs => new String(bs).split('\n').toList)
 
-    val threeDaysAgo: OffsetDateTime = OffsetDateTime.now(ZoneId.of("UTC")).minusDays(3)
+    val threeDaysAgo: OffsetDateTime =
+      OffsetDateTime.now(ZoneId.of("Europe/Rome")).truncatedTo(ChronoUnit.DAYS).minusDays(3)
 
     def updateReport(afterThan: Instant, beforeThan: Instant)(
       report: TokensReport
