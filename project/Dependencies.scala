@@ -214,8 +214,7 @@ object Dependencies {
       pagopa.mail              % Compile,
       pagopa.cqrs              % Compile,
       pagopa.file              % Compile,
-      pagopa.parser            % Compile,
-      scalameta.munit          % Test
+      pagopa.parser            % Compile
     ).map(_.withSources.withJavadoc)
 
     lazy val dashboardMetricsReportGenerator: Seq[ModuleID] = Seq(
