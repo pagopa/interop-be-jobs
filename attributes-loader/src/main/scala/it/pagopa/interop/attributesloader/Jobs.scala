@@ -1,10 +1,11 @@
 package it.pagopa.interop.attributesloader
 
+import cats.syntax.all._
 import com.typesafe.scalalogging.LoggerTakingImplicit
 import it.pagopa.interop.attributeregistrymanagement.model.persistence.JsonFormats._
 import it.pagopa.interop.attributeregistrymanagement.model.persistence.attribute.PersistentAttribute
 import it.pagopa.interop.attributeregistryprocess.Utils.kindToBeExcluded
-import it.pagopa.interop.attributeregistryprocess.client.model.{AttributeKind, AttributeSeed}
+import it.pagopa.interop.attributeregistryprocess.client.model.InternalCertifiedAttributeSeed
 import it.pagopa.interop.attributesloader.service.{AttributeRegistryProcessService, PartyRegistryService}
 import it.pagopa.interop.commons.cqrs.service.ReadModelService
 import it.pagopa.interop.commons.logging.ContextFieldsToLog
@@ -31,11 +32,10 @@ final class Jobs(
     _                             = logger.info(s"Categories retrieved: ${categories.size}")
     attributeSeedsCategoriesNames = categories
       .map(c =>
-        AttributeSeed(
-          code = Option(c.code),
-          kind = AttributeKind.CERTIFIED,
+        InternalCertifiedAttributeSeed(
+          code = c.code,
           description = c.name, // passing the name since no description exists at party-registry-proxy
-          origin = Option(c.origin),
+          origin = c.origin,
           name = c.name
         )
       )
@@ -44,11 +44,10 @@ final class Jobs(
       .distinctBy(_.kind)
       .filterNot(c => kindToBeExcluded.contains(c.kind)) // Including only Pubbliche Amministrazioni
       .map(c =>
-        AttributeSeed(
-          code = Option(Digester.toSha256(c.kind.getBytes)),
-          kind = AttributeKind.CERTIFIED,
+        InternalCertifiedAttributeSeed(
+          code = Digester.toSha256(c.kind.getBytes),
           description = c.kind,
-          origin = Option(c.origin),
+          origin = c.origin,
           name = c.kind
         )
       )
@@ -60,11 +59,10 @@ final class Jobs(
     )
     _                          = logger.info(s"Institutions retrieved: ${institutions.size}")
     attributeSeedsInstitutions = institutions.map(i =>
-      AttributeSeed(
-        code = Option(i.originId),
-        kind = AttributeKind.CERTIFIED,
+      InternalCertifiedAttributeSeed(
+        code = i.originId,
         description = i.description,
-        origin = Option(i.origin),
+        origin = i.origin,
         name = i.description
       )
     )
@@ -72,17 +70,17 @@ final class Jobs(
     _ <- addNewAttributes(attributeSeedsCategories ++ attributeSeedsInstitutions)
   } yield ()
 
-  private def addNewAttributes(attributesSeeds: Seq[AttributeSeed])(implicit
+  private def addNewAttributes(attributesSeeds: Seq[InternalCertifiedAttributeSeed])(implicit
     contexts: Seq[(String, String)],
     logger: LoggerTakingImplicit[ContextFieldsToLog],
     ec: ExecutionContext
   ): Future[Unit] = {
 
     // calculating the delta of attributes
-    def delta(attrs: List[PersistentAttribute]): Set[AttributeSeed] =
-      attributesSeeds.foldLeft[Set[AttributeSeed]](Set.empty)((attributesDelta, seed) =>
+    def delta(attrs: List[PersistentAttribute]): Set[InternalCertifiedAttributeSeed] =
+      attributesSeeds.foldLeft[Set[InternalCertifiedAttributeSeed]](Set.empty)((attributesDelta, seed) =>
         attrs
-          .find(persisted => seed.origin == persisted.origin && seed.code == persisted.code)
+          .find(persisted => seed.origin.some == persisted.origin && seed.code.some == persisted.code)
           .fold(attributesDelta + seed)(_ => attributesDelta)
       )
 
@@ -94,7 +92,7 @@ final class Jobs(
       // The client must log in case of errors
       _ <- Future.parCollectWithLatch(100)(deltaAttributes.toList)(seed =>
         attributeRegistryProcessService
-          .createAttribute(seed)
+          .createInternalCertifiedAttribute(seed)
           .map(_ => ())
           .recover(ex =>
             logger
