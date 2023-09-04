@@ -79,7 +79,7 @@ object Jobs {
           everBeenActiveStates.contains(a.state)
 
         val actuallyActiveAgreements: Int = agreements.count(isActive)
-        val differentConsumers: Int       = agreements.filter(hasEverBeenActive).map(_.producerId).distinct.size
+        val differentConsumers: Int       = agreements.filter(hasEverBeenActive).map(_.consumerId).distinct.size
 
         val activeAgreementsOverTime: List[GraphElement] = Graph.getGraphPoints(10)(
           agreements.filter(hasEverBeenActive).map(a => a.stamps.activation.map(_.when).getOrElse(a.createdAt))
