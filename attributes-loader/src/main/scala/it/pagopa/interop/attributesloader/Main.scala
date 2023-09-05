@@ -9,7 +9,8 @@ import com.typesafe.scalalogging.{Logger, LoggerTakingImplicit}
 import it.pagopa.interop.commons.logging.{CanLogContextFields, ContextFieldsToLog}
 import it.pagopa.interop.commons.utils.BEARER
 
-import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
 import scala.util.{Failure, Success}
 
 //shuts down the actor system in case of startup errors
@@ -32,7 +33,7 @@ object Main extends App with Dependencies {
 
   logger.info("Loading attributes data...")
 
-  val result: Future[Unit] = for {
+  def loadAttributes(): Future[Unit] = for {
     tokenGenerator <- interopTokenGenerator(blockingEc)
     m2mToken       <- tokenGenerator
       .generateInternalToken(
@@ -46,13 +47,16 @@ object Main extends App with Dependencies {
     _ <- jobs.loadCertifiedAttributes()(contextWithBearer, logger, executionContext)
   } yield ()
 
-  result.onComplete {
+  def run() = loadAttributes().andThen {
     case Success(_)  =>
-      logger.info("Attributes load completed")
+      logger.info("Attributes load successfully completed")
       CoordinatedShutdown(classicActorSystem).run(SuccessShutdown)
     case Failure(ex) =>
       logger.error("Attributes load failed", ex)
       CoordinatedShutdown(classicActorSystem).run(ErrorShutdown)
   }
+
+  Await.result(run(), Duration.Inf)
+  logger.info("Attributes load job completed")
 
 }
