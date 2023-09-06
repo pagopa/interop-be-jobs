@@ -21,10 +21,6 @@ object Main extends App with Dependencies {
     }
     .andThen(_ => blockingThreadPool.shutdown())
 
-  executionLoop()
-    .recover(ex => logger.error("There was an error while running the job", ex))
-    .andThen(_ => blockingThreadPool.shutdown())(ec): Unit
-
   Await.ready(init, Duration.Inf)
 
 }
