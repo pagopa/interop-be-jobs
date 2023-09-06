@@ -7,9 +7,8 @@ object ApplicationConfiguration {
 
   private val config: Config = ConfigFactory.load()
 
-  val archivingEservicesQueueUrl: String =
-    config.getString("queue.archiving-eservices-queue-url")
-  val visibilityTimeout: Int = config.getInt("queue.visibility-timeout-in-seconds")
+  val archivingEservicesQueueUrl: String = config.getString("queue.archiving-eservices-queue-url")
+  val visibilityTimeout: Int             = config.getInt("queue.visibility-timeout-in-seconds")
 
   val agreementsCollection: String = config.getString("read-model.collections.agreements")
   val eservicesCollection: String  = config.getString("read-model.collections.eservices")
@@ -21,4 +20,16 @@ object ApplicationConfiguration {
 
     ReadModelConfig(connectionString, dbName)
   }
+
+  val rsaKeysIdentifiers: Set[String] = config
+    .getString("key.rsa-keys-identifiers")
+    .split(",")
+    .toSet
+    .filter(_.nonEmpty)
+
+  val ecKeysIdentifiers: Set[String] = config
+    .getString("key.ec-keys-identifiers")
+    .split(",")
+    .toSet
+    .filter(_.nonEmpty)
 }
