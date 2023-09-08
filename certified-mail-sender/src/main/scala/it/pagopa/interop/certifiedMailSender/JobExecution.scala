@@ -1,10 +1,9 @@
 package it.pagopa.interop.certifiedMailSender
 
-import cats.syntax.all._
+import it.pagopa.interop.commons.mail.Mail._
 import com.typesafe.scalalogging.Logger
-import io.circe.generic.auto._
 import io.circe.jawn.parse
-import it.pagopa.interop.commons.mail.{InteropMailer, Mail, TextMail}
+import it.pagopa.interop.commons.mail.{InteropMailer, InteropEnvelope, Mail, TextMail}
 import it.pagopa.interop.commons.queue.config.SQSHandlerConfig
 import it.pagopa.interop.commons.queue.impl.SQSHandler
 import it.pagopa.interop.commons.utils.TypeConversions.EitherOps
@@ -54,20 +53,15 @@ final class JobExecution private (config: Configuration)(implicit blockingEC: Ex
     } yield interopEnvelope
 
   private def sendMail(interopEnvelope: InteropEnvelope): Future[Unit] =
-    prepareMail(interopEnvelope).toFuture
-      .flatMap(mailer.send)
+    mailer
+      .send(prepareMail(interopEnvelope))
       .recoverWith { ex =>
         logger.error(s"Error trying to send envelope ${interopEnvelope.id.toString} - ${ex.getMessage}")
         Future.failed(ex)
       }
 
-  private def prepareMail(envelop: InteropEnvelope): Either[Throwable, Mail] =
-    envelop.recipients
-      .flatTraverse(Mail.addresses)
-      .map(recipients =>
-        TextMail(recipients = recipients, subject = envelop.subject, body = envelop.body, attachments = Nil)
-      )
-
+  private def prepareMail(envelop: InteropEnvelope): Mail =
+    TextMail(recipients = envelop.recipients, subject = envelop.subject, body = envelop.body, attachments = Nil)
 }
 
 object JobExecution {

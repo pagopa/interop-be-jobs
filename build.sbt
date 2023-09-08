@@ -20,20 +20,17 @@ lazy val metricsReportGeneratorModuleName            = "metrics-report-generator
 lazy val paDigitaleReportGeneratorModuleName         = "padigitale-report-generator"
 lazy val dashboardMetricsGeneratorModuleName         = "dashboard-metrics-report-generator"
 lazy val certifiedMailSenderModuleName               = "certified-mail-sender"
-lazy val certifiedMailSenderModelsModuleName         = "certified-mail-sender-models"
 lazy val eservicesMonitoringExporterModuleName       = "eservices-monitoring-exporter"
 lazy val privacyNoticesUpdaterModuleName             = "privacy-notices-updater"
 lazy val eserviceDescriptorsArchiverModuleName       = "eservice-descriptors-archiver"
 lazy val purposesArchiverModuleName                  = "purposes-archiver"
 
 cleanFiles += baseDirectory.value / certifiedMailSenderModuleName / "target"
-cleanFiles += baseDirectory.value / certifiedMailSenderModelsModuleName / "target"
 
 cleanFiles += baseDirectory.value / attributesLoaderModuleName / "target"
 cleanFiles += baseDirectory.value / tokenDetailsPersisterModuleName / "target"
 
 cleanFiles += baseDirectory.value / certifiedMailSenderModuleName / "target"
-cleanFiles += baseDirectory.value / certifiedMailSenderModelsModuleName / "target"
 
 cleanFiles += baseDirectory.value / purposesArchiverModuleName / "target"
 
@@ -167,7 +164,6 @@ lazy val certifiedMailSender = project
     publishLocal         := (()),
     publishTo            := None
   )
-  .dependsOn(certifiedMailSenderModels)
   .enablePlugins(JavaAppPackaging)
   .enablePlugins(DockerPlugin)
 
@@ -185,10 +181,6 @@ lazy val eservicesMonitoringExporter = project
   )
   .enablePlugins(JavaAppPackaging)
   .enablePlugins(DockerPlugin)
-
-lazy val certifiedMailSenderModels = project
-  .in(file(certifiedMailSenderModelsModuleName))
-  .settings(name := "interop-be-certified-mail-sender-models", scalafmtOnCompile := true, Docker / publish := {})
 
 lazy val privacyNoticesUpdater = project
   .in(file(privacyNoticesUpdaterModuleName))
@@ -245,7 +237,6 @@ lazy val jobs = project
     attributesLoader,
     metricsReportGenerator,
     certifiedMailSender,
-    certifiedMailSenderModels,
     eservicesMonitoringExporter,
     privacyNoticesUpdater,
     tenantsAttributesChecker,

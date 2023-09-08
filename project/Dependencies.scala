@@ -101,9 +101,6 @@ object Dependencies {
     lazy val selfcareV2Client =
       namespace %% "interop-selfcare-v2-client" % selfcareV2ClientVersion
 
-    lazy val certifiedMailSenderModels =
-      namespace %% "interop-be-certified-mail-sender-models" % certifiedMailSenderModelsVersion
-
     lazy val commons = namespace %% "interop-commons-utils"         % commonsVersion
     lazy val mail    = namespace %% "interop-commons-mail-manager"  % commonsVersion
     lazy val jwt     = namespace %% "interop-commons-jwt"           % commonsVersion
@@ -147,6 +144,7 @@ object Dependencies {
       jackson.core        % Compile,
       jackson.databind    % Compile,
       jackson.scalaModule % Compile,
+      pagopa.mail         % Compile,
       pagopa.commons      % Compile
     ).map(_.withSources.withJavadoc)
 
@@ -293,7 +291,7 @@ object Dependencies {
       mongodb.scalaDriver              % Compile,
       pagopa.tenantModels              % Compile,
       pagopa.tenantProcess             % Compile,
-      pagopa.certifiedMailSenderModels % Compile,
+      pagopa.mail                      % Compile,
       pagopa.agreementProcessClient    % Compile,
       pagopa.selfcareV2Client          % Compile,
       pagopa.attributeRegistryProcess  % Compile,

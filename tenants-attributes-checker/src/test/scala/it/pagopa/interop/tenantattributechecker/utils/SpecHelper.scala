@@ -1,7 +1,7 @@
 package it.pagopa.interop.tenantattributechecker.utils
 
 import it.pagopa.interop.attributeregistryprocess.client.model.Attribute
-import it.pagopa.interop.certifiedMailSender.InteropEnvelope
+import it.pagopa.interop.commons.mail.InteropEnvelope
 import it.pagopa.interop.commons.utils._
 import it.pagopa.interop.selfcare.v2.client.model.Institution
 import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenant
