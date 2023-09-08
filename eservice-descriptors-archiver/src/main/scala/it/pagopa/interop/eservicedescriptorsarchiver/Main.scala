@@ -2,7 +2,6 @@ package it.pagopa.interop.eservicedescriptorsarchiver
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
-import scala.util.{Failure, Success}
 
 object Main extends App with Dependencies {
 
@@ -10,17 +9,14 @@ object Main extends App with Dependencies {
 
   logger.info("Starting eservice versions archiver job")
 
-  private val execution: Future[Unit] = sqsHandler.processAllRawMessages(chunkSize)(processMessages)
-
-  private def executionLoop(): Future[Unit] = execution.flatMap(_ => executionLoop())
-
-  private val init: Future[Unit] = executionLoop()
-    .andThen {
-      case Failure(e) => logger.error("Eservice version archiver job failed with exception", e)
-      case Success(_) => logger.info("Completed eservice version archiver job")
+  def run(): Future[Unit] = sqsHandler
+    .processAllRawMessages(chunkSize)(processMessages)
+    .flatMap(_ => run())
+    .recoverWith { e =>
+      logger.error("Eservice version archiver job failed with exception", e)
+      run()
     }
-    .andThen(_ => blockingThreadPool.shutdown())
 
-  Await.ready(init, Duration.Inf)
+  Await.result(run(), Duration.Inf)
 
 }
