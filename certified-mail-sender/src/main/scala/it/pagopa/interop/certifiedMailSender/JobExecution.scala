@@ -3,7 +3,7 @@ package it.pagopa.interop.certifiedMailSender
 import it.pagopa.interop.commons.mail.Mail._
 import com.typesafe.scalalogging.Logger
 import io.circe.jawn.parse
-import it.pagopa.interop.commons.mail.{InteropMailer, InteropEnvelope, Mail, TextMail}
+import it.pagopa.interop.commons.mail.{InteropMailer, InteropEnvelope}
 import it.pagopa.interop.commons.queue.config.SQSHandlerConfig
 import it.pagopa.interop.commons.queue.impl.SQSHandler
 import it.pagopa.interop.commons.utils.TypeConversions.EitherOps
@@ -54,14 +54,11 @@ final class JobExecution private (config: Configuration)(implicit blockingEC: Ex
 
   private def sendMail(interopEnvelope: InteropEnvelope): Future[Unit] =
     mailer
-      .send(prepareMail(interopEnvelope))
+      .send(interopEnvelope)
       .recoverWith { ex =>
         logger.error(s"Error trying to send envelope ${interopEnvelope.id.toString} - ${ex.getMessage}")
         Future.failed(ex)
       }
-
-  private def prepareMail(envelop: InteropEnvelope): Mail =
-    TextMail(recipients = envelop.recipients, subject = envelop.subject, body = envelop.body, attachments = Nil)
 }
 
 object JobExecution {
