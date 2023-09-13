@@ -18,7 +18,7 @@ object PagopaVersions {
   lazy val attributeRegistryProcessVersion    = "1.0.x-SNAPSHOT"
   lazy val catalogManagementVersion           = "1.0.x-SNAPSHOT"
   lazy val catalogProcessVersion              = "1.0.x-SNAPSHOT"
-  lazy val commonsVersion                     = "1.0.x-SNAPSHOT"
+  lazy val commonsVersion                     = "PIN-3934-SNAPSHOT"
   lazy val partyRegistryProxyVersion          = "1.0.x-SNAPSHOT"
   lazy val agreementManagementVersion         = "1.0.x-SNAPSHOT"
   lazy val agreementProcessVersion            = "1.0.x-SNAPSHOT"
