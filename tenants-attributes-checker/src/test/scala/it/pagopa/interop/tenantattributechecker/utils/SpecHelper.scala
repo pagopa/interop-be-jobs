@@ -1,7 +1,7 @@
 package it.pagopa.interop.tenantattributechecker.utils
 
 import it.pagopa.interop.attributeregistryprocess.client.model.Attribute
-import it.pagopa.interop.commons.mail.InteropEnvelope
+import it.pagopa.interop.commons.mail.TextMail
 import it.pagopa.interop.commons.utils._
 import it.pagopa.interop.selfcare.v2.client.model.Institution
 import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenant
@@ -37,8 +37,8 @@ trait SpecHelper extends MockFactory with SpecData {
     consumer: PersistentTenant,
     producerSelfcare: Institution,
     consumerSelfcare: Institution,
-    producerEnvelope: InteropEnvelope,
-    consumerEnvelope: InteropEnvelope
+    producerEnvelope: TextMail,
+    consumerEnvelope: TextMail
   ): Unit = {
 
     (mockTenantProcess
@@ -66,13 +66,13 @@ trait SpecHelper extends MockFactory with SpecData {
       .once(): Unit
 
     (mockQueueService
-      .send[InteropEnvelope](_: InteropEnvelope)(_: JsonWriter[InteropEnvelope]))
+      .send[TextMail](_: TextMail)(_: JsonWriter[TextMail]))
       .expects(consumerEnvelope, *)
       .returns(Future.successful("sent"))
       .once(): Unit
 
     (mockQueueService
-      .send[InteropEnvelope](_: InteropEnvelope)(_: JsonWriter[InteropEnvelope]))
+      .send[TextMail](_: TextMail)(_: JsonWriter[TextMail]))
       .expects(producerEnvelope, *)
       .returns(Future.successful("sent"))
       .once(): Unit

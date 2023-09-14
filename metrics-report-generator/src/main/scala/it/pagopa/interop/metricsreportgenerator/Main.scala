@@ -39,7 +39,13 @@ object Main extends App {
 
   def sendMail(config: Configuration): List[MailAttachment] => Future[Unit] = ats => {
     val mail: TextMail =
-      TextMail(config.recipients, s"Report ${config.environment}", s"Data report of ${config.environment}", ats)
+      TextMail(
+        UUID.randomUUID(),
+        config.recipients,
+        s"Report ${config.environment}",
+        s"Data report of ${config.environment}",
+        ats
+      )
     InteropMailer.from(config.mailer).send(mail)
   }
 

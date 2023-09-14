@@ -1,7 +1,7 @@
 package it.pagopa.interop.tenantsattributeschecker.util
 
 import it.pagopa.interop.agreementprocess.client.model.CompactTenant
-import it.pagopa.interop.commons.mail.InteropEnvelope
+import it.pagopa.interop.commons.mail.TextMail
 import it.pagopa.interop.commons.utils.TypeConversions._
 import it.pagopa.interop.commons.utils.service.UUIDSupplier
 import it.pagopa.interop.tenantmanagement.model.tenant.{
@@ -88,8 +88,8 @@ class Jobs(
       attributeName: String,
       producerName: String,
       consumerName: String
-    ): InteropEnvelope =
-      InteropEnvelope(
+    ): TextMail =
+      TextMail(
         id = uuidSupplier.get(),
         recipients = recipients,
         subject = template.subject,
@@ -120,8 +120,8 @@ class Jobs(
         producer.name,
         consumer.name
       )
-      _ <- queueService.send[InteropEnvelope](consumerEnvelope)
-      _ <- queueService.send[InteropEnvelope](producerEnvelope)
+      _ <- queueService.send[TextMail](consumerEnvelope)
+      _ <- queueService.send[TextMail](producerEnvelope)
     } yield ()
   }
 }
