@@ -8,6 +8,5 @@ object ApplicationConfiguration {
   val maxNumberOfMessagesPerFile: Int = config.getInt("token-details-persister.queue.max-number-of-messages-per-file")
   val visibilityTimeout: Int          = config.getInt("token-details-persister.queue.visibility-timeout-in-seconds")
 
-  val containerPath: String    = config.getString("token-details-persister.storage.container")
-  val tokenStoragePath: String = config.getString("token-details-persister.storage.token-storage-path")
+  val containerPath: String = config.getString("token-details-persister.storage.container")
 }
