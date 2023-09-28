@@ -1,7 +1,7 @@
 package it.pagopa.interop.tenantsattributeschecker.util
 
 import it.pagopa.interop.agreementprocess.client.model.CompactTenant
-import it.pagopa.interop.certifiedMailSender.InteropEnvelope
+import it.pagopa.interop.commons.mail.TextMail
 import it.pagopa.interop.commons.utils.TypeConversions._
 import it.pagopa.interop.commons.utils.service.UUIDSupplier
 import it.pagopa.interop.tenantmanagement.model.tenant.{
@@ -14,7 +14,9 @@ import it.pagopa.interop.tenantsattributeschecker.service._
 import it.pagopa.interop.tenantsattributeschecker.service.impl._
 import it.pagopa.interop.tenantsattributeschecker.util.Adapters.DependencyTenantAttributeWrapper
 import it.pagopa.interop.tenantsattributeschecker.util.errors._
+import it.pagopa.interop.commons.mail.Mail
 
+import javax.mail.internet.InternetAddress
 import java.util.UUID
 import scala.concurrent.Future
 
@@ -82,14 +84,14 @@ class Jobs(
 
     def createEnvelope(
       template: MailTemplate,
-      recipient: String,
+      recipients: Seq[InternetAddress],
       attributeName: String,
       producerName: String,
       consumerName: String
-    ): InteropEnvelope =
-      InteropEnvelope(
+    ): TextMail =
+      TextMail(
         id = uuidSupplier.get(),
-        recipients = List(recipient),
+        recipients = recipients,
         subject = template.subject,
         body = createBody(template, attributeName, producerName, consumerName),
         attachments = List.empty
@@ -102,22 +104,24 @@ class Jobs(
       producerSelfcare   <- selfcareClientService.getInstitution(producerSelfcareId)
       consumerSelfcare   <- selfcareClientService.getInstitution(consumerSelfcareId)
       attribute          <- attributeRegistryProcess.getAttributeById(attributeId)
+      consumerAddresses  <- Mail.addresses(consumerSelfcare.digitalAddress).toFuture
+      producerAddresses  <- Mail.addresses(producerSelfcare.digitalAddress).toFuture
       consumerEnvelope = createEnvelope(
         consumerMailTemplate,
-        consumerSelfcare.digitalAddress,
+        consumerAddresses,
         attribute.name,
         producer.name,
         consumer.name
       )
       producerEnvelope = createEnvelope(
         producerMailTemplate,
-        producerSelfcare.digitalAddress,
+        producerAddresses,
         attribute.name,
         producer.name,
         consumer.name
       )
-      _ <- queueService.send[InteropEnvelope](consumerEnvelope)
-      _ <- queueService.send[InteropEnvelope](producerEnvelope)
+      _ <- queueService.send[TextMail](consumerEnvelope)
+      _ <- queueService.send[TextMail](producerEnvelope)
     } yield ()
   }
 }
