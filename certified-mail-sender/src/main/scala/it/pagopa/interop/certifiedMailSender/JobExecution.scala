@@ -1,10 +1,9 @@
 package it.pagopa.interop.certifiedMailSender
 
-import cats.syntax.all._
+import it.pagopa.interop.commons.mail.Mail._
 import com.typesafe.scalalogging.Logger
-import io.circe.generic.auto._
 import io.circe.jawn.parse
-import it.pagopa.interop.commons.mail.{InteropMailer, Mail, TextMail}
+import it.pagopa.interop.commons.mail.{InteropMailer, TextMail}
 import it.pagopa.interop.commons.queue.config.SQSHandlerConfig
 import it.pagopa.interop.commons.queue.impl.SQSHandler
 import it.pagopa.interop.commons.utils.TypeConversions.EitherOps
@@ -31,7 +30,7 @@ final class JobExecution private (config: Configuration)(implicit blockingEC: Ex
   private def processMessage(message: Message): Future[Unit] =
     sendMail(message.body()).flatMap(deleteMessage(message.receiptHandle()))
 
-  private def deleteMessage(receipt: String): InteropEnvelope => Future[Unit] =
+  private def deleteMessage(receipt: String): TextMail => Future[Unit] =
     envelope => {
       logger.info(s"Deleting envelope ${envelope.id.toString} with receipt $receipt")
       sqsHandler
@@ -45,29 +44,21 @@ final class JobExecution private (config: Configuration)(implicit blockingEC: Ex
         }
     }
 
-  private def sendMail(message: String): Future[InteropEnvelope] =
+  private def sendMail(message: String): Future[TextMail] =
     for {
-      interopEnvelope <- parse(message).flatMap(_.as[InteropEnvelope]).toFuture
-      _ = logger.info(s"Sending envelope ${interopEnvelope.id.toString}")
-      _ <- sendMail(interopEnvelope)
-      _ = logger.info(s"Envelope ${interopEnvelope.id.toString} sent")
-    } yield interopEnvelope
+      mail <- parse(message).flatMap(_.as[TextMail]).toFuture
+      _ = logger.info(s"Sending envelope ${mail.id.toString}")
+      _ <- sendMail(mail)
+      _ = logger.info(s"Envelope ${mail.id.toString} sent")
+    } yield mail
 
-  private def sendMail(interopEnvelope: InteropEnvelope): Future[Unit] =
-    prepareMail(interopEnvelope).toFuture
-      .flatMap(mailer.send)
+  private def sendMail(mail: TextMail): Future[Unit] =
+    mailer
+      .send(mail)
       .recoverWith { ex =>
-        logger.error(s"Error trying to send envelope ${interopEnvelope.id.toString} - ${ex.getMessage}")
+        logger.error(s"Error trying to send envelope ${mail.id.toString} - ${ex.getMessage}")
         Future.failed(ex)
       }
-
-  private def prepareMail(envelop: InteropEnvelope): Either[Throwable, Mail] =
-    envelop.recipients
-      .flatTraverse(Mail.addresses)
-      .map(recipients =>
-        TextMail(recipients = recipients, subject = envelop.subject, body = envelop.body, attachments = Nil)
-      )
-
 }
 
 object JobExecution {
