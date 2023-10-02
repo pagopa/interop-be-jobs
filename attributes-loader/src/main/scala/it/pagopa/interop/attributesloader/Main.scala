@@ -50,10 +50,10 @@ object Main extends App with Dependencies {
   def run() = loadAttributes().andThen {
     case Success(_)  =>
       logger.info("Attributes load successfully completed")
-      CoordinatedShutdown(classicActorSystem).run(SuccessShutdown)
+      actorSystem.terminate()
     case Failure(ex) =>
       logger.error("Attributes load failed", ex)
-      CoordinatedShutdown(classicActorSystem).run(ErrorShutdown)
+      actorSystem.terminate()
   }
 
   Await.result(run(), Duration.Inf)
