@@ -18,7 +18,7 @@ final case class Configuration(
   readModel: ReadModelConfig,
   collections: CollectionsConfiguration,
   tokens: TokensBucketConfiguration,
-  metric: StorageConfiguration,
+  metric: MetricConfiguration,
   interface: InterfaceConfiguration,
   mailer: MailConfiguration
 )
@@ -31,7 +31,7 @@ final case class CollectionsConfiguration(
   eservices: String
 )
 final case class TokensBucketConfiguration(bucket: String, basePath: String)
-final case class StorageConfiguration(bucket: String, basePath: String)
+final case class MetricConfiguration(bucket: String, basePath: String)
 final case class InterfaceConfiguration(bucket: String)
 
 object Configuration {

@@ -29,7 +29,7 @@ object Purpose {
   implicit val format: RootJsonFormat[Purpose] = jsonFormat4(Purpose.apply)
 }
 
-final case class DescriptorRaw(
+final case class Descriptor(
   name: String,
   createdAt: String,
   producerId: String,
@@ -40,15 +40,15 @@ final case class DescriptorRaw(
 ) {
   def isActive: Boolean = state == "Suspended" || state == "Published" || state == "Deprecated"
 
-  def toDescriptor(fingerprint: String): Descriptor =
-    Descriptor(name, createdAt, producerId, producer, descriptorId, state, fingerprint)
+  def toMetric(fingerprint: String): MetricDescriptor =
+    MetricDescriptor(name, createdAt, producerId, producer, descriptorId, state, fingerprint)
 }
 
-object DescriptorRaw {
-  implicit val format: RootJsonFormat[DescriptorRaw] = jsonFormat7(DescriptorRaw.apply)
+object Descriptor {
+  implicit val format: RootJsonFormat[Descriptor] = jsonFormat7(Descriptor.apply)
 }
 
-final case class Descriptor(
+final case class MetricDescriptor(
   name: String,
   createdAt: String,
   producerId: String,

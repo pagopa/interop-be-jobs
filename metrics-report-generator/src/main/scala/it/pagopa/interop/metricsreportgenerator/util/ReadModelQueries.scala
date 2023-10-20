@@ -1,7 +1,7 @@
 package it.pagopa.interop.metricsreportgenerator.util
 
 import it.pagopa.interop.commons.cqrs.service.ReadModelService
-import it.pagopa.interop.metricsreportgenerator.util.models.{Agreement, DescriptorRaw, Purpose}
+import it.pagopa.interop.metricsreportgenerator.util.models.{Agreement, Descriptor, Purpose}
 import org.mongodb.scala.Document
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.Aggregates._
@@ -17,9 +17,9 @@ object ReadModelQueries {
   ): Future[Seq[Agreement]] =
     getAll(config.maxParallelism)(getActiveAgreements(_, _, config, rm))
 
-  def getAllDescriptorsRaw(config: CollectionsConfiguration, rm: ReadModelService)(implicit
+  def getAllDescriptors(config: CollectionsConfiguration, rm: ReadModelService)(implicit
     ec: ExecutionContext
-  ): Future[Seq[DescriptorRaw]] =
+  ): Future[Seq[Descriptor]] =
     getAll(config.maxParallelism)(getDescriptors(_, _, config, rm))
 
   def getAllPurposes(config: CollectionsConfiguration, rm: ReadModelService)(implicit
@@ -102,7 +102,7 @@ object ReadModelQueries {
     limit: Int,
     collections: CollectionsConfiguration,
     readModelService: ReadModelService
-  )(implicit ec: ExecutionContext): Future[Seq[DescriptorRaw]] = {
+  )(implicit ec: ExecutionContext): Future[Seq[Descriptor]] = {
     val projection1: Bson = project(
       fields(
         exclude("_id"),
@@ -134,7 +134,7 @@ object ReadModelQueries {
       )
     )
 
-    readModelService.aggregateRaw[DescriptorRaw](
+    readModelService.aggregateRaw[Descriptor](
       collections.eservices,
       Seq(projection1, unwindStep, zipProducer, unwindStep2, projection2),
       offset,
