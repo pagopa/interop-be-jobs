@@ -35,14 +35,28 @@ final case class Descriptor(
   producerId: String,
   producer: String,
   descriptorId: String,
-  state: String
+  state: String,
+  interfacePath: String
 ) {
   def isActive: Boolean = state == "Suspended" || state == "Published" || state == "Deprecated"
+
+  def toMetric(fingerprint: String): MetricDescriptor =
+    MetricDescriptor(name, createdAt, producerId, producer, descriptorId, state, fingerprint)
 }
 
 object Descriptor {
-  implicit val format: RootJsonFormat[Descriptor] = jsonFormat6(Descriptor.apply)
+  implicit val format: RootJsonFormat[Descriptor] = jsonFormat7(Descriptor.apply)
 }
+
+final case class MetricDescriptor(
+  name: String,
+  createdAt: String,
+  producerId: String,
+  producer: String,
+  descriptorId: String,
+  state: String,
+  fingerprint: String
+)
 
 final case class Report private (map: Map[Report.RecordValue, Int]) {
   def addIfInRange(after: Instant, before: Instant)(record: String): Try[Report] = Report

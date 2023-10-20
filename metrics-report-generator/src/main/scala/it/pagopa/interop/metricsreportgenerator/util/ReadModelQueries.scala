@@ -1,12 +1,13 @@
 package it.pagopa.interop.metricsreportgenerator.util
 
 import it.pagopa.interop.commons.cqrs.service.ReadModelService
-import it.pagopa.interop.metricsreportgenerator.util.models.{Agreement, Purpose, Descriptor}
+import it.pagopa.interop.metricsreportgenerator.util.models.{Agreement, Descriptor, Purpose}
 import org.mongodb.scala.Document
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.Aggregates._
 import org.mongodb.scala.model.Filters
 import org.mongodb.scala.model.Projections._
+
 import scala.concurrent.{ExecutionContext, Future}
 
 object ReadModelQueries {
