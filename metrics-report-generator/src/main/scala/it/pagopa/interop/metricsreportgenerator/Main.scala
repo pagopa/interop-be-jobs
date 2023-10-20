@@ -1,19 +1,19 @@
 package it.pagopa.interop.metricsreportgenerator
 
 import com.typesafe.scalalogging.{Logger, LoggerTakingImplicit}
+import it.pagopa.interop.commons.cqrs.service.{MongoDbReadModelService, ReadModelService}
 import it.pagopa.interop.commons.files.service.FileManager
+import it.pagopa.interop.commons.logging._
+import it.pagopa.interop.commons.mail.{InteropMailer, MailAttachment, TextMail}
+import it.pagopa.interop.commons.utils.CORRELATION_ID_HEADER
 import it.pagopa.interop.metricsreportgenerator.util._
-import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
+
+import java.util.UUID
+import java.util.concurrent.{ExecutorService, Executors}
 import scala.concurrent.ExecutionContext.global
 import scala.concurrent.duration.Duration
-import java.util.concurrent.{ExecutorService, Executors}
-import java.util.UUID
-import it.pagopa.interop.commons.logging._
-import it.pagopa.interop.commons.utils.CORRELATION_ID_HEADER
-import it.pagopa.interop.commons.cqrs.service.{ReadModelService, MongoDbReadModelService}
+import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
 import scala.util.Failure
-import it.pagopa.interop.commons.mail.{InteropMailer, TextMail}
-import it.pagopa.interop.commons.mail.MailAttachment
 
 object Main extends App {
 
@@ -33,7 +33,7 @@ object Main extends App {
     fm        <- Future(FileManager.get(FileManager.S3)(blockingEC))
     s3        <- Future(new S3(fm, config))
     rm        <- Future(new MongoDbReadModelService(config.readModel))
-    jobs      <- Future(new Jobs(config, rm))
+    jobs      <- Future(new Jobs(config, rm, s3))
     tokensJob <- Future(new TokensJobs(s3))
   } yield (es, blockingEC, fm, s3, rm, jobs, tokensJob, config)
 

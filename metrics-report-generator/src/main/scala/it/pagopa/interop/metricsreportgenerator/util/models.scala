@@ -29,20 +29,34 @@ object Purpose {
   implicit val format: RootJsonFormat[Purpose] = jsonFormat4(Purpose.apply)
 }
 
+final case class DescriptorRaw(
+  name: String,
+  createdAt: String,
+  producerId: String,
+  producer: String,
+  descriptorId: String,
+  state: String,
+  interfacePath: String
+) {
+  def isActive: Boolean = state == "Suspended" || state == "Published" || state == "Deprecated"
+
+  def toDescriptor(fingerprint: String): Descriptor =
+    Descriptor(name, createdAt, producerId, producer, descriptorId, state, fingerprint)
+}
+
+object DescriptorRaw {
+  implicit val format: RootJsonFormat[DescriptorRaw] = jsonFormat7(DescriptorRaw.apply)
+}
+
 final case class Descriptor(
   name: String,
   createdAt: String,
   producerId: String,
   producer: String,
   descriptorId: String,
-  state: String
-) {
-  def isActive: Boolean = state == "Suspended" || state == "Published" || state == "Deprecated"
-}
-
-object Descriptor {
-  implicit val format: RootJsonFormat[Descriptor] = jsonFormat6(Descriptor.apply)
-}
+  state: String,
+  fingerprint: String
+)
 
 final case class Report private (map: Map[Report.RecordValue, Int]) {
   def addIfInRange(after: Instant, before: Instant)(record: String): Try[Report] = Report

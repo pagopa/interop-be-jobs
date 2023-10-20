@@ -18,7 +18,8 @@ final case class Configuration(
   readModel: ReadModelConfig,
   collections: CollectionsConfiguration,
   tokens: TokensBucketConfiguration,
-  storage: StorageConfiguration,
+  metric: StorageConfiguration,
+  interface: InterfaceConfiguration,
   mailer: MailConfiguration
 )
 
@@ -31,6 +32,7 @@ final case class CollectionsConfiguration(
 )
 final case class TokensBucketConfiguration(bucket: String, basePath: String)
 final case class StorageConfiguration(bucket: String, basePath: String)
+final case class InterfaceConfiguration(bucket: String)
 
 object Configuration {
   implicit val overrideRecipientReader: ConfigReader[List[InternetAddress]] =
