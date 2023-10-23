@@ -112,7 +112,7 @@ object ReadModelQueries {
         computed(
           "descriptors",
           Document(
-            """{$map:{"input":"$data.descriptors","as":"descriptor","in":{"id":"$$descriptor.id","state":"$$descriptor.state"}}}"""
+            """{$map:{"input":"$data.descriptors","as":"descriptor","in":{"id":"$$descriptor.id","state":"$$descriptor.state", "interfacePath": "$$descriptor.interface.path"}}}"""
           )
         )
       )
@@ -130,6 +130,7 @@ object ReadModelQueries {
         include("name", "createdAt", "producerId"),
         computed("descriptorId", "$descriptors.id"),
         computed("state", "$descriptors.state"),
+        computed("interfacePath", "$descriptors.interfacePath"),
         computed("producer", "$producerTenant.data.name")
       )
     )
