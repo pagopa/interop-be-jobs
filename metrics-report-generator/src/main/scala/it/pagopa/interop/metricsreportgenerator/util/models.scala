@@ -36,7 +36,7 @@ final case class Descriptor(
   producer: String,
   descriptorId: String,
   state: String,
-  interfacePath: String
+  interfacePath: Option[String]
 ) {
   def isActive: Boolean = state == "Suspended" || state == "Published" || state == "Deprecated"
 
