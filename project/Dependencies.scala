@@ -95,9 +95,6 @@ object Dependencies {
     lazy val purposeProcessClient =
       namespace %% "interop-be-purpose-process-client" % purposeProcessVersion
 
-    lazy val partyManagement =
-      namespace %% "interop-selfcare-party-management-client" % partyManagementClientVersion
-
     lazy val selfcareV2Client =
       namespace %% "interop-selfcare-v2-client" % selfcareV2ClientVersion
 
@@ -223,7 +220,7 @@ object Dependencies {
       pagopa.catalogModels     % Compile,
       pagopa.tenantModels      % Compile,
       pagopa.agreementsModels  % Compile,
-      pagopa.partyManagement   % Compile,
+      pagopa.selfcareV2Client  % Compile,
       pagopa.purposeModels     % Compile,
       pagopa.commons           % Compile,
       pagopa.cqrs              % Compile,
