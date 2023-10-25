@@ -1,10 +1,13 @@
 package it.pagopa.interop.metricsreportgenerator.util
 
 import it.pagopa.interop.commons.files.service.FileManager
+
 import scala.concurrent.{ExecutionContext, Future}
 import com.typesafe.scalalogging.LoggerTakingImplicit
 import it.pagopa.interop.commons.logging._
 import it.pagopa.interop.commons.utils.TypeConversions._
+import it.pagopa.interop.metricsreportgenerator.util.Errors.InterfacePathNotFound
+
 import scala.util.{Failure, Success}
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -51,7 +54,8 @@ class S3(fileManager: FileManager, config: Configuration)(implicit
 
   def getToken(path: String): Future[Array[Byte]] = fileManager.getFile(config.tokens.bucket)(path)
 
-  def getInterfaceDocument(path: String): Future[Array[Byte]] = fileManager.getFile(config.interface.bucket)(path)
+  def getInterfaceDocument(path: Option[String]): Future[Array[Byte]] =
+    path.fold(Future.failed[Array[Byte]](InterfacePathNotFound))(p => fileManager.getFile(config.interface.bucket)(p))
 
   private def renderPath(fileName: String): String = List(config.metric.bucket, config.metric.basePath, fileName)
     .map(_.stripMargin('/'))
