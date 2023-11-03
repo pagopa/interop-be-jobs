@@ -25,22 +25,21 @@ final case class TenantProcessServiceImpl(blockingEc: ExecutionContextExecutor)(
   override def updateVerifiedAttributeExtensionDate(tenantId: UUID, attributeId: UUID, verifierId: UUID)(implicit
     contexts: Seq[(String, String)]
   ): Future[Tenant] =
-    withHeaders[Tenant] { (bearerToken, correlationId, ip) =>
+    withHeaders[Tenant] { (bearerToken, correlationId) =>
       val request: ApiRequest[Tenant] =
         api.updateVerifiedAttributeExtensionDate(
           xCorrelationId = correlationId,
           tenantId = tenantId,
           attributeId = attributeId,
-          verifierId = verifierId,
-          xForwardedFor = ip
+          verifierId = verifierId
         )(BearerToken(bearerToken))
       invoker.invoke(request, s"Updating verified attribute $attributeId to $tenantId")
     }
 
   override def getTenant(tenantId: UUID)(implicit contexts: Seq[(String, String)]): Future[Tenant] =
-    withHeaders[Tenant] { (bearerToken, correlationId, ip) =>
+    withHeaders[Tenant] { (bearerToken, correlationId) =>
       val request: ApiRequest[Tenant] =
-        api.getTenant(xCorrelationId = correlationId, xForwardedFor = ip, id = tenantId)(BearerToken(bearerToken))
+        api.getTenant(xCorrelationId = correlationId, id = tenantId)(BearerToken(bearerToken))
       invoker.invoke(request, s"Getting tenant with id $tenantId")
     }
 }

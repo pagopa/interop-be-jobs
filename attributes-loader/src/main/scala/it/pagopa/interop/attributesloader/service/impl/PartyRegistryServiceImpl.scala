@@ -22,29 +22,22 @@ final case class PartyRegistryServiceImpl(
   override def getCategories(page: Option[Int] = None, limit: Option[Int] = None)(implicit
     contexts: Seq[(String, String)]
   ): Future[Categories] =
-    withHeaders { (bearerToken, correlationId, ip) =>
+    withHeaders { (bearerToken, correlationId) =>
       val request: ApiRequest[Categories] =
-        categoryApi.getCategories(
-          origin = None,
-          xCorrelationId = correlationId,
-          xForwardedFor = ip,
-          page = page,
-          limit = limit
-        )(BearerToken(bearerToken))
+        categoryApi.getCategories(origin = None, xCorrelationId = correlationId, page = page, limit = limit)(
+          BearerToken(bearerToken)
+        )
       invoker.invoke(request, "Retrieving categories")
     }
 
   override def getInstitutions(page: Option[Int] = None, limit: Option[Int] = None)(implicit
     contexts: Seq[(String, String)]
   ): Future[Institutions] =
-    withHeaders { (bearerToken, correlationId, ip) =>
+    withHeaders { (bearerToken, correlationId) =>
       val request: ApiRequest[Institutions] =
-        institutionApi.searchInstitutions(
-          xCorrelationId = correlationId,
-          xForwardedFor = ip,
-          page = page,
-          limit = limit
-        )(BearerToken(bearerToken))
+        institutionApi.searchInstitutions(xCorrelationId = correlationId, page = page, limit = limit)(
+          BearerToken(bearerToken)
+        )
       invoker.invoke(request, "Retrieving Institutions")
     }
 }
