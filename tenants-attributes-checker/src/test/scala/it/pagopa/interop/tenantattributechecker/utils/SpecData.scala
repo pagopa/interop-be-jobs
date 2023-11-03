@@ -96,7 +96,8 @@ trait SpecData {
       updatedAt = None,
       mails = Nil,
       name = "test_name",
-      kind = None
+      kind = None,
+      onboardedAt = None
     )
   }
 
