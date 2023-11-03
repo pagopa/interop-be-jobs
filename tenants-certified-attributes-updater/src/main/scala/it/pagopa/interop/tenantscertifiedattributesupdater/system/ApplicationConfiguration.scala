@@ -38,6 +38,9 @@ object ApplicationConfiguration {
       .toSet
       .filter(_.nonEmpty)
 
+  val ivassAssuranceAttributesCode: String =
+    config.getString("interop-be-tenants-certified-attributes-updater.ivass-assurance-attribute-code")
+
   require(
     rsaKeysIdentifiers.nonEmpty || ecKeysIdentifiers.nonEmpty,
     "You MUST provide at least one signing key (either RSA or EC)"

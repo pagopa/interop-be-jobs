@@ -27,12 +27,11 @@ final case class CatalogProcessServiceImpl(blockingEc: ExecutionContextExecutor)
     contexts: Seq[(String, String)]
   ): Future[Unit] = {
     for {
-      (bearerToken, correlationId, ip) <- extractHeaders(contexts).toFuture
+      (bearerToken, correlationId) <- extractHeaders(contexts).toFuture
       request = api.archiveDescriptor(
         xCorrelationId = correlationId,
         eServiceId = eServiceId,
-        descriptorId = descriptorId,
-        xForwardedFor = ip
+        descriptorId = descriptorId
       )(BearerToken(bearerToken))
       result <- invoker
         .invoke(request, s"ArchiveDescriptor triggered for eService $eServiceId and descriptor $descriptorId")

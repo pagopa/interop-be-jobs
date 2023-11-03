@@ -9,8 +9,8 @@ object Versions {
   lazy val scanamoVersion            = "1.0.0-M25"
   lazy val sttpVersion               = "4.0.0-M1"
   lazy val sttpModelVersion          = "1.5.5"
-  lazy val scalaMockVersion            = "5.2.0"
-  lazy val scalatestVersion            = "3.2.16"
+  lazy val scalaMockVersion          = "5.2.0"
+  lazy val scalatestVersion          = "3.2.16"
 }
 
 object PagopaVersions {

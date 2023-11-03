@@ -42,7 +42,7 @@ final case class PurposeProcessServiceImpl(invoker: PurposeProcessInvoker, api: 
     offset: Int,
     limit: Int
   )(implicit contexts: Seq[(String, String)]): Future[Purposes] =
-    withHeaders { (bearerToken, correlationId, ip) =>
+    withHeaders { (bearerToken, correlationId) =>
       val request: ApiRequest[Purposes] = api.getPurposes(
         xCorrelationId = correlationId,
         name = None,
@@ -52,8 +52,7 @@ final case class PurposeProcessServiceImpl(invoker: PurposeProcessInvoker, api: 
         states = states,
         excludeDraft = None,
         offset = offset,
-        limit = limit,
-        xForwardedFor = ip
+        limit = limit
       )(BearerToken(bearerToken))
       invoker.invoke(request, s"Retrieving purposes with EServiceId $eServiceId and consumerId $consumerId")
     }
@@ -61,24 +60,20 @@ final case class PurposeProcessServiceImpl(invoker: PurposeProcessInvoker, api: 
   override def archive(purposeId: UUID, versionId: UUID)(implicit
     contexts: Seq[(String, String)]
   ): Future[PurposeVersion] =
-    withHeaders { (bearerToken, correlationId, ip) =>
-      val request: ApiRequest[PurposeVersion] = api.archivePurposeVersion(
-        xCorrelationId = correlationId,
-        purposeId = purposeId,
-        versionId = versionId,
-        xForwardedFor = ip
-      )(BearerToken(bearerToken))
+    withHeaders { (bearerToken, correlationId) =>
+      val request: ApiRequest[PurposeVersion] =
+        api.archivePurposeVersion(xCorrelationId = correlationId, purposeId = purposeId, versionId = versionId)(
+          BearerToken(bearerToken)
+        )
       invoker.invoke(request, s"Archive purpose $purposeId with version $versionId")
     }
 
   override def delete(purposeId: UUID, versionId: UUID)(implicit contexts: Seq[(String, String)]): Future[Unit] =
-    withHeaders { (bearerToken, correlationId, ip) =>
-      val request: ApiRequest[Unit] = api.deletePurposeVersion(
-        xCorrelationId = correlationId,
-        purposeId = purposeId,
-        versionId = versionId,
-        xForwardedFor = ip
-      )(BearerToken(bearerToken))
+    withHeaders { (bearerToken, correlationId) =>
+      val request: ApiRequest[Unit] =
+        api.deletePurposeVersion(xCorrelationId = correlationId, purposeId = purposeId, versionId = versionId)(
+          BearerToken(bearerToken)
+        )
       invoker.invoke(request, s"Delete purpose $purposeId with version $versionId")
     }
 }
