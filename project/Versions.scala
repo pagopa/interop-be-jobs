@@ -9,8 +9,8 @@ object Versions {
   lazy val scanamoVersion            = "1.0.0-M25"
   lazy val sttpVersion               = "4.0.0-M1"
   lazy val sttpModelVersion          = "1.5.5"
-  lazy val scalaMockVersion            = "5.2.0"
-  lazy val scalatestVersion            = "3.2.16"
+  lazy val scalaMockVersion          = "5.2.0"
+  lazy val scalatestVersion          = "3.2.16"
 }
 
 object PagopaVersions {
@@ -26,7 +26,7 @@ object PagopaVersions {
   lazy val purposeProcessVersion              = "1.0.x-SNAPSHOT"
   lazy val tenantManagementVersion            = "1.0.x-SNAPSHOT"
   lazy val tenantProcessVersion               = "1.0.x-SNAPSHOT"
-  lazy val partyManagementClientVersion       = "1.0.x-SNAPSHOT"
+  lazy val partyManagementClientVersion       = "1.0.11"
   lazy val certifiedMailSenderModelsVersion   = "1.0.x-SNAPSHOT"
-  lazy val selfcareV2ClientVersion            = "1.0.x-SNAPSHOT"
+  lazy val selfcareV2ClientVersion            = "1.0.11"
 }

@@ -24,10 +24,9 @@ final case class AttributeRegistryProcessServiceImpl(blockingEc: ExecutionContex
     Logger.takingImplicit[ContextFieldsToLog](this.getClass)
 
   override def getAttributeById(attributeId: UUID)(implicit contexts: Seq[(String, String)]): Future[Attribute] =
-    withHeaders[Attribute] { (bearerToken, correlationId, ip) =>
-      val request = api.getAttributeById(xCorrelationId = correlationId, attributeId = attributeId, xForwardedFor = ip)(
-        BearerToken(bearerToken)
-      )
+    withHeaders[Attribute] { (bearerToken, correlationId) =>
+      val request =
+        api.getAttributeById(xCorrelationId = correlationId, attributeId = attributeId)(BearerToken(bearerToken))
       invoker.invoke(request, s"Getting attribute by id $attributeId")
     }
 }
