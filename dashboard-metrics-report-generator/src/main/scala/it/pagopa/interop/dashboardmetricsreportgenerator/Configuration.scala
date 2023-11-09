@@ -12,17 +12,13 @@ final case class Configuration(
   tokensStorage: TokensBucketConfiguration,
   readModel: ReadModelConfig,
   collections: CollectionsConfiguraion,
-  partyManagement: PartyManagementConfiguration,
+  selfcareV2Client: SelfcareV2ClientConfiguration,
   overrides: Overrides
 )
 final case class StorageBucketConfiguration(bucket: String, filename: String)
 final case class TokensBucketConfiguration(bucket: String, basePath: String)
 final case class CollectionsConfiguraion(tenants: String, agreements: String, purposes: String, eservices: String)
-final case class PartyManagementConfiguration(
-  partyManagementUrl: String,
-  partyManagementApiKey: String,
-  interopProductName: String
-)
+final case class SelfcareV2ClientConfiguration(url: String, apiKey: String, interopProductName: String)
 final case class Overrides(totalTenants: Option[Int])
 
 object Configuration {
