@@ -34,16 +34,16 @@ object Main extends App {
   def getReadModel(readModelConfig: ReadModelConfig): Future[ReadModelService] =
     Future(new MongoDbReadModelService(readModelConfig))(global)
 
-  def getPartyManager(partyManagerConfig: PartyManagementConfiguration): Future[PartyManagementProxy] =
-    Future(new PartyManagementProxy(partyManagerConfig))(global)
+  def getSelfcareV2Client(selfcareV2ClientConfig: SelfcareV2ClientConfiguration): Future[SelfcareV2Client] =
+    Future(new SelfcareV2Client(selfcareV2ClientConfig))(global)
 
   def resources()(implicit
     global: ExecutionContext
-  ): Future[(Configuration, FileManager, ReadModelService, PartyManagementProxy, ExecutorService)] = for {
+  ): Future[(Configuration, FileManager, ReadModelService, SelfcareV2Client, ExecutorService)] = for {
     config   <- Configuration.read()
     (fm, es) <- getFileManager()
     rm       <- getReadModel(config.readModel)
-    pm       <- getPartyManager(config.partyManagement)
+    pm       <- getSelfcareV2Client(config.selfcareV2Client)
   } yield (config, fm, rm, pm, es)
 
   def saveIntoBucket(fm: FileManager, config: StorageBucketConfiguration)(
@@ -53,12 +53,12 @@ object Main extends App {
     fm.storeBytes(config.bucket, "", config.filename)(data.toJson.compactPrint.getBytes()).map(_ => ())
   }
 
-  def job(config: Configuration, fm: FileManager, rm: ReadModelService, pm: PartyManagementProxy)(implicit
+  def job(config: Configuration, fm: FileManager, rm: ReadModelService, sm: SelfcareV2Client)(implicit
     global: ExecutionContext
   ): Future[Unit] = {
     // * These are val on purpose, to let them start in parallel
     val descriptorsF: Future[DescriptorsData] = Jobs.getDescriptorData(rm, config.collections)
-    val tenantsF: Future[TenantsData]         = Jobs.getTenantsData(rm, pm, config.collections, config.overrides)
+    val tenantsF: Future[TenantsData]         = Jobs.getTenantsData(rm, sm, config.collections, config.overrides)
     val agreementsF: Future[AgreementsData]   = Jobs.getAgreementsData(rm, config.collections)
     val purposesF: Future[PurposesData]       = Jobs.getPurposesData(rm, config.collections)
     val tokensF: Future[TokensData]           = Jobs.getTokensData(fm, config.tokensStorage)

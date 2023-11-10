@@ -98,14 +98,20 @@ class Jobs(
       )
 
     for {
-      producer           <- tenantProcess.getTenant(verifier.id)
-      producerSelfcareId <- producer.selfcareId.toFuture(SelfcareIdNotFound(producer.id))
-      consumerSelfcareId <- consumer.selfcareId.toFuture(SelfcareIdNotFound(consumer.id))
-      producerSelfcare   <- selfcareClientService.getInstitution(producerSelfcareId)
-      consumerSelfcare   <- selfcareClientService.getInstitution(consumerSelfcareId)
-      attribute          <- attributeRegistryProcess.getAttributeById(attributeId)
-      consumerAddresses  <- Mail.addresses(consumerSelfcare.digitalAddress).toFuture
-      producerAddresses  <- Mail.addresses(producerSelfcare.digitalAddress).toFuture
+      producer              <- tenantProcess.getTenant(verifier.id)
+      producerSelfcareId    <- producer.selfcareId.toFuture(SelfcareIdNotFound(producer.id))
+      consumerSelfcareId    <- consumer.selfcareId.toFuture(SelfcareIdNotFound(consumer.id))
+      producerSelfcare      <- selfcareClientService.getInstitution(producerSelfcareId)
+      consumerSelfcare      <- selfcareClientService.getInstitution(consumerSelfcareId)
+      attribute             <- attributeRegistryProcess.getAttributeById(attributeId)
+      consumerDigitalAdress <- consumerSelfcare.digitalAddress.toFuture(
+        SelfcareEntityNotFilled(consumerSelfcare.getClass().getName(), "digitalAddress")
+      )
+      producerDigitalAdress <- producerSelfcare.digitalAddress.toFuture(
+        SelfcareEntityNotFilled(producerSelfcare.getClass().getName(), "digitalAddress")
+      )
+      consumerAddresses     <- Mail.addresses(consumerDigitalAdress).toFuture
+      producerAddresses     <- Mail.addresses(producerDigitalAdress).toFuture
       consumerEnvelope = createEnvelope(
         consumerMailTemplate,
         consumerAddresses,
