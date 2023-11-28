@@ -73,18 +73,10 @@ object Main extends App with Dependencies {
     uo           <- retrieveAllInstitutions(uoRetriever, initPage, List.empty)
     allInstitutions = institutions ++ aoo ++ uo
     _ <- verifyInstitutionsCount(allInstitutions)
-    action      = createAction(allInstitutions, tenants.toList, attributesIndex)
-    ivassAction = createIvassAction(
-      tenants.toList,
-      attributesIndex,
-      ApplicationConfiguration.ivassAssuranceAttributesCode
-    )
-    _ <- processActivations(
-      tenantUpserter,
-      action.activations.grouped(groupDimension).toList :+ ivassAction.activations
-    )
+    action = createAction(allInstitutions, tenants.toList, attributesIndex)
+    _ <- processActivations(tenantUpserter, action.activations.grouped(groupDimension).toList)
     _ = logger.info(s"Activated tenants/attributes")
-    _ <- processRevocations(revokerCertifiedAttribute, action.revocations.toList ++ ivassAction.revocations.toList)
+    _ <- processRevocations(revokerCertifiedAttribute, action.revocations.toList)
     _ = logger.info(s"Revoked tenants/attributes")
   } yield ()
 

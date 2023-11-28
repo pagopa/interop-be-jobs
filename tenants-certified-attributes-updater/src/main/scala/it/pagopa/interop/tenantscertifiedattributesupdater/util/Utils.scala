@@ -12,11 +12,7 @@ import it.pagopa.interop.commons.signer.service.SignerService
 import it.pagopa.interop.commons.utils.Digester
 import it.pagopa.interop.commons.utils.TypeConversions._
 import it.pagopa.interop.partyregistryproxy.client.model.{Classification, Institution, Institutions}
-import it.pagopa.interop.tenantmanagement.model.tenant.{
-  PersistentCertifiedAttribute,
-  PersistentExternalId,
-  PersistentTenant
-}
+import it.pagopa.interop.tenantmanagement.model.tenant.{PersistentExternalId, PersistentTenant}
 import it.pagopa.interop.attributeregistryprocess.Utils.kindToBeExcluded
 import it.pagopa.interop.tenantprocess.client.model.{ExternalId, InternalAttributeSeed, InternalTenantSeed}
 import it.pagopa.interop.tenantscertifiedattributesupdater.system.ApplicationConfiguration
@@ -27,8 +23,6 @@ import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
 object Utils {
-
-  val IVASS_ORIGIN = "IVASS"
 
   implicit class AttributeInfoOps(val a: AttributeInfo) extends AnyVal {
     def toInternalAttributeSeed: InternalAttributeSeed = InternalAttributeSeed(a.origin, a.code)
@@ -110,35 +104,6 @@ object Utils {
 
     TenantActions(activations, revocations)
 
-  }
-
-  def createIvassAction(
-    tenants: List[PersistentTenant],
-    attributesIndex: Map[UUID, AttributeInfo],
-    ivassAssuranceAttributesCode: String
-  ): TenantActions = {
-    val ivassAttribute     = attributesIndex
-      .find(a => a._2.origin == IVASS_ORIGIN && a._2.code == ivassAssuranceAttributesCode)
-    val ivassAttributeInfo = ivassAttribute.map(_._2.toInternalAttributeSeed).toList
-
-    def missingAttributes(tenant: PersistentTenant): Boolean =
-      tenant.attributes.collectFirst {
-        case a: PersistentCertifiedAttribute if ivassAttribute.exists(_._1 == a.id) && a.revocationTimestamp.isEmpty =>
-          ()
-      }.isEmpty
-
-    val activations: List[InternalTenantSeed] = tenants
-      .filter(_.externalId.origin == IVASS_ORIGIN)
-      .filter(missingAttributes)
-      .map(tenant =>
-        InternalTenantSeed(
-          TenantId(tenant.externalId.origin, tenant.externalId.value, tenant.name).toExternalId,
-          ivassAttributeInfo,
-          tenant.name
-        )
-      )
-
-    TenantActions(activations, Map.empty)
   }
 
   def createAttributesIndex(attributes: Seq[PersistentAttribute]): Map[UUID, AttributeInfo] =
