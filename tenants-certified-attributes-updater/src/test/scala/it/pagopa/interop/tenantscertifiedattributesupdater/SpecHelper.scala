@@ -31,7 +31,9 @@ object SpecHelper {
     createdAt = timestamp,
     updatedAt = None,
     mails = Nil,
-    name = defaultName
+    name = defaultName,
+    onboardedAt = None,
+    subUnitType = None
   )
 
   def institution(origin: String, originId: String, category: String, kind: String): Institution = Institution(
