@@ -4,9 +4,7 @@ import it.pagopa.interop.commons.logging._
 import com.typesafe.scalalogging.LoggerTakingImplicit
 import it.pagopa.interop.catalogmanagement.model.{CatalogDescriptor, CatalogItem, Draft}
 import it.pagopa.interop.commons.cqrs.service.ReadModelService
-import it.pagopa.interop.commons.files.service.FileManager
 import it.pagopa.interop.commons.parser.{InterfaceParser, InterfaceParserUtils}
-import it.pagopa.interop.commons.utils.Digester
 import it.pagopa.interop.commons.utils.TypeConversions.{EitherOps, OptionOps}
 import it.pagopa.interop.commons.utils.service.OffsetDateTimeSupplier
 import it.pagopa.interop.padigitalereportgenerator.report.{FileExtractedMetrics, Metric, MetricGeneratorSeed}
@@ -37,7 +35,6 @@ object Utils {
 
   def createMetrics(implicit
     readModelService: ReadModelService,
-    fileManager: FileManager,
     dateTimeSupplier: OffsetDateTimeSupplier,
     ex: ExecutionContext
   ): CatalogItem => Future[Seq[Metric]] = eService =>
@@ -57,10 +54,9 @@ object Utils {
 
   private def createMetric(
     metricGenerator: MetricGeneratorSeed => Metric
-  )(descriptor: CatalogDescriptor)(implicit ec: ExecutionContext, fileManager: FileManager): Future[Metric] =
+  )(descriptor: CatalogDescriptor)(implicit ec: ExecutionContext): Future[Metric] =
     for {
-      stream <- fileManager.get(ApplicationConfiguration.interfacesContainer)(descriptor.interface.get.path)
-      fileExtractedMetrics <- getFileExtractedMetrics(stream.toByteArray).toFuture
+      fileExtractedMetrics <- getFileExtractedMetrics(descriptor.interface.get.checksum).toFuture
       publishedAt          <- descriptor.publishedAt.toFuture(Error.MissingActivationTimestamp(descriptor.id))
     } yield metricGenerator(
       MetricGeneratorSeed(
@@ -72,21 +68,17 @@ object Utils {
       )
     )
 
-  def getFileExtractedMetrics(bytes: Array[Byte]): Either[Throwable, FileExtractedMetrics] =
-    getOpenApiExtractedMetrics(bytes) orElse getWSDLExtractedMetrics(bytes)
+  def getFileExtractedMetrics(fingerprint: String): Either[Throwable, FileExtractedMetrics] =
+    getOpenApiExtractedMetrics(fingerprint) orElse getWSDLExtractedMetrics(fingerprint)
 
-  private def getOpenApiExtractedMetrics(bytes: Array[Byte]): Either[Throwable, FileExtractedMetrics] =
+  private def getOpenApiExtractedMetrics(fingerprint: String): Either[Throwable, FileExtractedMetrics] =
     InterfaceParser
-      .parseOpenApi(bytes)
-      .flatMap(json =>
-        InterfaceParserUtils.getEndpoints(json).map(es => FileExtractedMetrics(Digester.toSha256(bytes), es.size))
-      )
+      .parseOpenApi(fingerprint.getBytes())
+      .flatMap(json => InterfaceParserUtils.getEndpoints(json).map(es => FileExtractedMetrics(fingerprint, es.size)))
 
-  private def getWSDLExtractedMetrics(bytes: Array[Byte]): Either[Throwable, FileExtractedMetrics] =
+  private def getWSDLExtractedMetrics(fingerprint: String): Either[Throwable, FileExtractedMetrics] =
     InterfaceParser
-      .parseWSDL(bytes)
-      .flatMap(xml =>
-        InterfaceParserUtils.getEndpoints(xml).map(es => FileExtractedMetrics(Digester.toSha256(bytes), es.size))
-      )
+      .parseWSDL(fingerprint.getBytes())
+      .flatMap(xml => InterfaceParserUtils.getEndpoints(xml).map(es => FileExtractedMetrics(fingerprint, es.size)))
 
 }
