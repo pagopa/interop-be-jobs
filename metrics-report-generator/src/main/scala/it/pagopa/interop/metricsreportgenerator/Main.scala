@@ -71,8 +71,8 @@ object Main extends App {
   }
 
   def job(implicit ec: ExecutionContext): Future[Unit] = resources.flatMap {
-    case (es, blockingEC, fm, rm, jobs, tokensJob, config) => 
-      execution(jobs, tokensJob, config)(blockingEC) 
+    case (es, blockingEC, fm, rm, jobs, tokensJob, config) =>
+      execution(jobs, tokensJob, config)(blockingEC)
         .andThen { case Failure(ex) => logger.error("Metrics job got an error", ex) }
         .andThen { _ =>
           es.shutdown()

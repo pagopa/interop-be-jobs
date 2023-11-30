@@ -10,6 +10,7 @@ import java.time.Instant
 import java.time.ZoneId
 import spoiwo.model._
 import spoiwo.model.enums._
+import scala.collection.immutable.ListMap
 
 final case class Agreement(
   activationDate: Option[String],
@@ -122,13 +123,13 @@ final case class Report private (map: Map[Report.RecordValue, Int]) {
     val columns   = (0 until (Report.headerSheet.size)).toList
       .map(index => Column(index = index, style = CellStyle(font = Font(bold = true)), autoSized = true))
 
-    val rows = map.map(Report.renderLineSheet).toList // .sorted).mkString("\n")//TODO
+    val rows = ListMap(map.toSeq.sorted: _*).map(Report.renderLineSheet).toList
     Sheet(name = "Tokens", rows = headerRow :: rows, columns = columns)
   }
 }
 
 object Report {
-  type RecordValue    = (String, String, LocalDate)
+  type RecordValue    = Tuple3[String, String, LocalDate]
   type RawRecordValue = (String, String, Instant)
 
   val europeRome: ZoneId = ZoneId.of("Europe/Rome")
