@@ -14,6 +14,7 @@ import it.pagopa.interop.metricsreportgenerator.util.models.Report
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.temporal.ChronoUnit
+import spoiwo.model.Sheet
 
 class TokensJobs(s3: S3)(implicit
   logger: LoggerTakingImplicit[ContextFieldsToLog],
@@ -44,7 +45,8 @@ class TokensJobs(s3: S3)(implicit
       .flatMap(_.toFuture)
   }
 
-  def getTokensData: Future[String] = {
+  private def getTokenReport(): Future[Report] = {
+
     logger.info("Gathering tokens information")
 
     // * The data on S3 is skewed, meaning that a specific date-folder (i.e.
@@ -74,7 +76,16 @@ class TokensJobs(s3: S3)(implicit
             .map(_.flatten)
             .flatMap(updateReport(afterThan, beforeThan)(prunedReport))
       }
-      .map(_.render)
+  }
+
+  def getTokensDataCsv: Future[String] = {
+    getTokenReport()
+      .map(_.renderCsv)
+  }
+
+  def getTokensDataSheet: Future[Sheet] = {
+    getTokenReport()
+      .map(_.renderSheet)
   }
 
 }

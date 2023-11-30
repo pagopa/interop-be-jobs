@@ -97,8 +97,8 @@ trait SpecData {
       mails = Nil,
       name = "test_name",
       kind = None,
-  onboardedAt = None,
-  subUnitType = None
+      onboardedAt = None,
+      subUnitType = None
     )
   }
 

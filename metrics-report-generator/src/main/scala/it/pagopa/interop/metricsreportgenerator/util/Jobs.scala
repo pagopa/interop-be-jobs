@@ -9,9 +9,9 @@ import it.pagopa.interop.commons.utils.Digester
 import it.pagopa.interop.metricsreportgenerator.util.models.{MetricDescriptor, Descriptor}
 
 import spoiwo.model._
-import spoiwo.model.enums._
 
 import scala.concurrent.{ExecutionContext, Future}
+import it.pagopa.interop.metricsreportgenerator.util.models.SheetStyle
 
 class Jobs(config: Configuration, readModel: ReadModelService, s3: S3)(implicit
   logger: LoggerTakingImplicit[ContextFieldsToLog],
@@ -44,41 +44,11 @@ class Jobs(config: Configuration, readModel: ReadModelService, s3: S3)(implicit
       }
   }
 
-  val headerStyle =
-    CellStyle(
-      fillPattern = CellFill.Solid,
-      fillForegroundColor = Color.LightGreen,
-      font = Font(bold = true),
-      locked = true,
-      borders = CellBorders(
-        leftStyle = CellBorderStyle.Thin,
-        bottomStyle = CellBorderStyle.Thin,
-        rightStyle = CellBorderStyle.Thin,
-        topStyle = CellBorderStyle.Thin
-      ),
-      horizontalAlignment = CellHorizontalAlignment.Center,
-      verticalAlignment = CellVerticalAlignment.Center,
-      wrapText = true
-    )
-
-  val rowStyle =
-    CellStyle(
-      fillPattern = CellFill.Solid,
-      fillForegroundColor = Color.White,
-      font = Font(bold = false),
-      borders = CellBorders(
-        leftStyle = CellBorderStyle.Thin,
-        bottomStyle = CellBorderStyle.Thin,
-        rightStyle = CellBorderStyle.Thin,
-        topStyle = CellBorderStyle.Thin
-      )
-    )
-
   def getAgreementSheet(implicit ec: ExecutionContext): Future[Sheet] = {
     logger.info("Gathering Agreements Information")
     val headerList = List("EserviceId", "Eservice", "Producer", "Consumer", "AgreementId", "Purposes", "PurposeIds")
     val headerRow  =
-      Row(style = headerStyle).withCellValues(headerList)
+      Row(style = SheetStyle.headerStyle).withCellValues(headerList)
 
     val columns = (0 until (headerList.size)).toList
       .map(index => Column(index = index, style = CellStyle(font = Font(bold = true)), autoSized = true))
@@ -93,7 +63,7 @@ class Jobs(config: Configuration, readModel: ReadModelService, s3: S3)(implicit
             .map(p => (p.purposeId, p.name))
             .separate
 
-          Row(style = rowStyle).withCellValues(
+          Row(style = SheetStyle.rowStyle).withCellValues(
             a.eserviceId,
             a.eservice,
             a.producer,
@@ -124,6 +94,35 @@ class Jobs(config: Configuration, readModel: ReadModelService, s3: S3)(implicit
       .flatMap(descriptors => Future.traverse(descriptors)(createMetricDescriptor))
       .map(asCsv)
       .map(_.mkString("\n"))
+  }
+
+  def getDescriptorsSheet(implicit ec: ExecutionContext): Future[Sheet] = {
+    logger.info("Gathering Descriptors Information")
+
+    val headerList = List("Name", "CreatedAt", "ProducerId", "Producer", "DescriptorId", "State", "Fingerprint")
+    val headerRow  =
+      Row(style = SheetStyle.headerStyle).withCellValues(headerList)
+
+    val columns = (0 until (headerList.size)).toList
+      .map(index => Column(index = index, style = CellStyle(font = Font(bold = true)), autoSized = true))
+
+    for {
+      descriptors <- ReadModelQueries.getAllDescriptors(config.collections, readModel).map(_.filter(_.isActive).toList)
+      metricDescriptors <- Future.traverse(descriptors)(createMetricDescriptor)
+      rows = metricDescriptors
+        .map(descriptor =>
+          Row(style = SheetStyle.rowStyle).withCellValues(
+            descriptor.name,
+            descriptor.createdAt,
+            descriptor.producerId,
+            descriptor.producer,
+            descriptor.descriptorId,
+            descriptor.state,
+            descriptor.fingerprint
+          )
+        )
+        .toList
+    } yield Sheet(name = "Agreements", rows = headerRow :: rows, columns = columns)
   }
 
   private def createMetricDescriptor(descriptor: Descriptor)(implicit ec: ExecutionContext): Future[MetricDescriptor] =

@@ -32,8 +32,8 @@ object SpecHelper {
     updatedAt = None,
     mails = Nil,
     name = defaultName,
-  onboardedAt = None,
-  subUnitType = None
+    onboardedAt = None,
+    subUnitType = None
   )
 
   def institution(origin: String, originId: String, category: String, kind: String): Institution = Institution(
