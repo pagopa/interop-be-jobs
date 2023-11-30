@@ -11,6 +11,7 @@ object Versions {
   lazy val sttpModelVersion          = "1.5.5"
   lazy val scalaMockVersion          = "5.2.0"
   lazy val scalatestVersion          = "3.2.16"
+  lazy val spoiwo                    = "2.2.1"
 }
 
 object PagopaVersions {

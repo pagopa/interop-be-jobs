@@ -8,6 +8,9 @@ import it.pagopa.interop.commons.logging._
 import it.pagopa.interop.commons.utils.Digester
 import it.pagopa.interop.metricsreportgenerator.util.models.{MetricDescriptor, Descriptor}
 
+import spoiwo.model._
+import spoiwo.model.enums._
+
 import scala.concurrent.{ExecutionContext, Future}
 
 class Jobs(config: Configuration, readModel: ReadModelService, s3: S3)(implicit
@@ -39,6 +42,69 @@ class Jobs(config: Configuration, readModel: ReadModelService, s3: S3)(implicit
           ).map(s => s"\"$s\"").mkString(",")
         }).mkString("\n")
       }
+  }
+
+  val headerStyle =
+    CellStyle(
+      fillPattern = CellFill.Solid,
+      fillForegroundColor = Color.LightGreen,
+      font = Font(bold = true),
+      locked = true,
+      borders = CellBorders(
+        leftStyle = CellBorderStyle.Thin,
+        bottomStyle = CellBorderStyle.Thin,
+        rightStyle = CellBorderStyle.Thin,
+        topStyle = CellBorderStyle.Thin
+      ),
+      horizontalAlignment = CellHorizontalAlignment.Center,
+      verticalAlignment = CellVerticalAlignment.Center,
+      wrapText = true
+    )
+
+  val rowStyle =
+    CellStyle(
+      fillPattern = CellFill.Solid,
+      fillForegroundColor = Color.White,
+      font = Font(bold = false),
+      borders = CellBorders(
+        leftStyle = CellBorderStyle.Thin,
+        bottomStyle = CellBorderStyle.Thin,
+        rightStyle = CellBorderStyle.Thin,
+        topStyle = CellBorderStyle.Thin
+      )
+    )
+
+  def getAgreementSheet(implicit ec: ExecutionContext): Future[Sheet] = {
+    logger.info("Gathering Agreements Information")
+    val headerList = List("EserviceId", "Eservice", "Producer", "Consumer", "AgreementId", "Purposes", "PurposeIds")
+    val headerRow  =
+      Row(style = headerStyle).withCellValues(headerList)
+
+    val columns = (0 until (headerList.size)).toList
+      .map(index => Column(index = index, style = CellStyle(font = Font(bold = true)), autoSized = true))
+
+    ReadModelQueries
+      .getAllActiveAgreements(config.collections, readModel)
+      .zip(ReadModelQueries.getAllPurposes(config.collections, readModel))
+      .map { case (agreements, purposes) =>
+        agreements.toList.map { a =>
+          val (purposeIds, purposeNames): (Seq[String], Seq[String]) = purposes
+            .filter(p => p.consumerId == a.consumerId && p.eserviceId == a.eserviceId)
+            .map(p => (p.purposeId, p.name))
+            .separate
+
+          Row(style = rowStyle).withCellValues(
+            a.eserviceId,
+            a.eservice,
+            a.producer,
+            a.consumer,
+            a.agreementId,
+            purposeNames.mkString(", "),
+            purposeIds.mkString(", ")
+          )
+        }
+      }
+      .map(rows => Sheet(name = "Agreements", rows = headerRow :: rows, columns = columns))
   }
 
   def getDescriptorsRecord(implicit ec: ExecutionContext): Future[String] = {

@@ -7,6 +7,8 @@ import it.pagopa.interop.commons.logging._
 import it.pagopa.interop.commons.mail.{InteropMailer, MailAttachment, TextMail}
 import it.pagopa.interop.commons.utils.CORRELATION_ID_HEADER
 import it.pagopa.interop.metricsreportgenerator.util._
+import spoiwo.model.Workbook
+import spoiwo.natures.xlsx.Model2XlsxConversions._
 
 import java.util.UUID
 import java.util.concurrent.{ExecutorService, Executors}
@@ -14,6 +16,7 @@ import scala.concurrent.ExecutionContext.global
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
 import scala.util.Failure
+import java.io.ByteArrayOutputStream
 
 object Main extends App {
 
@@ -49,34 +52,54 @@ object Main extends App {
     InteropMailer.from(config.mailer).send(mail)
   }
 
+  def sendMail(config: Configuration, attachments: Seq[MailAttachment]): Future[Unit] = {
+    val mail: TextMail =
+      TextMail(
+        UUID.randomUUID(),
+        config.recipients,
+        s"Report ${config.environment}",
+        s"Data report of ${config.environment}",
+        attachments
+      )
+    InteropMailer.from(config.mailer).send(mail)
+  }
+
   def asAttachment(fileName: String, content: Array[Byte]): MailAttachment =
     MailAttachment(fileName, content, "text/csv")
 
-  def execution(jobs: Jobs, tokensJob: TokensJobs, s3: S3, config: Configuration)(implicit
-    blockingEC: ExecutionContextExecutor
-  ): Future[Unit] = {
+  // def execution(jobs: Jobs, tokensJob: TokensJobs, s3: S3, config: Configuration)(implicit
+  def execution(jobs: Jobs, config: Configuration)(implicit blockingEC: ExecutionContextExecutor): Future[Unit] = {
     val env: String = config.environment
+    for {
+      agreementsSheet <- jobs.getAgreementSheet
+      bytes = Workbook(agreementsSheet).writeToOutputStream(new ByteArrayOutputStream()).toByteArray()
+      _ <- sendMail(config, Seq(asAttachment(s"report-${env}.xlsx", bytes)))
+    } yield ()
 
-    val agreementsJobResult: Future[MailAttachment] = jobs.getAgreementRecord
-      .map(_.getBytes)
-      .flatMap(bs => s3.saveAgreementsReport(bs).map(_ => asAttachment(s"agreements-${env}.csv", bs)))
+    // jobs.getAgreementSheet.flatMap(agreements =>
+    //   Future.successful(Workbook(agreements).saveAsXlsx(s"agreements-${env}.xlsx"))
+    // )
 
-    val activeDescriptorsJobResult: Future[MailAttachment] = jobs.getDescriptorsRecord
-      .map(_.getBytes)
-      .flatMap(bs => s3.saveActiveDescriptorsReport(bs).map(_ => asAttachment(s"active-descriptors-${env}.csv", bs)))
+    // val agreementsJobResult: Future[MailAttachment] = jobs.getAgreementRecord
+    //   .map(_.getBytes)
+    //   .flatMap(bs => s3.saveAgreementsReport(bs).map(_ => asAttachment(s"agreements-${env}.csv", bs)))
 
-    val tokensJobResult: Future[MailAttachment] = tokensJob.getTokensData
-      .map(_.getBytes)
-      .flatMap(bs => s3.saveTokensReport(bs).map(_ => asAttachment(s"tokens-${env}.csv", bs)))
+    // val activeDescriptorsJobResult: Future[MailAttachment] = jobs.getDescriptorsRecord
+    //   .map(_.getBytes)
+    //   .flatMap(bs => s3.saveActiveDescriptorsReport(bs).map(_ => asAttachment(s"active-descriptors-${env}.csv", bs)))
 
-    Future
-      .sequence(List(agreementsJobResult, tokensJobResult, activeDescriptorsJobResult))
-      .flatMap(sendMail(config))
+    // val tokensJobResult: Future[MailAttachment] = tokensJob.getTokensData
+    //   .map(_.getBytes)
+    //   .flatMap(bs => s3.saveTokensReport(bs).map(_ => asAttachment(s"tokens-${env}.csv", bs)))
+
+    // Future
+    //   .sequence(List(agreementsJobResult, tokensJobResult, activeDescriptorsJobResult))
+    //   .flatMap(sendMail(config))
   }
 
   def job(implicit ec: ExecutionContext): Future[Unit] = resources.flatMap {
-    case (es, blockingEC, fm, s3, rm, jobs, tokensJob, config) =>
-      execution(jobs, tokensJob, s3, config)(blockingEC)
+    case (es, blockingEC, fm, _, rm, jobs, _, config) => // s3, rm, jobs, tokensJob, config) =>
+      execution(jobs, config)(blockingEC) // , tokensJob, s3, config)(blockingEC)
         .andThen { case Failure(ex) => logger.error("Metrics job got an error", ex) }
         .andThen { _ =>
           es.shutdown()
