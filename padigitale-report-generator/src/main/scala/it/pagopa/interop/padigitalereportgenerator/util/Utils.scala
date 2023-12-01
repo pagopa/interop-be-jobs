@@ -88,5 +88,5 @@ object Utils {
       .flatMap(xml =>
         InterfaceParserUtils.getEndpoints(xml).map(es => FileExtractedMetrics(Digester.toSha256(bytes), es.size))
       )
-      
+
 }
