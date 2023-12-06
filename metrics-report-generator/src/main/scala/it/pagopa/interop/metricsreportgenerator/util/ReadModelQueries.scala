@@ -76,7 +76,13 @@ object ReadModelQueries {
       secondProjection
     )
 
-    readModelService.aggregate[Agreement](config.agreements, aggregation, offset, limit)
+    readModelService.aggregate[Agreement](
+      collectionName = config.agreements,
+      pipeline = aggregation,
+      offset = offset,
+      limit = limit,
+      allowDiskUse = true
+    )
   }
 
   private def getPurposes(
@@ -94,7 +100,13 @@ object ReadModelQueries {
         exclude("_id")
       )
     )
-    readModelService.aggregate[Purpose](collections.purposes, Seq(projection), offset, limit)
+    readModelService.aggregate[Purpose](
+      collectionName = collections.purposes,
+      pipeline = Seq(projection),
+      offset = offset,
+      limit = limit,
+      allowDiskUse = true
+    )
   }
 
   private def getDescriptors(
@@ -136,10 +148,11 @@ object ReadModelQueries {
     )
 
     readModelService.aggregateRaw[Descriptor](
-      collections.eservices,
-      Seq(projection1, unwindStep, zipProducer, unwindStep2, projection2),
-      offset,
-      limit
+      collectionName = collections.eservices,
+      pipeline = Seq(projection1, unwindStep, zipProducer, unwindStep2, projection2),
+      offset = offset,
+      limit = limit,
+      allowDiskUse = true
     )
   }
 
