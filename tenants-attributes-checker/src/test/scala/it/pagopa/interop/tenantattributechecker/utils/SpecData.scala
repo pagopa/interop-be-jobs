@@ -66,16 +66,16 @@ trait SpecData {
   )
 
   final lazy val institution = Institution(
-    id = UUID.randomUUID(),
-    externalId = "27f8dce0-0a5b-476b-9fdd-a7a658eb9211",
-    originId = "originId1",
-    description = "Institution One",
-    digitalAddress = "digitalAddress1",
-    address = "address1",
-    zipCode = "zipCode1",
-    taxCode = "taxCode1",
-    origin = "origin",
-    attributes = Seq.empty
+    id = Some(UUID.randomUUID()),
+    externalId = Some("27f8dce0-0a5b-476b-9fdd-a7a658eb9211"),
+    originId = Some("originId1"),
+    description = Some("Institution One"),
+    digitalAddress = Some("digitalAddress1"),
+    address = Some("address1"),
+    zipCode = Some("zipCode1"),
+    taxCode = Some("taxCode1"),
+    origin = Some("origin"),
+    attributes = Some(Seq.empty)
   )
 
   def createPersistentTenant(tenantId: UUID, attributeId: UUID, verifierId: UUID): PersistentTenant = {
@@ -96,7 +96,9 @@ trait SpecData {
       updatedAt = None,
       mails = Nil,
       name = "test_name",
-      kind = None
+      kind = None,
+      onboardedAt = None,
+      subUnitType = None
     )
   }
 

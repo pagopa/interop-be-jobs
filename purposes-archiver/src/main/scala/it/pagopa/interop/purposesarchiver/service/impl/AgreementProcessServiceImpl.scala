@@ -22,9 +22,9 @@ final case class AgreementProcessServiceImpl(invoker: AgreementProcessInvoker, a
     Logger.takingImplicit[ContextFieldsToLog](this.getClass)
 
   override def getAgreementById(agreementId: UUID)(implicit contexts: Seq[(String, String)]): Future[Agreement] =
-    withHeaders { (bearerToken, correlationId, ip) =>
+    withHeaders { (bearerToken, correlationId) =>
       val request: ApiRequest[Agreement] =
-        api.getAgreementById(xCorrelationId = correlationId, agreementId = agreementId.toString, xForwardedFor = ip)(
+        api.getAgreementById(xCorrelationId = correlationId, agreementId = agreementId.toString)(
           BearerToken(bearerToken)
         )
       invoker.invoke(request, s"Retrieving agreement $agreementId")

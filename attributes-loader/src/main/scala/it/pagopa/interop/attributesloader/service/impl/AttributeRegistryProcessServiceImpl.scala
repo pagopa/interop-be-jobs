@@ -19,13 +19,11 @@ final case class AttributeRegistryProcessServiceImpl(invoker: AttributeRegistryP
   override def createInternalCertifiedAttribute(
     seed: InternalCertifiedAttributeSeed
   )(implicit contexts: Seq[(String, String)]): Future[Attribute] =
-    withHeaders { (bearerToken, correlationId, ip) =>
+    withHeaders { (bearerToken, correlationId) =>
       val request: ApiRequest[Attribute] = api
-        .createInternalCertifiedAttribute(
-          xCorrelationId = correlationId,
-          xForwardedFor = ip,
-          internalCertifiedAttributeSeed = seed
-        )(BearerToken(bearerToken))
+        .createInternalCertifiedAttribute(xCorrelationId = correlationId, internalCertifiedAttributeSeed = seed)(
+          BearerToken(bearerToken)
+        )
       invoker.invoke(request, s"Creating attribute")
     }
 }

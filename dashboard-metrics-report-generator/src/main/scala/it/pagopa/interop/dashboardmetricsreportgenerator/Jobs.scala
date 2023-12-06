@@ -47,7 +47,7 @@ object Jobs {
 
   def getTenantsData(
     readModel: ReadModelService,
-    partyManagementProxy: PartyManagementProxy,
+    selfcareV2Client: SelfcareV2Client,
     config: CollectionsConfiguraion,
     overrides: Overrides
   ): Future[TenantsData] =
@@ -55,9 +55,7 @@ object Jobs {
       .flatMap { tenants =>
         for {
           selfcareIds     <- Future.traverse(tenants.flatMap(_.selfcareId.toList).toList)(_.toFutureUUID)
-          onBoardingDates <- Future.parCollectWithLatch(maxParallelism)(selfcareIds)(
-            partyManagementProxy.getOnboardingDate
-          )
+          onBoardingDates <- Future.parCollectWithLatch(maxParallelism)(selfcareIds)(selfcareV2Client.getOnboardingDate)
         } yield onBoardingDates
       }
       .map { onBoardingDates =>
