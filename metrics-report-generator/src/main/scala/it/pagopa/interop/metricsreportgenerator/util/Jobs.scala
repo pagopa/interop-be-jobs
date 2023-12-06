@@ -136,7 +136,7 @@ class Jobs(config: Configuration, readModel: ReadModelService, s3: S3)(implicit
           )
         )
         .toList
-    } yield Sheet(name = "Agreements", rows = headerRow :: rows, columns = columns)
+    } yield Sheet(name = "Descriptors", rows = headerRow :: rows, columns = columns)
   }
 
   private def createMetricDescriptor(descriptor: Descriptor)(implicit ec: ExecutionContext): Future[MetricDescriptor] =
