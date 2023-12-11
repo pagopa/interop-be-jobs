@@ -36,7 +36,7 @@ object Main extends App {
     fm        <- Future(FileManager.get(FileManager.S3)(blockingEC))
     s3        <- Future(new S3(fm, config))
     rm        <- Future(new MongoDbReadModelService(config.readModel))
-    jobs      <- Future(new Jobs(config, rm, s3))
+    jobs      <- Future(new Jobs(config, rm))
     tokensJob <- Future(new TokensJobs(s3))
   } yield (es, blockingEC, fm, s3, rm, jobs, tokensJob, config)
 

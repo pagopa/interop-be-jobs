@@ -40,12 +40,12 @@ final case class Descriptor(
   producer: String,
   descriptorId: String,
   state: String,
-  interfacePath: Option[String]
+  checksum: String
 ) {
   def isActive: Boolean = state == "Suspended" || state == "Published" || state == "Deprecated"
 
-  def toMetric(fingerprint: String): MetricDescriptor =
-    MetricDescriptor(name, createdAt, producerId, producer, descriptorId, state, fingerprint)
+  def toMetric: MetricDescriptor =
+    MetricDescriptor(name, createdAt, producerId, producer, descriptorId, state, checksum)
 }
 
 object Descriptor {

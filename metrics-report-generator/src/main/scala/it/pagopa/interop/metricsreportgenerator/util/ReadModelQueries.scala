@@ -126,7 +126,7 @@ object ReadModelQueries {
         computed(
           "descriptors",
           Document(
-            """{$map:{"input":"$data.descriptors","as":"descriptor","in":{"id":"$$descriptor.id","state":"$$descriptor.state", "interfacePath": "$$descriptor.interface.path"}}}"""
+            """{$map:{"input":"$data.descriptors","as":"descriptor","in":{"id":"$$descriptor.id","state":"$$descriptor.state", "checksum": "$$descriptor.interface.checksum"}}}"""
           )
         )
       )
