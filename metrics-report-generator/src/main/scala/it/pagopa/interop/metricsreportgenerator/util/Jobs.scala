@@ -35,9 +35,9 @@ class Jobs(config: Configuration, readModel: ReadModelService, s3: S3)(implicit
             a.eserviceId,
             a.eservice,
             a.producer,
+            a.producerId,
             a.consumer,
             a.consumerId,
-            a.producerId,
             a.agreementId,
             purposeNames.mkString("§"),
             purposeIds.mkString("§")
@@ -79,9 +79,9 @@ class Jobs(config: Configuration, readModel: ReadModelService, s3: S3)(implicit
             a.eserviceId,
             a.eservice,
             a.producer,
+            a.producerId,
             a.consumer,
             a.consumerId,
-            a.producerId,
             a.agreementId,
             purposeNames.mkString(", "),
             purposeIds.mkString(", ")
