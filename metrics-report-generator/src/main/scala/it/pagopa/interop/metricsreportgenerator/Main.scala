@@ -28,7 +28,7 @@ object Main extends App {
   logger.info("Starting metrics report generator job")
 
   def resources(implicit ec: ExecutionContext): Future[
-    (ExecutorService, ExecutionContextExecutor, FileManager, ReadModelService, Jobs, TokensJobs, Configuration)
+    (ExecutorService, ExecutionContextExecutor, FileManager, S3, ReadModelService, Jobs, TokensJobs, Configuration)
   ] = for {
     config <- Configuration.read()
     es     <- Future(Executors.newFixedThreadPool(1.max(Runtime.getRuntime.availableProcessors() - 1)))
@@ -38,7 +38,7 @@ object Main extends App {
     rm        <- Future(new MongoDbReadModelService(config.readModel))
     jobs      <- Future(new Jobs(config, rm, s3))
     tokensJob <- Future(new TokensJobs(s3))
-  } yield (es, blockingEC, fm, rm, jobs, tokensJob, config)
+  } yield (es, blockingEC, fm, s3, rm, jobs, tokensJob, config)
 
   def sendMail(config: Configuration, attachments: Seq[MailAttachment]): Future[Unit] = {
     val mail: TextMail =
@@ -55,24 +55,44 @@ object Main extends App {
   def asAttachment(fileName: String, content: Array[Byte]): MailAttachment =
     MailAttachment(fileName, content, "text/csv")
 
-  def execution(jobs: Jobs, tokensJob: TokensJobs, config: Configuration)(implicit
+  def execution(jobs: Jobs, tokensJob: TokensJobs, s3: S3, config: Configuration)(implicit
     blockingEC: ExecutionContextExecutor
   ): Future[Unit] = {
     val env: String = config.environment
     for {
+
+      _ <- jobs.getAgreementRecord
+        .map(_.getBytes)
+        .flatMap(bs => s3.saveAgreementsReport(bs))
+
+      _ <- jobs.getDescriptorsRecord
+        .map(_.getBytes)
+        .flatMap(bs => s3.saveActiveDescriptorsReport(bs))
+
+      _ <- tokensJob.getTokensDataCsv
+        .map(_.getBytes)
+        .flatMap(bs => s3.saveTokensReport(bs))
+
       agreementsSheet  <- jobs.getAgreementSheet
       descriptorsSheet <- jobs.getDescriptorsSheet
       tokenSheet       <- tokensJob.getTokensDataSheet
-      bytes = Workbook(agreementsSheet, descriptorsSheet, tokenSheet)
-        .writeToOutputStream(new ByteArrayOutputStream())
-        .toByteArray()
-      _ <- sendMail(config, Seq(asAttachment(s"report-${env}.xlsx", bytes)))
+      _                <- sendMail(
+        config,
+        Seq(
+          asAttachment(
+            s"report-${env}.xlsx",
+            Workbook(agreementsSheet, descriptorsSheet, tokenSheet)
+              .writeToOutputStream(new ByteArrayOutputStream())
+              .toByteArray()
+          )
+        )
+      )
     } yield ()
   }
 
   def job(implicit ec: ExecutionContext): Future[Unit] = resources.flatMap {
-    case (es, blockingEC, fm, rm, jobs, tokensJob, config) =>
-      execution(jobs, tokensJob, config)(blockingEC)
+    case (es, blockingEC, fm, s3, rm, jobs, tokensJob, config) =>
+      execution(jobs, tokensJob, s3, config)(blockingEC)
         .andThen { case Failure(ex) => logger.error("Metrics job got an error", ex) }
         .andThen { _ =>
           es.shutdown()
