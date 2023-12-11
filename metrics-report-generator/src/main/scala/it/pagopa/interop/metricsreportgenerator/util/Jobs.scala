@@ -25,7 +25,7 @@ class Jobs(config: Configuration, readModel: ReadModelService, s3: S3)(implicit
       .getAllActiveAgreements(config.collections, readModel)
       .zip(ReadModelQueries.getAllPurposes(config.collections, readModel))
       .map { case (agreements, purposes) =>
-        val header = "eserviceId,eservice,producer,consumer,agreementId,purposes,purposeIds"
+        val header = "eserviceId,eservice,producer,producerId,consumer,consumerId,agreementId,purposes,purposeIds"
         (header :: agreements.toList.map { a =>
           val (purposeIds, purposeNames): (Seq[String], Seq[String]) = purposes
             .filter(p => p.consumerId == a.consumerId && p.eserviceId == a.eserviceId)
@@ -35,7 +35,9 @@ class Jobs(config: Configuration, readModel: ReadModelService, s3: S3)(implicit
             a.eserviceId,
             a.eservice,
             a.producer,
+            a.producerId,
             a.consumer,
+            a.consumerId,
             a.agreementId,
             purposeNames.mkString("§"),
             purposeIds.mkString("§")
@@ -46,7 +48,17 @@ class Jobs(config: Configuration, readModel: ReadModelService, s3: S3)(implicit
 
   def getAgreementSheet(implicit ec: ExecutionContext): Future[Sheet] = {
     logger.info("Gathering Agreements Information")
-    val headerList = List("EserviceId", "Eservice", "Producer", "Consumer", "AgreementId", "Purposes", "PurposeIds")
+    val headerList = List(
+      "EserviceId",
+      "Eservice",
+      "Producer",
+      "ProducerId",
+      "Consumer",
+      "ConsumerId",
+      "AgreementId",
+      "Purposes",
+      "PurposeIds"
+    )
     val headerRow  =
       Row(style = SheetStyle.headerStyle).withCellValues(headerList)
 
@@ -67,7 +79,9 @@ class Jobs(config: Configuration, readModel: ReadModelService, s3: S3)(implicit
             a.eserviceId,
             a.eservice,
             a.producer,
+            a.producerId,
             a.consumer,
+            a.consumerId,
             a.agreementId,
             purposeNames.mkString(", "),
             purposeIds.mkString(", ")

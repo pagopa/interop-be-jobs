@@ -18,12 +18,13 @@ final case class Agreement(
   eserviceId: String,
   eservice: String,
   producer: String,
+  producerId: String,
   consumer: String,
   consumerId: String
 )
 
 object Agreement {
-  implicit val format: RootJsonFormat[Agreement] = jsonFormat7(Agreement.apply)
+  implicit val format: RootJsonFormat[Agreement] = jsonFormat8(Agreement.apply)
 }
 
 final case class Purpose(purposeId: String, consumerId: String, eserviceId: String, name: String)

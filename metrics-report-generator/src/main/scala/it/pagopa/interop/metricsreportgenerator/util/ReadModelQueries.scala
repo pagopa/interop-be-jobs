@@ -50,7 +50,8 @@ object ReadModelQueries {
         computed("activationDate", "$data.stamps.activation.when"),
         computed("agreementId", "$data.id"),
         computed("eserviceId", "$data.eserviceId"),
-        computed("consumerId", "$data.consumerId")
+        computed("consumerId", "$data.consumerId"),
+        computed("producerId", "$data.producerId")
       )
     )
 
@@ -63,6 +64,7 @@ object ReadModelQueries {
         computed("data.agreementId", "$agreementId"),
         computed("data.eserviceId", "$eserviceId"),
         computed("data.consumerId", "$consumerId"),
+        computed("data.producerId", "$producerId"),
         exclude("_id")
       )
     )
