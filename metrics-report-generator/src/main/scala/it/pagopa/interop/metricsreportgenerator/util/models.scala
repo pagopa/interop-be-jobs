@@ -2,12 +2,17 @@ package it.pagopa.interop.metricsreportgenerator.util.models
 
 import java.time.LocalDate
 import it.pagopa.interop.commons.utils.errors.GenericComponentErrors.GenericError
+import it.pagopa.interop.commons.utils.TypeConversions.EitherOps
+
 import scala.util._
 import spray.json.DefaultJsonProtocol._
 import spray.json._
 import cats.syntax.all._
+import it.pagopa.interop.metricsreportgenerator.util.Errors.ChecksumNotFound
+
 import java.time.Instant
 import java.time.ZoneId
+import scala.concurrent.Future
 
 final case class Agreement(
   activationDate: Option[String],
@@ -36,12 +41,16 @@ final case class Descriptor(
   producer: String,
   descriptorId: String,
   state: String,
-  checksum: String
+  checksum: Option[String]
 ) {
   def isActive: Boolean = state == "Suspended" || state == "Published" || state == "Deprecated"
 
-  def toMetric: MetricDescriptor =
-    MetricDescriptor(name, createdAt, producerId, producer, descriptorId, state, checksum)
+  def toMetric: Future[MetricDescriptor] = checksum
+    .fold[Either[ChecksumNotFound, MetricDescriptor]](Left(ChecksumNotFound(descriptorId)))(chs =>
+      Right(MetricDescriptor(name, createdAt, producerId, producer, descriptorId, state, chs))
+    )
+    .toFuture
+
 }
 
 object Descriptor {

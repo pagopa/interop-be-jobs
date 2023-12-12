@@ -54,7 +54,7 @@ class Jobs(config: Configuration, readModel: ReadModelService)(implicit
     ReadModelQueries
       .getAllDescriptors(config.collections, readModel)
       .map(_.filter(_.isActive).toList)
-      .map(_.map(_.toMetric))
+      .flatMap(xs => Future.traverse(xs)(_.toMetric))
       .map(asCsv)
       .map(_.mkString("\n"))
   }
