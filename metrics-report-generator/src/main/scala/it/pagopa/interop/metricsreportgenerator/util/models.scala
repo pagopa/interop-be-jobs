@@ -46,10 +46,9 @@ final case class Descriptor(
   def isActive: Boolean = state == "Suspended" || state == "Published" || state == "Deprecated"
 
   def toMetric: Future[MetricDescriptor] = checksum
-    .fold[Either[ChecksumNotFound, MetricDescriptor]](Left(ChecksumNotFound(descriptorId)))(chs =>
-      Right(MetricDescriptor(name, createdAt, producerId, producer, descriptorId, state, chs))
+    .fold[Future[MetricDescriptor]](Future.failed(ChecksumNotFound(descriptorId)))(chs =>
+      Future.successful(MetricDescriptor(name, createdAt, producerId, producer, descriptorId, state, chs))
     )
-    .toFuture
 
 }
 
