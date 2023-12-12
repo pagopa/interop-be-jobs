@@ -5,12 +5,11 @@ import cats.syntax.all._
 import com.typesafe.scalalogging.LoggerTakingImplicit
 import it.pagopa.interop.commons.cqrs.service.ReadModelService
 import it.pagopa.interop.commons.logging._
-import it.pagopa.interop.commons.utils.Digester
-import it.pagopa.interop.metricsreportgenerator.util.models.{MetricDescriptor, Descriptor}
+import it.pagopa.interop.metricsreportgenerator.util.models.MetricDescriptor
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class Jobs(config: Configuration, readModel: ReadModelService, s3: S3)(implicit
+class Jobs(config: Configuration, readModel: ReadModelService)(implicit
   logger: LoggerTakingImplicit[ContextFieldsToLog],
   context: ContextFieldsToLog
 ) {
@@ -55,12 +54,8 @@ class Jobs(config: Configuration, readModel: ReadModelService, s3: S3)(implicit
     ReadModelQueries
       .getAllDescriptors(config.collections, readModel)
       .map(_.filter(_.isActive).toList)
-      .flatMap(descriptors => Future.traverse(descriptors)(createMetricDescriptor))
+      .map(_.map(_.toMetric))
       .map(asCsv)
       .map(_.mkString("\n"))
   }
-
-  private def createMetricDescriptor(descriptor: Descriptor)(implicit ec: ExecutionContext): Future[MetricDescriptor] =
-    s3.getInterfaceDocument(descriptor.interfacePath).map(bytes => descriptor.toMetric(Digester.toSha256(bytes)))
-
 }
