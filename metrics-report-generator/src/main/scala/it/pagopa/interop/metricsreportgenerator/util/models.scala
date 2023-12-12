@@ -1,18 +1,14 @@
 package it.pagopa.interop.metricsreportgenerator.util.models
 
-import java.time.LocalDate
+import cats.syntax.all._
 import it.pagopa.interop.commons.utils.errors.GenericComponentErrors.GenericError
-import it.pagopa.interop.commons.utils.TypeConversions.EitherOps
-
-import scala.util._
+import it.pagopa.interop.metricsreportgenerator.util.Errors.ChecksumNotFound
 import spray.json.DefaultJsonProtocol._
 import spray.json._
-import cats.syntax.all._
-import it.pagopa.interop.metricsreportgenerator.util.Errors.ChecksumNotFound
 
-import java.time.Instant
-import java.time.ZoneId
+import java.time.{Instant, LocalDate, ZoneId}
 import scala.concurrent.Future
+import scala.util._
 
 final case class Agreement(
   activationDate: Option[String],
