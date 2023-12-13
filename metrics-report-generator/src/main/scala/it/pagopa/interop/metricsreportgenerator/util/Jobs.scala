@@ -120,7 +120,7 @@ class Jobs(config: Configuration, readModel: ReadModelService)(implicit
 
     for {
       descriptors <- ReadModelQueries.getAllDescriptors(config.collections, readModel).map(_.filter(_.isActive).toList)
-      metricDescriptors <- Future.traverse(descriptors)(createMetricDescriptor)
+      metricDescriptors <- Future.traverse(descriptors)(_.toMetric)
       rows = metricDescriptors
         .map(descriptor =>
           Row(style = SheetStyle.rowStyle).withCellValues(
@@ -136,8 +136,4 @@ class Jobs(config: Configuration, readModel: ReadModelService)(implicit
         .toList
     } yield Sheet(name = "Descriptors", rows = headerRow :: rows, columns = columns)
   }
-
-  private def createMetricDescriptor(descriptor: Descriptor)(implicit ec: ExecutionContext): Future[MetricDescriptor] =
-    s3.getInterfaceDocument(descriptor.interfacePath).map(bytes => descriptor.toMetric(Digester.toSha256(bytes)))
-
 }
