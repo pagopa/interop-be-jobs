@@ -144,7 +144,7 @@ object ReadModelQueries {
         include("name", "createdAt", "producerId"),
         computed("descriptorId", "$descriptors.id"),
         computed("state", "$descriptors.state"),
-        computed("interfacePath", "$descriptors.interfacePath"),
+        computed("checksum", "$descriptors.checksum"),
         computed("producer", "$producerTenant.data.name")
       )
     )

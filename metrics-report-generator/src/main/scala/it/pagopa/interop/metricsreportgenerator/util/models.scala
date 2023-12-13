@@ -1,13 +1,14 @@
 package it.pagopa.interop.metricsreportgenerator.util.models
 
-import java.time.LocalDate
+import cats.syntax.all._
 import it.pagopa.interop.commons.utils.errors.GenericComponentErrors.GenericError
-import scala.util._
+import it.pagopa.interop.metricsreportgenerator.util.Errors.ChecksumNotFound
 import spray.json.DefaultJsonProtocol._
 import spray.json._
-import cats.syntax.all._
-import java.time.Instant
-import java.time.ZoneId
+
+import java.time.{Instant, LocalDate, ZoneId}
+import scala.concurrent.Future
+import scala.util._
 import spoiwo.model._
 import spoiwo.model.enums._
 import scala.collection.immutable.ListMap
@@ -40,12 +41,15 @@ final case class Descriptor(
   producer: String,
   descriptorId: String,
   state: String,
-  checksum: String
+  checksum: Option[String]
 ) {
   def isActive: Boolean = state == "Suspended" || state == "Published" || state == "Deprecated"
 
-  def toMetric: MetricDescriptor =
-    MetricDescriptor(name, createdAt, producerId, producer, descriptorId, state, checksum)
+  def toMetric: Future[MetricDescriptor] = checksum
+    .fold[Future[MetricDescriptor]](Future.failed(ChecksumNotFound(descriptorId)))(chs =>
+      Future.successful(MetricDescriptor(name, createdAt, producerId, producer, descriptorId, state, chs))
+    )
+
 }
 
 object Descriptor {
