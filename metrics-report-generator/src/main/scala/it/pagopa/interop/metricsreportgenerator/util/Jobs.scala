@@ -6,7 +6,6 @@ import com.typesafe.scalalogging.LoggerTakingImplicit
 import it.pagopa.interop.commons.cqrs.service.ReadModelService
 import it.pagopa.interop.commons.logging._
 import it.pagopa.interop.metricsreportgenerator.util.models.MetricDescriptor
-
 import spoiwo.model._
 
 import scala.concurrent.{ExecutionContext, Future}
