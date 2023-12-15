@@ -15,17 +15,17 @@ object ReadModelQueries {
   def getAllActiveAgreements(config: CollectionsConfiguration, rm: ReadModelService)(implicit
     ec: ExecutionContext
   ): Future[Seq[Agreement]] =
-    getAll(config.maxParallelism)(getActiveAgreements(_, _, config, rm))
+    getAll(config.limit)(getActiveAgreements(_, _, config, rm))
 
   def getAllDescriptors(config: CollectionsConfiguration, rm: ReadModelService)(implicit
     ec: ExecutionContext
   ): Future[Seq[Descriptor]] =
-    getAll(config.maxParallelism)(getDescriptors(_, _, config, rm))
+    getAll(config.limit)(getDescriptors(_, _, config, rm))
 
   def getAllPurposes(config: CollectionsConfiguration, rm: ReadModelService)(implicit
     ec: ExecutionContext
   ): Future[Seq[Purpose]] =
-    getAll(config.maxParallelism)(getPurposes(_, _, config, rm))
+    getAll(config.limit)(getPurposes(_, _, config, rm))
 
   private def getActiveAgreements(
     offset: Int,
@@ -76,13 +76,8 @@ object ReadModelQueries {
       secondProjection
     )
 
-    readModelService.aggregate[Agreement](
-      collectionName = config.agreements,
-      pipeline = aggregation,
-      offset = offset,
-      limit = limit,
-      allowDiskUse = true
-    )
+    readModelService
+      .aggregate[Agreement](collectionName = config.agreements, pipeline = aggregation, offset = offset, limit = limit)
   }
 
   private def getPurposes(
@@ -104,8 +99,7 @@ object ReadModelQueries {
       collectionName = collections.purposes,
       pipeline = Seq(projection),
       offset = offset,
-      limit = limit,
-      allowDiskUse = true
+      limit = limit
     )
   }
 
@@ -151,8 +145,7 @@ object ReadModelQueries {
       collectionName = collections.eservices,
       pipeline = Seq(projection1, unwindStep, zipProducer, unwindStep2, projection2),
       offset = offset,
-      limit = limit,
-      allowDiskUse = true
+      limit = limit
     )
   }
 
