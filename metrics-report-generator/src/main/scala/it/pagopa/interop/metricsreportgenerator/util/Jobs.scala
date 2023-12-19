@@ -21,7 +21,7 @@ class Jobs(config: Configuration, readModel: ReadModelService)(implicit
       .getAllActiveAgreements(config.collections, readModel)
       .zip(ReadModelQueries.getAllPurposes(config.collections, readModel))
       .map { case (agreements, purposes) =>
-        val header = "eserviceId,eservice,producer,consumer,agreementId,purposes,purposeIds"
+        val header = "eserviceId,eservice,producerId,producer,consumerId,consumer,agreementId,state,purposes,purposeIds"
         (header :: agreements.toList.map { a =>
           val (purposeIds, purposeNames): (Seq[String], Seq[String]) = purposes
             .filter(p => p.consumerId == a.consumerId && p.eserviceId == a.eserviceId)
@@ -30,9 +30,12 @@ class Jobs(config: Configuration, readModel: ReadModelService)(implicit
           List(
             a.eserviceId,
             a.eservice,
+            a.producerId,
             a.producer,
+            a.consumerId,
             a.consumer,
             a.agreementId,
+            a.state,
             purposeNames.mkString("§"),
             purposeIds.mkString("§")
           ).map(s => s"\"$s\"").mkString(",")
@@ -43,9 +46,9 @@ class Jobs(config: Configuration, readModel: ReadModelService)(implicit
   def getDescriptorsRecord(implicit ec: ExecutionContext): Future[String] = {
     logger.info("Gathering Descriptors Information")
 
-    val header: String                       = "name,createdAt,producerId,producer,descriptorId,state,fingerprint"
-    val asCsvRow: MetricDescriptor => String = (d: MetricDescriptor) =>
-      s""""${d.name}","${d.createdAt}","${d.producerId}","${d.producer}","${d.descriptorId}","${d.state}","${d.fingerprint}""""
+    val header: String = "name,createdAt,producerId,producer,descriptorId,state,fingerprint,tokenDuration"
+    val asCsvRow: MetricDescriptor => String              = (d: MetricDescriptor) =>
+      s""""${d.name}","${d.createdAt}","${d.producerId}","${d.producer}","${d.descriptorId}","${d.state}","${d.fingerprint}","${d.tokenDuration}""""
     val asCsvRows: List[MetricDescriptor] => List[String] = Functor[List].lift(asCsvRow)
     val addHeader: List[String] => List[String]           = header :: _
 
