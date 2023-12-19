@@ -50,7 +50,9 @@ object ReadModelQueries {
         computed("activationDate", "$data.stamps.activation.when"),
         computed("agreementId", "$data.id"),
         computed("eserviceId", "$data.eserviceId"),
-        computed("consumerId", "$data.consumerId")
+        computed("consumerId", "$data.consumerId"),
+        computed("producerId", "$data.producerId"),
+        computed("state", "$data.state")
       )
     )
 
@@ -62,13 +64,15 @@ object ReadModelQueries {
         computed("data.activationDate", "$activationDate"),
         computed("data.agreementId", "$agreementId"),
         computed("data.eserviceId", "$eserviceId"),
+        computed("data.producerId", "$producerId"),
         computed("data.consumerId", "$consumerId"),
+        computed("data.state", "$state"),
         exclude("_id")
       )
     )
 
     val aggregation: List[Bson] = List(
-      `match`(Filters.eq("data.state", "Active")),
+      `match`(Filters.in("data.state", "Active", "Suspended", "Archived")),
       lookup("eservices", localField = "data.eserviceId", foreignField = "data.id", as = "data.eservice"),
       lookup("tenants", localField = "data.consumerId", foreignField = "data.id", as = "data.consumer"),
       lookup("tenants", localField = "data.producerId", foreignField = "data.id", as = "data.producer"),
@@ -118,7 +122,7 @@ object ReadModelQueries {
         computed(
           "descriptors",
           Document(
-            """{$map:{"input":"$data.descriptors","as":"descriptor","in":{"id":"$$descriptor.id","state":"$$descriptor.state", "checksum": "$$descriptor.interface.checksum"}}}"""
+            """{$map:{"input":"$data.descriptors","as":"descriptor","in":{"id":"$$descriptor.id","state":"$$descriptor.state", "checksum": "$$descriptor.interface.checksum", "voucherLifespan": "$$descriptor.voucherLifespan"}}}"""
           )
         )
       )
@@ -137,10 +141,12 @@ object ReadModelQueries {
         computed("descriptorId", "$descriptors.id"),
         computed("state", "$descriptors.state"),
         computed("checksum", "$descriptors.checksum"),
+        computed("voucherLifespan", "$descriptors.voucherLifespan"),
         computed("producer", "$producerTenant.data.name")
       )
     )
 
+    Seq(projection1, unwindStep, zipProducer, unwindStep2, projection2).foreach(b => println(b.toBsonDocument.toString))
     readModelService.aggregateRaw[Descriptor](
       collectionName = collections.eservices,
       pipeline = Seq(projection1, unwindStep, zipProducer, unwindStep2, projection2),
