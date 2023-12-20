@@ -24,7 +24,7 @@ final case class Configuration(
 )
 
 final case class CollectionsConfiguration(
-  maxParallelism: Int,
+  limit: Int,
   tenants: String,
   agreements: String,
   purposes: String,
@@ -40,6 +40,6 @@ object Configuration {
 
   def read(): Future[Configuration] = ConfigSource.default
     .load[Configuration]
-    .leftMap(new ConfigReaderException(_))
+    .leftMap(ConfigReaderException(_))
     .fold(Future.failed, Future.successful)
 }
