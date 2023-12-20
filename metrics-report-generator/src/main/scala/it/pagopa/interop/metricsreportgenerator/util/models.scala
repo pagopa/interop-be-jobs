@@ -1,6 +1,7 @@
 package it.pagopa.interop.metricsreportgenerator.util.models
 
 import cats.syntax.all._
+import it.pagopa.interop.commons.utils.TypeConversions.OptionOps
 import it.pagopa.interop.commons.utils.errors.GenericComponentErrors.GenericError
 import it.pagopa.interop.metricsreportgenerator.util.Errors.ChecksumNotFound
 import spray.json.DefaultJsonProtocol._
@@ -21,11 +22,12 @@ final case class Agreement(
   producer: String,
   producerId: String,
   consumer: String,
-  consumerId: String
+  consumerId: String,
+  state: String
 )
 
 object Agreement {
-  implicit val format: RootJsonFormat[Agreement] = jsonFormat8(Agreement.apply)
+  implicit val format: RootJsonFormat[Agreement] = jsonFormat9(Agreement.apply)
 }
 
 final case class Purpose(purposeId: String, consumerId: String, eserviceId: String, name: String)
@@ -41,19 +43,34 @@ final case class Descriptor(
   producer: String,
   descriptorId: String,
   state: String,
+  voucherLifespan: Option[Int],
   checksum: Option[String]
 ) {
   def isActive: Boolean = state == "Suspended" || state == "Published" || state == "Deprecated"
 
-  def toMetric: Future[MetricDescriptor] = checksum
-    .fold[Future[MetricDescriptor]](Future.failed(ChecksumNotFound(descriptorId)))(chs =>
-      Future.successful(MetricDescriptor(name, createdAt, producerId, producer, descriptorId, state, chs))
+  def toMetric: Future[MetricDescriptor] = {
+    val metric: Option[MetricDescriptor] = for {
+      chs  <- checksum
+      vouL <- voucherLifespan
+    } yield MetricDescriptor(
+      name = name,
+      createdAt = createdAt,
+      producerId = producerId,
+      producer = producer,
+      descriptorId = descriptorId,
+      state = state,
+      fingerprint = chs,
+      tokenDuration = vouL
     )
+
+    metric.toFuture(ChecksumNotFound(s"$descriptorId check=checksum vl=$voucherLifespan"))
+
+  }
 
 }
 
 object Descriptor {
-  implicit val format: RootJsonFormat[Descriptor] = jsonFormat7(Descriptor.apply)
+  implicit val format: RootJsonFormat[Descriptor] = jsonFormat8(Descriptor.apply)
 }
 
 final case class MetricDescriptor(
@@ -63,7 +80,8 @@ final case class MetricDescriptor(
   producer: String,
   descriptorId: String,
   state: String,
-  fingerprint: String
+  fingerprint: String,
+  tokenDuration: Int
 )
 
 object SheetStyle {
