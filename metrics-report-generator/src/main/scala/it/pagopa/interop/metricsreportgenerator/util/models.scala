@@ -175,8 +175,8 @@ object Report {
     (aId, pId, time)
   }
 
-  private val headerCsv: String         = "agreementId,purposeId,year,month,day,tokencount"
   private val headerSheet: List[String] = List("agreementId", "purposeId", "year", "month", "day", "tokencount")
+  private val headerCsv: String         = headerSheet.mkString(",")
 
   private val row = raw""""([\w|-]{36})","([\w|-]{36})","(\d{4})","(\d*)","(\d*)","(\d*)"""".r
 

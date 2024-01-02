@@ -61,22 +61,24 @@ object Main extends App {
     val env: String = config.environment
     for {
 
-      _ <- jobs.getAgreementRecord
-        .map(_.getBytes)
-        .flatMap(bs => s3.saveAgreementsReport(bs))
+      agreements  <- jobs.getAgreements
+      purposes    <- jobs.getPurposes
+      descriptors <- jobs.getActiveDescriptors
 
-      _ <- jobs.getDescriptorsRecord
-        .map(_.getBytes)
-        .flatMap(bs => s3.saveActiveDescriptorsReport(bs))
+      agreementRecord = jobs.getAgreementRecord(agreements, purposes).getBytes
+      _ <- s3.saveAgreementsReport(agreementRecord)
 
-      _ <- tokensJob.getTokensDataCsv
-        .map(_.getBytes)
-        .flatMap(bs => s3.saveTokensReport(bs))
+      descriptorRecord <- jobs.getDescriptorsRecord(descriptors).map(_.getBytes)
+      _                <- s3.saveActiveDescriptorsReport(descriptorRecord)
 
-      agreementsSheet  <- jobs.getAgreementSheet
-      descriptorsSheet <- jobs.getDescriptorsSheet
-      tokenSheet       <- tokensJob.getTokensDataSheet
-      _                <- sendMail(
+      tokenReport <- tokensJob.getTokenReport()
+      tokenCsv = tokenReport.renderCsv
+      _ <- s3.saveTokensReport(tokenCsv.getBytes)
+
+      agreementsSheet = jobs.getAgreementSheet(agreements, purposes)
+      descriptorsSheet <- jobs.getDescriptorsSheet(descriptors)
+      tokenSheet = tokenReport.renderSheet
+      _ <- sendMail(
         config,
         Seq(
           asAttachment(

@@ -14,7 +14,6 @@ import it.pagopa.interop.metricsreportgenerator.util.models.Report
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.temporal.ChronoUnit
-import spoiwo.model.Sheet
 
 class TokensJobs(s3: S3)(implicit
   logger: LoggerTakingImplicit[ContextFieldsToLog],
@@ -45,7 +44,7 @@ class TokensJobs(s3: S3)(implicit
       .flatMap(_.toFuture)
   }
 
-  private def getTokenReport(): Future[Report] = {
+  def getTokenReport(): Future[Report] = {
 
     logger.info("Gathering tokens information")
 
@@ -77,15 +76,4 @@ class TokensJobs(s3: S3)(implicit
             .flatMap(updateReport(afterThan, beforeThan)(prunedReport))
       }
   }
-
-  def getTokensDataCsv: Future[String] = {
-    getTokenReport()
-      .map(_.renderCsv)
-  }
-
-  def getTokensDataSheet: Future[Sheet] = {
-    getTokenReport()
-      .map(_.renderSheet)
-  }
-
 }

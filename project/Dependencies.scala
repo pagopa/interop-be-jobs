@@ -109,7 +109,7 @@ object Dependencies {
   }
 
   private[this] object spoiwo {
-    lazy val spoiwo = "com.norbitltd" %% "spoiwo" % "2.2.1"
+    lazy val spoiwo = "com.norbitltd" %% "spoiwo" % spoiwoVersion
   }  
   
   private[this] object scanamo {
