@@ -81,7 +81,13 @@ object ReadModelQueries {
     )
 
     readModelService
-      .aggregate[Agreement](collectionName = config.agreements, pipeline = aggregation, offset = offset, limit = limit)
+      .aggregate[Agreement](
+        collectionName = config.agreements,
+        pipeline = aggregation,
+        offset = offset,
+        limit = limit,
+        allowDiskUse = true
+      )
   }
 
   private def getPurposes(
@@ -103,7 +109,8 @@ object ReadModelQueries {
       collectionName = collections.purposes,
       pipeline = Seq(projection),
       offset = offset,
-      limit = limit
+      limit = limit,
+      allowDiskUse = true
     )
   }
 
@@ -146,12 +153,12 @@ object ReadModelQueries {
       )
     )
 
-    Seq(projection1, unwindStep, zipProducer, unwindStep2, projection2).foreach(b => println(b.toBsonDocument.toString))
     readModelService.aggregateRaw[Descriptor](
       collectionName = collections.eservices,
       pipeline = Seq(projection1, unwindStep, zipProducer, unwindStep2, projection2),
       offset = offset,
-      limit = limit
+      limit = limit,
+      allowDiskUse = true
     )
   }
 
