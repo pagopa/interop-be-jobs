@@ -44,7 +44,8 @@ class TokensJobs(s3: S3)(implicit
       .flatMap(_.toFuture)
   }
 
-  def getTokensData: Future[String] = {
+  def getTokenReport(): Future[Report] = {
+
     logger.info("Gathering tokens information")
 
     // * The data on S3 is skewed, meaning that a specific date-folder (i.e.
@@ -74,7 +75,5 @@ class TokensJobs(s3: S3)(implicit
             .map(_.flatten)
             .flatMap(updateReport(afterThan, beforeThan)(prunedReport))
       }
-      .map(_.render)
   }
-
 }

@@ -108,6 +108,10 @@ object Dependencies {
     lazy val parser  = namespace %% "interop-commons-parser"        % commonsVersion
   }
 
+  private[this] object spoiwo {
+    lazy val spoiwo = "com.norbitltd" %% "spoiwo" % spoiwoVersion
+  }  
+  
   private[this] object scanamo {
     lazy val scanamo = "org.scanamo" %% "scanamo"         % scanamoVersion
     lazy val testkit = "org.scanamo" %% "scanamo-testkit" % scanamoVersion
@@ -197,6 +201,7 @@ object Dependencies {
       "javax.annotation"       % "javax.annotation-api" % "1.3.2" % "compile",
       cats.core                % Compile,
       "com.github.pureconfig" %% "pureconfig"           % "0.17.2",
+      spoiwo.spoiwo            % Compile,
       circe.core               % Compile,
       circe.generic            % Compile,
       logback.classic          % Compile,

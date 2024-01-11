@@ -10,6 +10,9 @@ import spray.json._
 import java.time.{Instant, LocalDate, ZoneId}
 import scala.concurrent.Future
 import scala.util._
+import spoiwo.model._
+import spoiwo.model.enums._
+import scala.collection.immutable.ListMap
 
 final case class Agreement(
   activationDate: Option[String],
@@ -81,6 +84,39 @@ final case class MetricDescriptor(
   tokenDuration: Int
 )
 
+object SheetStyle {
+
+  val headerStyle =
+    CellStyle(
+      fillPattern = CellFill.Solid,
+      fillForegroundColor = Color.LightGreen,
+      font = Font(bold = true),
+      locked = true,
+      borders = CellBorders(
+        leftStyle = CellBorderStyle.Thin,
+        bottomStyle = CellBorderStyle.Thin,
+        rightStyle = CellBorderStyle.Thin,
+        topStyle = CellBorderStyle.Thin
+      ),
+      horizontalAlignment = CellHorizontalAlignment.Center,
+      verticalAlignment = CellVerticalAlignment.Center,
+      wrapText = true
+    )
+
+  val rowStyle =
+    CellStyle(
+      fillPattern = CellFill.Solid,
+      fillForegroundColor = Color.White,
+      font = Font(bold = false),
+      borders = CellBorders(
+        leftStyle = CellBorderStyle.Thin,
+        bottomStyle = CellBorderStyle.Thin,
+        rightStyle = CellBorderStyle.Thin,
+        topStyle = CellBorderStyle.Thin
+      )
+    )
+}
+
 final case class Report private (map: Map[Report.RecordValue, Int]) {
   def addIfInRange(after: Instant, before: Instant)(record: String): Try[Report] = Report
     .extractDataFromToken(record)
@@ -102,11 +138,21 @@ final case class Report private (map: Map[Report.RecordValue, Int]) {
 
   def allButLastDate: Report = Report(map.filterNot { case ((_, _, date), _) => date.isEqual(lastDate) })
 
-  def render: String = (Report.header :: map.map(Report.renderLine).toList.sorted).mkString("\n")
+  def renderCsv: String = (Report.headerCsv :: map.map(Report.renderLineCsv).toList.sorted).mkString("\n")
+
+  def renderSheet: Sheet = {
+    val headerRow =
+      Row(style = SheetStyle.headerStyle).withCellValues(Report.headerSheet)
+    val columns   = (0 until (Report.headerSheet.size)).toList
+      .map(index => Column(index = index, style = CellStyle(font = Font(bold = true)), autoSized = true))
+
+    val rows = ListMap(map.toSeq.sorted: _*).map(Report.renderLineSheet).toList
+    Sheet(name = "Tokens", rows = headerRow :: rows, columns = columns)
+  }
 }
 
 object Report {
-  type RecordValue    = (String, String, LocalDate)
+  type RecordValue    = Tuple3[String, String, LocalDate]
   type RawRecordValue = (String, String, Instant)
 
   val europeRome: ZoneId = ZoneId.of("Europe/Rome")
@@ -129,7 +175,8 @@ object Report {
     (aId, pId, time)
   }
 
-  private val header: String = "agreementId,purposeId,year,month,day,tokencount"
+  private val headerSheet: List[String] = List("agreementId", "purposeId", "year", "month", "day", "tokencount")
+  private val headerCsv: String         = headerSheet.mkString(",")
 
   private val row = raw""""([\w|-]{36})","([\w|-]{36})","(\d{4})","(\d*)","(\d*)","(\d*)"""".r
 
@@ -139,12 +186,21 @@ object Report {
     case _                                      => Failure(GenericError(s"Csv line hasn't the right format: $line"))
   }
 
-  private def renderLine(row: (RecordValue, Int)): String = row match {
+  private def renderLineCsv(row: (RecordValue, Int)): String = row match {
     case ((aId, pId, time), count) =>
       val year: String  = f"${time.getYear()}%04d"
       val month: String = f"${time.getMonthValue()}%02d"
       val day: String   = f"${time.getDayOfMonth()}%02d"
       s""""${aId}","${pId}","${year}","${month}","${day}","${count}""""
+  }
+
+  private def renderLineSheet(row: (RecordValue, Int)): Row = row match {
+    case ((aId, pId, time), count) =>
+      val year: String  = f"${time.getYear()}%04d"
+      val month: String = f"${time.getMonthValue()}%02d"
+      val day: String   = f"${time.getDayOfMonth()}%02d"
+
+      Row(style = SheetStyle.rowStyle).withCellValues(aId, pId, year, month, day, count)
   }
 
   def from(bytes: Array[Byte]): Try[Report] =

@@ -7,6 +7,8 @@ import it.pagopa.interop.commons.logging._
 import it.pagopa.interop.commons.mail.{InteropMailer, MailAttachment, TextMail}
 import it.pagopa.interop.commons.utils.CORRELATION_ID_HEADER
 import it.pagopa.interop.metricsreportgenerator.util._
+import spoiwo.model.Workbook
+import spoiwo.natures.xlsx.Model2XlsxConversions._
 
 import java.util.UUID
 import java.util.concurrent.{ExecutorService, Executors}
@@ -14,6 +16,7 @@ import scala.concurrent.ExecutionContext.global
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
 import scala.util.Failure
+import java.io.ByteArrayOutputStream
 
 object Main extends App {
 
@@ -37,14 +40,14 @@ object Main extends App {
     tokensJob <- Future(new TokensJobs(s3))
   } yield (es, blockingEC, fm, s3, rm, jobs, tokensJob, config)
 
-  def sendMail(config: Configuration): List[MailAttachment] => Future[Unit] = ats => {
+  def sendMail(config: Configuration, attachments: Seq[MailAttachment]): Future[Unit] = {
     val mail: TextMail =
       TextMail(
         UUID.randomUUID(),
         config.recipients,
         s"Report ${config.environment}",
         s"Data report of ${config.environment}",
-        ats
+        attachments
       )
     InteropMailer.from(config.mailer).send(mail)
   }
@@ -56,22 +59,37 @@ object Main extends App {
     blockingEC: ExecutionContextExecutor
   ): Future[Unit] = {
     val env: String = config.environment
+    for {
 
-    val agreementsJobResult: Future[MailAttachment] = jobs.getAgreementRecord
-      .map(_.getBytes)
-      .flatMap(bs => s3.saveAgreementsReport(bs).map(_ => asAttachment(s"agreements-${env}.csv", bs)))
+      agreements  <- jobs.getAgreements
+      purposes    <- jobs.getPurposes
+      descriptors <- jobs.getActiveDescriptors
 
-    val activeDescriptorsJobResult: Future[MailAttachment] = jobs.getDescriptorsRecord
-      .map(_.getBytes)
-      .flatMap(bs => s3.saveActiveDescriptorsReport(bs).map(_ => asAttachment(s"active-descriptors-${env}.csv", bs)))
+      agreementRecord = jobs.getAgreementRecord(agreements, purposes).getBytes
+      _ <- s3.saveAgreementsReport(agreementRecord)
 
-    val tokensJobResult: Future[MailAttachment] = tokensJob.getTokensData
-      .map(_.getBytes)
-      .flatMap(bs => s3.saveTokensReport(bs).map(_ => asAttachment(s"tokens-${env}.csv", bs)))
+      descriptorRecord <- jobs.getDescriptorsRecord(descriptors).map(_.getBytes)
+      _                <- s3.saveActiveDescriptorsReport(descriptorRecord)
 
-    Future
-      .sequence(List(agreementsJobResult, tokensJobResult, activeDescriptorsJobResult))
-      .flatMap(sendMail(config))
+      tokenReport <- tokensJob.getTokenReport()
+      tokenCsv = tokenReport.renderCsv
+      _ <- s3.saveTokensReport(tokenCsv.getBytes)
+
+      agreementsSheet = jobs.getAgreementSheet(agreements, purposes)
+      descriptorsSheet <- jobs.getDescriptorsSheet(descriptors)
+      tokenSheet = tokenReport.renderSheet
+      _ <- sendMail(
+        config,
+        Seq(
+          asAttachment(
+            s"report-${env}.xlsx",
+            Workbook(agreementsSheet, descriptorsSheet, tokenSheet)
+              .writeToOutputStream(new ByteArrayOutputStream())
+              .toByteArray()
+          )
+        )
+      )
+    } yield ()
   }
 
   def job(implicit ec: ExecutionContext): Future[Unit] = resources.flatMap {
