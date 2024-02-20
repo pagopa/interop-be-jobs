@@ -21,7 +21,6 @@ lazy val paDigitaleReportGeneratorModuleName         = "padigitale-report-genera
 lazy val dashboardMetricsGeneratorModuleName         = "dashboard-metrics-report-generator"
 lazy val certifiedMailSenderModuleName               = "certified-mail-sender"
 lazy val eservicesMonitoringExporterModuleName       = "eservices-monitoring-exporter"
-lazy val privacyNoticesUpdaterModuleName             = "privacy-notices-updater"
 lazy val eserviceDescriptorsArchiverModuleName       = "eservice-descriptors-archiver"
 lazy val purposesArchiverModuleName                  = "purposes-archiver"
 
@@ -182,21 +181,6 @@ lazy val eservicesMonitoringExporter = project
   .enablePlugins(JavaAppPackaging)
   .enablePlugins(DockerPlugin)
 
-lazy val privacyNoticesUpdater = project
-  .in(file(privacyNoticesUpdaterModuleName))
-  .settings(
-    name                 := "interop-be-privacy-notices-updater",
-    Docker / packageName := s"${name.value}",
-    sharedSettings,
-    libraryDependencies ++= Dependencies.Jars.privacyNoticesUpdaterDependencies,
-    publish / skip       := true,
-    publish              := (()),
-    publishLocal         := (()),
-    publishTo            := None
-  )
-  .enablePlugins(JavaAppPackaging)
-  .enablePlugins(DockerPlugin)
-
 lazy val tenantsAttributesChecker = project
   .in(file(tenantsAttributesCheckerModuleName))
   .settings(
@@ -238,7 +222,6 @@ lazy val jobs = project
     metricsReportGenerator,
     certifiedMailSender,
     eservicesMonitoringExporter,
-    privacyNoticesUpdater,
     tenantsAttributesChecker,
     eserviceDescriptorsArchiver,
     purposesArchiver
