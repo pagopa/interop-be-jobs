@@ -70,7 +70,16 @@ object Utils {
     val filteredAttributesIndex: Map[UUID, AttributeInfo] =
       attributesIndex.filter(a => originsFromPartyRegistry.contains(a._2.origin))
 
-    val fromRegistry: List[TenantSeed] = institutions.filter(_.id.nonEmpty).map(createTenantSeed)
+    val tenantsMap: Map[PersistentExternalId, String] = tenants.map(t => (t.externalId, t.name)).toMap
+
+    val fromRegistry: List[TenantSeed] = institutions
+      .filter(institution => institution.id.nonEmpty)
+      .collect {
+        case i @ Institution(_, originId, _, _, _, _, _, _, _, origin, _)
+            if tenantsMap.contains(PersistentExternalId(origin, originId)) =>
+          i
+      }
+      .map(prepareTenantSeedForUpdate)
 
     val fromTenant: Map[PersistentExternalId, List[AttributeInfo]] =
       tenants
@@ -78,8 +87,6 @@ object Utils {
           tenant.externalId -> tenant.attributes.flatMap(AttributeInfo.addRevocationTimeStamp(filteredAttributesIndex))
         )
         .toMap
-
-    val tenantsMap: Map[PersistentExternalId, String] = tenants.map(t => (t.externalId, t.name)).toMap
 
     val activations: List[InternalTenantSeed] =
       fromRegistry
@@ -173,7 +180,7 @@ object Utils {
       }
       .map(_ => ())
 
-  private def createTenantSeed(institution: Institution): TenantSeed = {
+  private def prepareTenantSeedForUpdate(institution: Institution): TenantSeed = {
     val attributesWithoutKind: List[AttributeInfo] = institution.classification match {
       case Classification.AGENCY                  =>
         List(

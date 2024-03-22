@@ -5,6 +5,7 @@ import it.pagopa.interop.tenantmanagement.model.tenant.PersistentTenant
 import it.pagopa.interop.tenantscertifiedattributesupdater.repository.{TenantRepository, extractData}
 import it.pagopa.interop.tenantscertifiedattributesupdater.system.ApplicationConfiguration
 import org.mongodb.scala.{Document, MongoClient, MongoCollection}
+import org.mongodb.scala.model.Filters
 
 import scala.concurrent.Future
 
@@ -16,6 +17,6 @@ final case class TenantRepositoryImpl(client: MongoClient) extends TenantReposit
       .getCollection(ApplicationConfiguration.tenantsCollection)
 
   def getTenants: Future[Seq[Either[Throwable, PersistentTenant]]] =
-    collection.find().map(extractData[PersistentTenant]).toFuture()
+    collection.find(Filters.exists("data.selfcareId")).map(extractData[PersistentTenant]).toFuture()
 
 }
