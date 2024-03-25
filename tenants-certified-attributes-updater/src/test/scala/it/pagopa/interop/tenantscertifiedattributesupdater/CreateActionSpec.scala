@@ -16,7 +16,7 @@ import munit.FunSuite
 import java.util.UUID
 
 class CreateActionSpec extends FunSuite {
-  test("Update the tenant with attributes if the tenant exists and is from Selfcare") {
+  test("Update the tenant with attributes if the tenant exists with non-empty selfcareId") {
     val origin1                                   = "ORIGIN_1"
     val origin2                                   = "ORIGIN_2"
     val originId1                                 = "001"

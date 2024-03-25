@@ -75,12 +75,9 @@ object Utils {
     val tenantsMap: Map[PersistentExternalId, String] = filteredTenant.map(t => (t.externalId, t.name)).toMap
 
     val fromRegistry: List[TenantSeed] = institutions
-      .filter(institution => institution.id.nonEmpty)
-      .collect {
-        case i @ Institution(_, originId, _, _, _, _, _, _, _, origin, _)
-            if tenantsMap.contains(PersistentExternalId(origin, originId)) =>
-          i
-      }
+      .filter(institution =>
+        institution.id.nonEmpty && tenantsMap.contains(PersistentExternalId(institution.origin, institution.originId))
+      )
       .map(prepareTenantSeedForUpdate)
 
     val fromTenant: Map[PersistentExternalId, List[AttributeInfo]] =

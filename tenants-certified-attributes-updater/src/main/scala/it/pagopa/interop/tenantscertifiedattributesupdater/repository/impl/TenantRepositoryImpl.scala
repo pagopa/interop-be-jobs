@@ -17,6 +17,6 @@ final case class TenantRepositoryImpl(client: MongoClient) extends TenantReposit
       .getCollection(ApplicationConfiguration.tenantsCollection)
 
   def getTenants: Future[Seq[Either[Throwable, PersistentTenant]]] =
-    collection.find(Filters.exists("data.selfcareId")).map(extractData[PersistentTenant]).toFuture()
+    collection.find(Filters.ne("data.selfcareId", null)).map(extractData[PersistentTenant]).toFuture()
 
 }
