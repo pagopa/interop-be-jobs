@@ -16,16 +16,15 @@ import munit.FunSuite
 import java.util.UUID
 
 class CreateActionSpec extends FunSuite {
-  test("Create new Tenant with attributes if Tenant does not exist") {
-    val origin1        = "ORIGIN_1"
-    val origin2        = "ORIGIN_2"
-    val originId1      = "001"
-    val originId2      = "002"
-    val attributeCode1 = "CAT1"
-    val attributeCode2 = "CAT2"
-    val kind           = "KIND"
-    val kindSha256     = Digester.toSha256(kind.getBytes())
-
+  test("Update the tenant with attributes if the tenant exists with non-empty selfcareId") {
+    val origin1                                   = "ORIGIN_1"
+    val origin2                                   = "ORIGIN_2"
+    val originId1                                 = "001"
+    val originId2                                 = "002"
+    val attributeCode1                            = "CAT1"
+    val attributeCode2                            = "CAT2"
+    val kind                                      = "KIND"
+    val kindSha256                                = Digester.toSha256(kind.getBytes())
     val institutions: List[Institution]           =
       List(
         institution(origin1, originId1, attributeCode1, kind),
@@ -33,30 +32,13 @@ class CreateActionSpec extends FunSuite {
         institution(origin2, originId1, attributeCode2, kind),
         institution(origin1, originId2, attributeCode2, kind)
       )
-    val tenants: List[PersistentTenant]           = List(persistentTenant("ORIG1", "VAL1"))
+    val tenants: List[PersistentTenant]           =
+      List(persistentTenant(origin1, originId1))
     val attributesIndex: Map[UUID, AttributeInfo] = Map.empty
 
     val result = createAction(institutions, tenants, attributesIndex)
 
     val expectedActivations = List(
-      InternalTenantSeed(
-        externalId = ExternalId(origin2, originId1),
-        certifiedAttributes = List(
-          InternalAttributeSeed(origin2, kindSha256),
-          InternalAttributeSeed(origin2, attributeCode2),
-          InternalAttributeSeed(origin2, originId1)
-        ),
-        name = defaultName
-      ),
-      InternalTenantSeed(
-        externalId = ExternalId(origin1, originId2),
-        certifiedAttributes = List(
-          InternalAttributeSeed(origin1, kindSha256),
-          InternalAttributeSeed(origin1, attributeCode2),
-          InternalAttributeSeed(origin1, originId2)
-        ),
-        name = defaultName
-      ),
       InternalTenantSeed(
         externalId = ExternalId(origin1, originId1),
         certifiedAttributes = List(
