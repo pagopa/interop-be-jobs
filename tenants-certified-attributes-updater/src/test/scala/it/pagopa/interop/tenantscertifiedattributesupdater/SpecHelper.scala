@@ -24,7 +24,7 @@ object SpecHelper {
   ): PersistentTenant = PersistentTenant(
     id = UUID.randomUUID(),
     kind = Some(PersistentTenantKind.PA),
-    selfcareId = None,
+    selfcareId = Some(UUID.randomUUID().toString()),
     externalId = PersistentExternalId(origin, value),
     features = Nil,
     attributes = attributes,
