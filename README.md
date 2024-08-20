@@ -12,3 +12,7 @@ This application reads tokens stored in a queue and copies them in a bucket
 ## Eservices Monitoring Exporter
 
 This application reads eservices from DB and copies them in a bucket
+
+# Deprecated services
+- dashboard-metrics-report-generator
+- purposes-archiver
