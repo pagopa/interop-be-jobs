@@ -27,7 +27,7 @@ object Utils {
   // Categoria Gestori di Pubblici Servizi
   private val PUBLIC_SERVICES_MANAGERS_CATEGORY: String = "L37"
   // Tipologia Gestori di Pubblici Servizi
-  private val PUBLIC_SERVICES_MANAGERS_TIPOLOGY: String = "Gestori di Pubblici Servizi"
+  private val PUBLIC_SERVICES_MANAGERS_TYPOLOGY: String = "Gestori di Pubblici Servizi"
 
   implicit class AttributeInfoOps(val a: AttributeInfo) extends AnyVal {
     def toInternalAttributeSeed: InternalAttributeSeed = InternalAttributeSeed(a.origin, a.code)
@@ -198,7 +198,7 @@ object Utils {
     val shouldKindBeExcluded: Boolean = kindToBeExcluded.contains(institution.kind)
 
     val forcedGPSCategory: Option[AttributeInfo] = institution.kind match {
-      case PUBLIC_SERVICES_MANAGERS_TIPOLOGY =>
+      case PUBLIC_SERVICES_MANAGERS_TYPOLOGY =>
         Some(AttributeInfo(institution.origin, PUBLIC_SERVICES_MANAGERS_CATEGORY, None))
       case _                                 => None
     }
