@@ -204,13 +204,13 @@ object Utils {
     }
 
     val attributes: List[AttributeInfo] =
-      if (shouldKindBeExcluded) attributesWithoutKind :: forcedGPSCategory.toList
+      if (shouldKindBeExcluded) attributesWithoutKind ++ forcedGPSCategory.toList
       else
         AttributeInfo(
           institution.origin,
           Digester.toSha256(institution.kind.getBytes),
           None
-        ) :: attributesWithoutKind :: forcedGPSCategory.toList
+        ) :: attributesWithoutKind ++ forcedGPSCategory.toList
 
     TenantSeed(TenantId(institution.origin, institution.originId, institution.description), attributes)
   }
