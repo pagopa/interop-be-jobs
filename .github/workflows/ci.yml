@@ -38,7 +38,7 @@ jobs:
           java-version: 11
 
       - name: Setup SBT
-        uses: actions/setup-sbt@v1
+        uses: sbt/setup-sbt@v1
 
       - name: Cache sbt
         uses: actions/cache@v2
@@ -100,7 +100,7 @@ jobs:
           java-version: 11
 
       - name: Setup SBT
-        uses: actions/setup-sbt@v1
+        uses: sbt/setup-sbt@v1
 
       - name: Cache sbt
         uses: actions/cache@v2
