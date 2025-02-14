@@ -37,6 +37,9 @@ jobs:
           distribution: temurin
           java-version: 11
 
+      - name: Setup SBT
+        uses: sbt/setup-sbt@v1
+
       - name: Cache sbt
         uses: actions/cache@v2
         with:
@@ -64,7 +67,7 @@ jobs:
         run: tar cf targets.tar target attributes-loader/target tenants-certified-attributes-updater/target token-details-persister/target metrics-report-generator/target padigitale-report-generator/target project/target
 
       - name: Upload target directories
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: target-${{ matrix.os }}-${{ matrix.scala }}-${{ matrix.java }}
           path: targets.tar
@@ -96,6 +99,9 @@ jobs:
           distribution: temurin
           java-version: 11
 
+      - name: Setup SBT
+        uses: sbt/setup-sbt@v1
+
       - name: Cache sbt
         uses: actions/cache@v2
         with:
@@ -109,7 +115,7 @@ jobs:
           key: ${{ runner.os }}-sbt-cache-v2-${{ hashFiles('**/*.sbt') }}-${{ hashFiles('project/build.properties') }}
 
       - name: Download target directories (2.13.10)
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: target-${{ matrix.os }}-2.13.10-${{ matrix.java }}
 
