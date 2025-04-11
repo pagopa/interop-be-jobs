@@ -37,6 +37,9 @@ jobs:
           distribution: temurin
           java-version: 11
 
+      - name: Setup SBT
+        uses: sbt/setup-sbt@v1
+
       - name: Cache sbt
         uses: actions/cache@v2
         with:
@@ -95,6 +98,9 @@ jobs:
         with:
           distribution: temurin
           java-version: 11
+
+      - name: Setup SBT
+        uses: sbt/setup-sbt@v1
 
       - name: Cache sbt
         uses: actions/cache@v2
